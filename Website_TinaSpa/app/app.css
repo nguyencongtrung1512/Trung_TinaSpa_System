@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --color-canvas: #fff7fa;
+  --color-mist: #fde8f0;
+  --color-surface: #ffffff;
+  --color-ink: #4a2035;
+  --color-muted: #8a6573;
+  --color-clinic: #e11d74;
+  --color-clinic-deep: #be1860;
+  --color-rose-soft: #f8c3d6;
+  --color-whisper-shadow: rgb(225 29 116 / 0.08);
+}
+
+html,
+body {
+  @apply bg-canvas text-ink antialiased;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
