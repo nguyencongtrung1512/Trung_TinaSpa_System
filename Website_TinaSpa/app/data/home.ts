@@ -68,7 +68,7 @@ export const navLinks: readonly NavLinkItem[] = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Giới thiệu', href: '/about' },
   { label: 'Dịch vụ', href: '/#Service' },
-  { label: 'Sản phẩm', href: '/#Product' },
+  { label: 'Sản phẩm', href: '/products' },
   { label: 'Liên hệ', href: '/#Contact' }
 ]
 
@@ -77,7 +77,7 @@ export const hero = {
   title: 'Chăm sóc sắc đẹp chuyên nghiệp, tận tâm',
   description:
     'Phòng khám kết hợp thẩm mỹ y khoa và không gian spa yên tĩnh. BS. Nguyễn Lânn đồng hành cùng bạn từ tư vấn da đến liệu trình cá nhân hóa.',
-  primaryCta: { label: 'Đặt lịch ngay', href: '/#dat-lich' },
+  primaryCta: { label: 'Đặt lịch ngay', href: '/booking' },
   secondaryCta: { label: 'Tìm hiểu thêm', href: '/about' },
   portrait: {
     src: '/images/image 1.png',
@@ -262,7 +262,8 @@ export const footerColumns = {
     { label: 'Trang chủ', href: '/' },
     { label: 'Giới thiệu', href: '/about' },
     { label: 'Dịch vụ', href: '/#dich-vu' },
-    { label: 'Đặt lịch', href: '/#dat-lich' }
+    { label: 'Sản phẩm', href: '/products' },
+    { label: 'Đặt lịch', href: '/booking' }
   ],
   care: [
     { label: 'Khám da tổng quát', href: '/#dich-vu' },

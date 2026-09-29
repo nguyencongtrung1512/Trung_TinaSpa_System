@@ -1,7 +1,7 @@
 ---
-page: about
+page: services
 ---
-Trang giới thiệu Dr Tina Beauty: câu chuyện phòng khám, triết lý chăm sóc da, và hồ sơ BS. Nguyễn Lânn.
+Trang dịch vụ Dr Tina Beauty: catalog liệu trình (khám da, trị mụn, trẻ hóa, laser, chăm sóc body, tư vấn) với mô tả, thời lượng và lối đặt lịch.
 
 **DESIGN SYSTEM (REQUIRED):**
 - Platform: Web, Desktop-first

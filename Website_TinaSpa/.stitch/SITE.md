@@ -4,7 +4,6 @@
 
 ## 1. Core Identity
 * **Project Name:** Dr Tina Beauty (TinaSpa)
-* **Stitch Project ID:** Chưa có — Stitch MCP không khả dụng trong phiên dựng homepage
 * **Mission:** Website phòng khám thẩm mỹ: giới thiệu thương hiệu, liệu trình, đội ngũ và đặt lịch
 * **Target Audience:** Khách muốn chăm sóc da, trẻ hóa và liệu trình thẩm mỹ y khoa
 * **Voice:** Ấm, chuyên môn, gần gũi, đáng tin — tiếng Việt tự nhiên
@@ -18,18 +17,19 @@
 ## 3. Architecture & File Structure
 * **App root:** `Website_TinaSpa/app/`
 * **Stitch staging:** `.stitch/designs/`
-* **Production:** React Router routes (`/`, `/about`) — không dùng `site/public/*.html`
+* **Production:** React Router routes (`/`, `/about`, `/products`, `/booking`) — không dùng `site/public/*.html`
 * **Navigation:** Header chung: Trang chủ, Giới thiệu, Dịch vụ, Đội ngũ, Liên hệ, Đặt lịch ngay
 
 ## 4. Live Sitemap (Current State)
 * [x] `/` (`home`) — Homepage theo mockup: hero, thống kê, dịch vụ, lý do chọn, quy trình, đội ngũ, cảm nhận, CTA, footer
-* [ ] `/about` — Giới thiệu phòng khám và bác sĩ
+* [x] `/about` — Giới thiệu giá trị cốt lõi của phòng khám
+* [x] `/products` — Catalog sản phẩm p1–p6: lọc nhóm, tìm kiếm, sắp xếp, giá
+* [x] `/products/:productId` — Chi tiết sản phẩm: gallery, mô tả, thành phần, cách dùng, sản phẩm đi kèm
+* [x] `/booking` — Form đặt lịch hẹn
 
 ## 5. The Roadmap (Backlog)
 ### High Priority
-- [ ] Trang Giới thiệu (`about`)
-- [ ] Trang Dịch vụ chi tiết
-- [ ] Form đặt lịch
+- [ ] Trang Dịch vụ chi tiết (`services`)
 
 ### Medium Priority
 - [ ] Trang Đội ngũ

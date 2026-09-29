@@ -58,7 +58,7 @@ export function Header({ className = '' }: HeaderProps) {
             Đăng nhập
           </Link>
           <Link
-            to='/#dat-lich'
+            to='/booking'
             className='hidden rounded-full bg-clinic px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep sm:inline-flex'
           >
             Đặt lịch ngay
@@ -103,7 +103,7 @@ export function Header({ className = '' }: HeaderProps) {
               Đăng nhập
             </Link>
             <Link
-              to='/#dat-lich'
+              to='/booking'
               onClick={() => setOpen(false)}
               className='inline-flex min-h-11 items-center justify-center rounded-full bg-clinic px-5 py-2.5 text-sm font-semibold text-white'
             >

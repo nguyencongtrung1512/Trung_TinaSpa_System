@@ -13,7 +13,7 @@ export function CtaBanner({ className = '' }: CtaBannerProps) {
           Đến Tina Spa để xả stress và làm mới mình. Vẻ đẹp bắt đầu từ những điều nhỏ nhất và lan tỏa đến cả tâm hồn.
         </p>
         <Link
-          to='/#lien-he'
+          to='/booking'
           className='mt-8 inline-flex min-h-11 items-center justify-center rounded-full bg-clinic px-7 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
         >
           Đặt lịch trải nghiệm

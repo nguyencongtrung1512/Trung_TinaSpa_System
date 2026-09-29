@@ -41,3 +41,13 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 6rem;
 }
+
+.booking-page input,
+.booking-page select {
+  background-color: transparent;
+}
+
+.booking-page input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.45;
+}
