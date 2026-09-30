@@ -1,21 +1,29 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-const DEFAULT_ROLES = [
-  { name: 'ADMIN', description: 'Full system access' },
-  { name: 'STAFF', description: 'Staff operations access' },
-  { name: 'CUSTOMER', description: 'Default customer access' },
-] as const;
+const BCRYPT_SALT_ROUNDS = 12;
 
 async function main() {
-  for (const role of DEFAULT_ROLES) {
-    await prisma.role.upsert({
-      where: { name: role.name },
-      update: { description: role.description },
-      create: role,
-    });
+  const phone = process.env.SEED_ADMIN_PHONE;
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  const fullName = process.env.SEED_ADMIN_FULLNAME ?? 'Administrator';
+
+  if (!phone || !password) {
+    console.log('Skip seeding admin: SEED_ADMIN_PHONE / SEED_ADMIN_PASSWORD not set');
+    return;
   }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
+  await prisma.user.upsert({
+    where: { phone },
+    update: { role: 'ADMIN' },
+    create: { phone, passwordHash, fullName, role: 'ADMIN' },
+  });
+
+  console.log(`Seeded admin account: ${phone}`);
 }
 
 try {

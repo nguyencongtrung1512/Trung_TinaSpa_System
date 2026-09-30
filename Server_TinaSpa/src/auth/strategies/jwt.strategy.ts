@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtAccessPayload): Promise<AuthUser> {
-    const user = await this.usersService.findById(payload.sub);
+    const user = await this.usersService.findByUserID(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Invalid access token');
     }
@@ -34,7 +34,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     return {
-      id: user.id,
+      userAID: user.userAID,
+      userID: user.userID,
       phone: user.phone,
       fullName: user.fullName,
       isActive: user.isActive,

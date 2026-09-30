@@ -1,5 +1,6 @@
 export type AuthUser = {
-  id: string;
+  userAID: bigint;
+  userID: string;
   phone: string;
   fullName: string;
   isActive: boolean;

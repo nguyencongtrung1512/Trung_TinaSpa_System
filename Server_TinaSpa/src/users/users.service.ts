@@ -3,14 +3,11 @@ import type { User } from '@prisma/client';
 import { RoleName } from '../common/constants/roles.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
-export type UserWithRoles = User & {
-  userRoles: Array<{ role: { name: string } }>;
-};
-
 export type PublicUser = {
-  id: string;
+  userID: string;
   phone: string;
   fullName: string;
+  role: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -20,63 +17,43 @@ export type PublicUser = {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByPhone(phone: string): Promise<UserWithRoles | null> {
-    return this.prisma.user.findUnique({
-      where: { phone },
-      include: {
-        userRoles: {
-          include: { role: true },
-        },
-      },
-    });
+  findByPhone(phone: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { phone } });
   }
 
-  findById(id: string): Promise<UserWithRoles | null> {
-    return this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        userRoles: {
-          include: { role: true },
-        },
-      },
-    });
+  findByUserID(userID: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { userID } });
+  }
+
+  findByUserAID(userAID: bigint): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { userAID } });
   }
 
   create(data: {
     phone: string;
     passwordHash: string;
     fullName: string;
-  }): Promise<UserWithRoles> {
+  }): Promise<User> {
     return this.prisma.user.create({
       data: {
         phone: data.phone,
         passwordHash: data.passwordHash,
         fullName: data.fullName,
-        userRoles: {
-          create: {
-            role: {
-              connect: { name: RoleName.CUSTOMER },
-            },
-          },
-        },
-      },
-      include: {
-        userRoles: {
-          include: { role: true },
-        },
+        role: RoleName.CUSTOMER,
       },
     });
   }
 
-  getRoleNames(user: UserWithRoles): string[] {
-    return user.userRoles.map((userRole) => userRole.role.name);
+  getRoleNames(user: User): string[] {
+    return [user.role];
   }
 
   toPublicUser(user: User): PublicUser {
     return {
-      id: user.id,
+      userID: user.userID,
       phone: user.phone,
       fullName: user.fullName,
+      role: user.role,
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

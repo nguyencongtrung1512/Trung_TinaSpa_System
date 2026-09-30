@@ -22,7 +22,8 @@ describe('AuthService', () => {
   let usersService: {
     create: ReturnType<typeof vi.fn>;
     findByPhone: ReturnType<typeof vi.fn>;
-    findById: ReturnType<typeof vi.fn>;
+    findByUserID: ReturnType<typeof vi.fn>;
+    findByUserAID: ReturnType<typeof vi.fn>;
     getRoleNames: ReturnType<typeof vi.fn>;
     toPublicUser: ReturnType<typeof vi.fn>;
   };
@@ -39,26 +40,43 @@ describe('AuthService', () => {
   };
 
   const user = {
-    id: 'user-1',
+    userAID: 1n,
+    userID: '20260930000017',
     phone: '0901234567',
     passwordHash: 'hashed-password',
     fullName: 'Test User',
+    role: 'CUSTOMER',
     isActive: true,
     createdAt: new Date(),
+    createdByAID: null,
     updatedAt: new Date(),
-    userRoles: [{ role: { name: 'CUSTOMER' } }],
+    updatedByAID: null,
+    note: null,
   };
+
+  const storedRefreshToken = (overrides: Record<string, unknown> = {}) => ({
+    refreshTokenAID: 10n,
+    refreshTokenID: '20260930000023',
+    userAID: user.userAID,
+    tokenJti: 'token-1',
+    tokenHash: 'hash',
+    expiresAt: new Date(Date.now() + 60_000),
+    revokedAt: null,
+    ...overrides,
+  });
 
   beforeEach(async () => {
     usersService = {
       create: vi.fn(),
       findByPhone: vi.fn(),
-      findById: vi.fn(),
+      findByUserID: vi.fn(),
+      findByUserAID: vi.fn(),
       getRoleNames: vi.fn().mockReturnValue(['CUSTOMER']),
       toPublicUser: vi.fn().mockReturnValue({
-        id: user.id,
+        userID: user.userID,
         phone: user.phone,
         fullName: user.fullName,
+        role: user.role,
         isActive: true,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -111,7 +129,28 @@ describe('AuthService', () => {
       expect(result.refreshToken).toBe('refresh-token');
       expect(result.roles).toEqual(['CUSTOMER']);
       expect(result.user).not.toHaveProperty('passwordHash');
-      expect(prisma.refreshToken.create).toHaveBeenCalled();
+      expect(result.user).not.toHaveProperty('userAID');
+      expect(prisma.refreshToken.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userAID: user.userAID,
+          tokenJti: expect.any(String),
+        }),
+      });
+    });
+
+    it('signs tokens with userID as subject', async () => {
+      usersService.create.mockResolvedValue(user);
+
+      await authService.register({
+        phone: user.phone,
+        password: 'Password1',
+        fullName: user.fullName,
+      });
+
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ sub: user.userID }),
+        expect.anything(),
+      );
     });
 
     it('throws 409 when phone already exists', async () => {
@@ -176,34 +215,34 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('rotates refresh tokens', async () => {
-      jwtService.verifyAsync.mockResolvedValue({ sub: user.id, jti: 'token-1' });
-      prisma.refreshToken.findUnique.mockResolvedValue({
-        id: 'token-1',
-        userId: user.id,
-        tokenHash: 'hash',
-        expiresAt: new Date(Date.now() + 60_000),
-        revokedAt: null,
-      });
-      usersService.findById.mockResolvedValue(user);
+      jwtService.verifyAsync.mockResolvedValue({ sub: user.userID, jti: 'token-1' });
+      prisma.refreshToken.findUnique.mockResolvedValue(storedRefreshToken());
+      usersService.findByUserAID.mockResolvedValue(user);
 
       const result = await authService.refresh('old-refresh-token');
 
       expect(prisma.refreshToken.update).toHaveBeenCalledWith({
-        where: { id: 'token-1' },
+        where: { refreshTokenAID: 10n },
         data: { revokedAt: expect.any(Date) },
       });
+      expect(usersService.findByUserAID).toHaveBeenCalledWith(user.userAID);
       expect(result.refreshToken).toBe('refresh-token');
     });
 
-    it('rejects revoked refresh tokens', async () => {
-      jwtService.verifyAsync.mockResolvedValue({ sub: user.id, jti: 'token-1' });
-      prisma.refreshToken.findUnique.mockResolvedValue({
-        id: 'token-1',
-        userId: user.id,
-        tokenHash: 'hash',
-        expiresAt: new Date(Date.now() + 60_000),
-        revokedAt: new Date(),
+    it('rejects tokens whose jti does not match', async () => {
+      jwtService.verifyAsync.mockResolvedValue({ sub: user.userID, jti: 'other-jti' });
+      prisma.refreshToken.findUnique.mockResolvedValue(storedRefreshToken());
+
+      await expect(authService.refresh('tampered-token')).rejects.toMatchObject({
+        message: 'Invalid refresh token',
       });
+    });
+
+    it('rejects revoked refresh tokens', async () => {
+      jwtService.verifyAsync.mockResolvedValue({ sub: user.userID, jti: 'token-1' });
+      prisma.refreshToken.findUnique.mockResolvedValue(
+        storedRefreshToken({ revokedAt: new Date() }),
+      );
 
       await expect(authService.refresh('revoked-token')).rejects.toMatchObject({
         message: 'Refresh token revoked',
@@ -211,14 +250,10 @@ describe('AuthService', () => {
     });
 
     it('rejects expired refresh tokens', async () => {
-      jwtService.verifyAsync.mockResolvedValue({ sub: user.id, jti: 'token-1' });
-      prisma.refreshToken.findUnique.mockResolvedValue({
-        id: 'token-1',
-        userId: user.id,
-        tokenHash: 'hash',
-        expiresAt: new Date(Date.now() - 1_000),
-        revokedAt: null,
-      });
+      jwtService.verifyAsync.mockResolvedValue({ sub: user.userID, jti: 'token-1' });
+      prisma.refreshToken.findUnique.mockResolvedValue(
+        storedRefreshToken({ expiresAt: new Date(Date.now() - 1_000) }),
+      );
 
       await expect(authService.refresh('expired-token')).rejects.toMatchObject({
         message: 'Refresh token expired',

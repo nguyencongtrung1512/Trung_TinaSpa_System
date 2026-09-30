@@ -12,9 +12,10 @@ type AuthResponse = {
   accessToken: string;
   refreshToken: string;
   user: {
-    id: string;
+    userID: string;
     phone: string;
     fullName: string;
+    role: string;
     isActive: boolean;
   };
   roles: string[];
@@ -58,22 +59,6 @@ describe('Authentication & Authorization (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
-
-    await prisma.role.upsert({
-      where: { name: RoleName.ADMIN },
-      update: {},
-      create: { name: RoleName.ADMIN, description: 'Administrator' },
-    });
-    await prisma.role.upsert({
-      where: { name: RoleName.STAFF },
-      update: {},
-      create: { name: RoleName.STAFF, description: 'Staff' },
-    });
-    await prisma.role.upsert({
-      where: { name: RoleName.CUSTOMER },
-      update: {},
-      create: { name: RoleName.CUSTOMER, description: 'Customer' },
-    });
   });
 
   afterAll(async () => {
@@ -96,6 +81,9 @@ describe('Authentication & Authorization (e2e)', () => {
       expect(body.accessToken).toEqual(expect.any(String));
       expect(body.refreshToken).toEqual(expect.any(String));
       expect(body.roles).toEqual([RoleName.CUSTOMER]);
+      expect(body.user.userID).toMatch(/^\d{14}$/);
+      expect(body.user.role).toBe(RoleName.CUSTOMER);
+      expect(body.user).not.toHaveProperty('userAID');
       expect(body.user.phone).toBe(payload.phone);
       expect(body.user.fullName).toBe('Nguyen Van A');
       expect(body.user).not.toHaveProperty('passwordHash');
@@ -171,10 +159,10 @@ describe('Authentication & Authorization (e2e)', () => {
 
     it('rejects inactive user', async () => {
       const { payload, response: registerResponse } = await registerUser();
-      const userId = (registerResponse.body as AuthResponse).user.id;
+      const userID = (registerResponse.body as AuthResponse).user.userID;
 
       await prisma.user.update({
-        where: { id: userId },
+        where: { userID },
         data: { isActive: false },
       });
 
@@ -219,7 +207,7 @@ describe('Authentication & Authorization (e2e)', () => {
       const body = registerResponse.body as AuthResponse;
       const expiredToken = jwt.sign(
         {
-          sub: body.user.id,
+          sub: body.user.userID,
           phone: body.user.phone,
           roles: body.roles,
         },
@@ -283,7 +271,7 @@ describe('Authentication & Authorization (e2e)', () => {
       const body = registerResponse.body as AuthResponse;
       const expiredRefreshToken = jwt.sign(
         {
-          sub: body.user.id,
+          sub: body.user.userID,
           jti: 'expired-jti',
         },
         process.env.JWT_REFRESH_SECRET as string,
@@ -349,15 +337,9 @@ describe('Authentication & Authorization (e2e)', () => {
     it('allows ADMIN', async () => {
       const { response: registerResponse } = await registerUser();
       const body = registerResponse.body as AuthResponse;
-      const adminRole = await prisma.role.findUniqueOrThrow({
-        where: { name: RoleName.ADMIN },
-      });
-
-      await prisma.userRole.create({
-        data: {
-          userId: body.user.id,
-          roleId: adminRole.id,
-        },
+      await prisma.user.update({
+        where: { userID: body.user.userID },
+        data: { role: RoleName.ADMIN },
       });
 
       const response = await request(app.getHttpServer())
@@ -371,15 +353,9 @@ describe('Authentication & Authorization (e2e)', () => {
     it('forbids STAFF', async () => {
       const { response: registerResponse } = await registerUser();
       const body = registerResponse.body as AuthResponse;
-      const staffRole = await prisma.role.findUniqueOrThrow({
-        where: { name: RoleName.STAFF },
-      });
-
-      await prisma.userRole.create({
-        data: {
-          userId: body.user.id,
-          roleId: staffRole.id,
-        },
+      await prisma.user.update({
+        where: { userID: body.user.userID },
+        data: { role: RoleName.STAFF },
       });
 
       const response = await request(app.getHttpServer())

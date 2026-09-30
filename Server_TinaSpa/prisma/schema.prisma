@@ -7,52 +7,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// role: ADMIN | MANAGER | STAFF | CUSTOMER (CHECK constraint "CK_User_role" trong DB)
 model User {
-  id           String   @id @default(uuid())
-  phone        String   @unique
-  passwordHash String
-  fullName     String
+  userAID      BigInt   @id @default(autoincrement())
+  userID       String   @unique(map: "UQ_User_userID") @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(14)
+  phone        String   @unique(map: "UQ_User_phone") @db.VarChar(20)
+  passwordHash String   @db.VarChar(255)
+  fullName     String   @db.VarChar(100)
+  role         String   @default("CUSTOMER") @db.VarChar(20)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdByAID BigInt?
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID BigInt?
+  note         String?
 
-  userRoles     UserRole[]
   refreshTokens RefreshToken[]
 
-  @@index([isActive])
-}
-
-model Role {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-
-  userRoles UserRole[]
-}
-
-model UserRole {
-  userId String
-  roleId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@id([userId, roleId])
-  @@unique([userId, roleId])
-  @@index([roleId])
+  @@index([role], map: "IX_User_role")
 }
 
 model RefreshToken {
-  id        String    @id @default(uuid())
-  userId    String
-  tokenHash String    @unique
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
+  refreshTokenAID BigInt    @id @default(autoincrement())
+  refreshTokenID  String    @unique(map: "UQ_RefreshToken_refreshTokenID") @default(dbgenerated("\"generateBusinessID\"('RefreshToken'::text)")) @db.VarChar(14)
+  userAID         BigInt
+  tokenJti        String    @unique(map: "UQ_RefreshToken_tokenJti") @db.VarChar(100)
+  tokenHash       String    @unique(map: "UQ_RefreshToken_tokenHash") @db.VarChar(255)
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  createdByAID    BigInt?
+  updatedAt       DateTime  @default(now()) @updatedAt
+  updatedByAID    BigInt?
+  note            String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userAID], references: [userAID], onDelete: Cascade, map: "FK_RefreshToken_userAID")
 
-  @@index([userId])
-  @@index([expiresAt])
+  @@index([userAID], map: "IX_RefreshToken_userAID")
+  @@index([expiresAt], map: "IX_RefreshToken_expiresAt")
+}
+
+model BusinessIdCounter {
+  tableName   String   @db.VarChar(100)
+  counterDate DateTime @db.Date
+  lastValue   Int
+
+  @@id([tableName, counterDate], map: "PK_BusinessIdCounter")
 }

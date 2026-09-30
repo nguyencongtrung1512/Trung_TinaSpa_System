@@ -122,7 +122,7 @@ Trong đó:
 YYYY = năm
 MM   = tháng
 DD   = ngày
-XXXXXX = sequence 6 chữ số
+XXXXXX = sequence 6 chữ số tăng dần với bước nhảy ngẫu nhiên 1–50
 ```
 
 Ví dụ:
@@ -157,6 +157,12 @@ Không được dùng logic kiểu:
 ```text
 SELECT MAX(ID) + 1
 ```
+
+5.3. Cơ chế hiện tại
+Business ID được sinh bởi function PostgreSQL `"generateBusinessID"('<TableName>')`,
+dùng làm DEFAULT của cột `<tableName>ID`, đếm theo table + ngày trong table `BusinessIdCounter`.
+XXXXXX tăng dần với bước nhảy ngẫu nhiên 1–50 (không tăng +1) để khó đoán mã kế tiếp.
+Không gửi `AID` ra Frontend / JWT; API chỉ dùng `ID`.
 
 ## để generate mã trong môi trường production.
 
@@ -212,6 +218,17 @@ serviceName
 ```
 
 nếu đó là tên chính của entity.
+
+Ngoại lệ — các table KHÔNG có 3 field language:
+
+```text
+User               (đã có fullName là tên riêng của người dùng)
+RefreshToken       (table kỹ thuật phục vụ xác thực)
+BusinessIdCounter  (table kỹ thuật sinh Business ID, không theo convention AID/ID)
+```
+
+Các table nghiệp vụ khác (Service, Product, Appointment...) vẫn bắt buộc
+nameVietnamese, nameEnglish, nameCambodia.
 Ví dụ:
 
 ```text
@@ -653,9 +670,9 @@ Trước khi tạo hoặc sửa một table, AI phải tự kiểm tra:
 [ ] ID là NOT NULL?
 [ ] ID có format YYYYMMDDXXXXXX?
 [ ] Không có generic `id`?
-[ ] Có nameVietnamese?
-[ ] Có nameEnglish?
-[ ] Có nameCambodia?
+[ ] Có nameVietnamese? (trừ table ngoại lệ)
+[ ] Có nameEnglish? (trừ table ngoại lệ)
+[ ] Có nameCambodia? (trừ table ngoại lệ)
 [ ] Có createdAt?
 [ ] Có updatedAt?
 [ ] Foreign Key tham chiếu AID?
