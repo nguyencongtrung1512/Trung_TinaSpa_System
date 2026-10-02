@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { brand, navLinks } from '~/data/home'
 import { Icon } from '~/components/ui/Icon'
+import { loadSession } from '~/lib/auth'
 
 export interface HeaderProps {
   readonly className?: string
@@ -15,7 +16,12 @@ function isActivePath(href: string, pathname: string, hash: string) {
 
 export function Header({ className = '' }: HeaderProps) {
   const [open, setOpen] = useState(false)
+  const [accountName, setAccountName] = useState<string | null>(null)
   const location = useLocation()
+
+  useEffect(() => {
+    setAccountName(loadSession()?.user.fullName ?? null)
+  }, [location.pathname])
 
   return (
     <header className={`sticky top-0 z-40 border-b border-rose-soft/60 bg-surface/95 backdrop-blur ${className}`}>
@@ -53,9 +59,9 @@ export function Header({ className = '' }: HeaderProps) {
           <Link
             to='/login'
             aria-current={location.pathname === '/login' ? 'page' : undefined}
-            className='hidden rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic transition hover:bg-mist sm:inline-flex'
+            className='hidden max-w-40 truncate rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic transition hover:bg-mist sm:inline-flex'
           >
-            Đăng nhập
+            {accountName ?? 'Đăng nhập'}
           </Link>
           <Link
             to='/booking'
@@ -100,7 +106,7 @@ export function Header({ className = '' }: HeaderProps) {
               onClick={() => setOpen(false)}
               className='mt-2 inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic'
             >
-              Đăng nhập
+              {accountName ?? 'Đăng nhập'}
             </Link>
             <Link
               to='/booking'

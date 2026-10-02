@@ -43,7 +43,7 @@ describe('Authentication & Authorization (e2e)', () => {
     };
 
     const response = await request(app.getHttpServer())
-      .post('/auth/register')
+      .post('/api/auth/register')
       .send(payload);
 
     return { payload, response };
@@ -70,7 +70,7 @@ describe('Authentication & Authorization (e2e)', () => {
     await app.close();
   });
 
-  describe('POST /auth/register', () => {
+  describe('POST /api/auth/register', () => {
     it('registers successfully', async () => {
       const { payload, response } = await registerUser({
         fullName: 'Nguyen Van A',
@@ -94,7 +94,7 @@ describe('Authentication & Authorization (e2e)', () => {
       const { payload } = await registerUser();
 
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send({
           phone: payload.phone,
           password: 'Password1',
@@ -107,7 +107,7 @@ describe('Authentication & Authorization (e2e)', () => {
 
     it('rejects invalid register payload', async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send({
           phone: '',
           password: '123',
@@ -117,11 +117,11 @@ describe('Authentication & Authorization (e2e)', () => {
     });
   });
 
-  describe('POST /auth/login', () => {
+  describe('POST /api/auth/login', () => {
     it('logs in successfully', async () => {
       const { payload } = await registerUser({ fullName: 'Login User' });
 
-      const response = await request(app.getHttpServer()).post('/auth/login').send({
+      const response = await request(app.getHttpServer()).post('/api/auth/login').send({
         phone: payload.phone,
         password: payload.password,
       });
@@ -136,7 +136,7 @@ describe('Authentication & Authorization (e2e)', () => {
     });
 
     it('rejects unknown phone with generic error', async () => {
-      const response = await request(app.getHttpServer()).post('/auth/login').send({
+      const response = await request(app.getHttpServer()).post('/api/auth/login').send({
         phone: '0990000000',
         password: 'Password1',
       });
@@ -148,7 +148,7 @@ describe('Authentication & Authorization (e2e)', () => {
     it('rejects wrong password with generic error', async () => {
       const { payload } = await registerUser();
 
-      const response = await request(app.getHttpServer()).post('/auth/login').send({
+      const response = await request(app.getHttpServer()).post('/api/auth/login').send({
         phone: payload.phone,
         password: 'WrongPassword1',
       });
@@ -166,7 +166,7 @@ describe('Authentication & Authorization (e2e)', () => {
         data: { isActive: false },
       });
 
-      const response = await request(app.getHttpServer()).post('/auth/login').send({
+      const response = await request(app.getHttpServer()).post('/api/auth/login').send({
         phone: payload.phone,
         password: payload.password,
       });
@@ -176,7 +176,7 @@ describe('Authentication & Authorization (e2e)', () => {
     });
   });
 
-  describe('GET /auth/me JWT', () => {
+  describe('GET /api/auth/me JWT', () => {
     it('accepts a valid access token', async () => {
       const { response: registerResponse } = await registerUser({
         fullName: 'Me User',
@@ -184,7 +184,7 @@ describe('Authentication & Authorization (e2e)', () => {
       const tokens = registerResponse.body as AuthResponse;
 
       const response = await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${tokens.accessToken}`);
 
       expect(response.status).toBe(200);
@@ -195,7 +195,7 @@ describe('Authentication & Authorization (e2e)', () => {
 
     it('rejects an invalid access token', async () => {
       const response = await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', 'Bearer not-a-valid-token');
 
       expect(response.status).toBe(401);
@@ -216,7 +216,7 @@ describe('Authentication & Authorization (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${expiredToken}`);
 
       expect(response.status).toBe(401);
@@ -224,16 +224,16 @@ describe('Authentication & Authorization (e2e)', () => {
     });
 
     it('rejects a missing access token', async () => {
-      const response = await request(app.getHttpServer()).get('/auth/me');
+      const response = await request(app.getHttpServer()).get('/api/auth/me');
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Missing access token');
     });
   });
 
-  describe('POST /auth/refresh', () => {
+  describe('POST /api/auth/refresh', () => {
     it('requires refreshToken', async () => {
-      const response = await request(app.getHttpServer()).post('/auth/refresh').send({});
+      const response = await request(app.getHttpServer()).post('/api/auth/refresh').send({});
 
       expect(response.status).toBe(400);
     });
@@ -243,7 +243,7 @@ describe('Authentication & Authorization (e2e)', () => {
       const original = registerResponse.body as AuthResponse;
 
       const refreshResponse = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .send({ refreshToken: original.refreshToken });
 
       expect(refreshResponse.status).toBe(200);
@@ -253,14 +253,14 @@ describe('Authentication & Authorization (e2e)', () => {
       expect(rotated.refreshToken).not.toBe(original.refreshToken);
 
       const reuseResponse = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .send({ refreshToken: original.refreshToken });
 
       expect(reuseResponse.status).toBe(401);
       expect(reuseResponse.body.message).toBe('Refresh token revoked');
 
       const nextRefresh = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .send({ refreshToken: rotated.refreshToken });
 
       expect(nextRefresh.status).toBe(200);
@@ -279,7 +279,7 @@ describe('Authentication & Authorization (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .send({ refreshToken: expiredRefreshToken });
 
       expect(response.status).toBe(401);
@@ -291,11 +291,11 @@ describe('Authentication & Authorization (e2e)', () => {
       const body = registerResponse.body as AuthResponse;
 
       await request(app.getHttpServer())
-        .post('/auth/logout')
+        .post('/api/auth/logout')
         .send({ refreshToken: body.refreshToken });
 
       const response = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .send({ refreshToken: body.refreshToken });
 
       expect(response.status).toBe(401);
@@ -303,13 +303,13 @@ describe('Authentication & Authorization (e2e)', () => {
     });
   });
 
-  describe('POST /auth/logout', () => {
+  describe('POST /api/auth/logout', () => {
     it('logs out successfully', async () => {
       const { response: registerResponse } = await registerUser();
       const body = registerResponse.body as AuthResponse;
 
       const response = await request(app.getHttpServer())
-        .post('/auth/logout')
+        .post('/api/auth/logout')
         .send({ refreshToken: body.refreshToken });
 
       expect(response.status).toBe(200);
@@ -321,11 +321,11 @@ describe('Authentication & Authorization (e2e)', () => {
       const body = registerResponse.body as AuthResponse;
 
       await request(app.getHttpServer())
-        .post('/auth/logout')
+        .post('/api/auth/logout')
         .send({ refreshToken: body.refreshToken });
 
       const response = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/api/auth/refresh')
         .send({ refreshToken: body.refreshToken });
 
       expect(response.status).toBe(401);
@@ -333,7 +333,7 @@ describe('Authentication & Authorization (e2e)', () => {
     });
   });
 
-  describe('GET /users/admin-test roles', () => {
+  describe('GET /api/users/admin-test roles', () => {
     it('allows ADMIN', async () => {
       const { response: registerResponse } = await registerUser();
       const body = registerResponse.body as AuthResponse;
@@ -343,7 +343,7 @@ describe('Authentication & Authorization (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/users/admin-test')
+        .get('/api/users/admin-test')
         .set('Authorization', `Bearer ${body.accessToken}`);
 
       expect(response.status).toBe(200);
@@ -359,7 +359,7 @@ describe('Authentication & Authorization (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/users/admin-test')
+        .get('/api/users/admin-test')
         .set('Authorization', `Bearer ${body.accessToken}`);
 
       expect(response.status).toBe(403);
@@ -371,7 +371,7 @@ describe('Authentication & Authorization (e2e)', () => {
       const body = registerResponse.body as AuthResponse;
 
       const response = await request(app.getHttpServer())
-        .get('/users/admin-test')
+        .get('/api/users/admin-test')
         .set('Authorization', `Bearer ${body.accessToken}`);
 
       expect(response.status).toBe(403);

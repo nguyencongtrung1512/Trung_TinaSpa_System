@@ -9,7 +9,13 @@ export default defineConfig({
     devSourcemap: true
   },
   server: {
-    port: 5057
+    port: 5057,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
+    }
   },
   preview: {
     port: 5057
