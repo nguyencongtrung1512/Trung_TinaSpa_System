@@ -1,22 +1,25 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import {
   categoryLabel,
   formatPrice,
   matchesPrice,
   priceFilters,
   productCategories,
-  products,
   sortOptions,
+  useProducts,
   type PriceFilterId,
   type ProductCategoryId,
   type ProductItem,
   type SortId
 } from '~/data/products'
 import { Icon } from '~/components/ui/Icon'
+import { StableText } from '~/components/ui/StableText'
+import i18n from '~/i18n'
 
 function formatRating(value: number) {
-  return value.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  return value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 }
 
 function Stars({ rating }: { readonly rating: number }) {
@@ -41,6 +44,7 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdded }: ProductCardProps) {
+  const { t } = useTranslation()
   const isList = layout === 'list'
 
   return (
@@ -65,7 +69,7 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
         <button
           type='button'
           aria-pressed={saved}
-          aria-label={saved ? `Bỏ yêu thích ${product.name}` : `Yêu thích ${product.name}`}
+          aria-label={t(saved ? 'products.list.unsave' : 'products.list.save', { name: product.name })}
           onClick={() => onToggleSaved(product.id)}
           className='absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-clinic shadow-sm transition hover:bg-white'
         >
@@ -87,7 +91,7 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
         <p className='mt-2 flex items-center gap-2 text-xs text-muted'>
           <Stars rating={product.rating} />
           <span>
-            <span className='sr-only'>Đánh giá </span>
+            <span className='sr-only'>{t('products.list.rating')}</span>
             {formatRating(product.rating)} ({product.reviews})
           </span>
           <span aria-hidden>·</span>
@@ -95,13 +99,13 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
         </p>
         <div className='mt-auto flex items-center justify-between gap-3 pt-4'>
           <p className='text-lg font-extrabold text-clinic'>
-            <span className='sr-only'>Giá </span>
+            <span className='sr-only'>{t('products.list.price')}</span>
             {formatPrice(product.price)}
           </p>
           <button
             type='button'
             aria-pressed={added}
-            aria-label={added ? `Bỏ ${product.name} khỏi giỏ` : `Thêm ${product.name} vào giỏ`}
+            aria-label={t(added ? 'products.list.removeFromCart' : 'products.list.addToCart', { name: product.name })}
             onClick={() => onToggleAdded(product.id)}
             className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition ${
               added ? 'bg-clinic text-white' : 'bg-mist text-clinic hover:bg-rose-soft'
@@ -123,6 +127,8 @@ function toggleId(current: ReadonlySet<string>, id: string) {
 }
 
 export function ProductsPage() {
+  const { t } = useTranslation()
+  const products = useProducts()
   const [category, setCategory] = useState<ProductCategoryId>('all')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortId>('newest')
@@ -133,12 +139,12 @@ export function ProductsPage() {
   const [notice, setNotice] = useState('')
 
   const visible = useMemo(() => {
-    const keyword = query.trim().toLocaleLowerCase('vi')
+    const keyword = query.trim().toLocaleLowerCase()
     const filtered = products.filter((product) => {
       const inCategory = category === 'all' || product.category === category
       const inPrice = matchesPrice(product.price, price)
       const haystack = `${product.name} ${product.subtitle} ${product.description} ${categoryLabel(product.category)}`
-      const inQuery = keyword.length === 0 || haystack.toLocaleLowerCase('vi').includes(keyword)
+      const inQuery = keyword.length === 0 || haystack.toLocaleLowerCase().includes(keyword)
       return inCategory && inPrice && inQuery
     })
 
@@ -148,7 +154,7 @@ export function ProductsPage() {
       if (sort === 'rating') return right.rating - left.rating || right.reviews - left.reviews
       return right.createdAt.localeCompare(left.createdAt)
     })
-  }, [category, price, query, sort])
+  }, [category, price, query, sort, products])
 
   function resetFilters() {
     setCategory('all')
@@ -161,38 +167,42 @@ export function ProductsPage() {
     const product = products.find((item) => item.id === id)
     const willAdd = !addedIds.has(id)
     setAddedIds((current) => toggleId(current, id))
-    setNotice(product ? (willAdd ? `Đã thêm ${product.name} vào giỏ.` : `Đã bỏ ${product.name} khỏi giỏ.`) : '')
+    setNotice(product ? t(willAdd ? 'products.list.added' : 'products.list.removed', { name: product.name }) : '')
   }
 
   return (
     <div className='bg-canvas'>
       <section className='mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14'>
-        <p className='text-xs font-bold tracking-[0.28em] text-clinic uppercase'>Bộ sưu tập chăm sóc da</p>
-        <h1 className='mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl'>Sản phẩm Dr Tina Beauty</h1>
+        <p className='text-xs font-bold tracking-[0.28em] text-clinic uppercase'>
+          <StableText i18nKey='products.list.eyebrow' block />
+        </p>
+        <h1 className='mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl'>
+          <StableText i18nKey='products.list.title' block />
+        </h1>
         <p className='mt-3 max-w-2xl text-sm leading-7 text-muted'>
-          Tinh chất, kem dưỡng, chống nắng và mặt nạ phục hồi được phòng khám chọn để dùng sau liệu trình.
+          <StableText i18nKey='products.list.description' block />
         </p>
 
         <div
           className='mt-8 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
           role='group'
-          aria-label='Nhóm sản phẩm'
+          aria-label={t('products.list.groups')}
         >
           {productCategories.map((item) => {
-            const active = category === item.id
+            const active = category === item
             return (
               <button
-                key={item.id}
+                key={item}
                 type='button'
                 aria-pressed={active}
-                onClick={() => setCategory(item.id)}
+                onClick={() => setCategory(item)}
                 className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                   active
                     ? 'bg-clinic text-white shadow-[0_8px_20px_var(--color-whisper-shadow)]'
                     : 'border border-rose-soft bg-surface text-ink hover:border-clinic hover:text-clinic'
                 }`}
               >
-                {item.label}
+                <StableText i18nKey={`products.categories.${item}`} />
               </button>
             )
           })}
@@ -200,7 +210,7 @@ export function ProductsPage() {
 
         <div className='mt-5 flex flex-col gap-3 rounded-[1.35rem] bg-surface p-3 shadow-[0_8px_24px_var(--color-whisper-shadow)] lg:flex-row lg:items-center'>
           <label className='relative min-w-0 flex-1'>
-            <span className='sr-only'>Tìm sản phẩm</span>
+            <span className='sr-only'>{t('products.list.search')}</span>
             <Icon
               name='search'
               size={20}
@@ -209,48 +219,48 @@ export function ProductsPage() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder='Tìm tinh chất, kem dưỡng, mặt nạ...'
+              placeholder={t('products.list.searchPlaceholder')}
               className='h-11 w-full rounded-full border border-rose-soft bg-canvas pr-4 pl-11 text-sm text-ink outline-none placeholder:text-muted focus:border-clinic focus:ring-2 focus:ring-clinic/20'
             />
           </label>
 
           <label className='flex h-11 items-center gap-2 rounded-full border border-rose-soft bg-canvas px-4 text-sm'>
-            <span className='shrink-0 font-semibold text-muted'>Sắp xếp</span>
+            <StableText i18nKey='products.list.sortLabel' align='start' className='shrink-0 font-semibold text-muted' />
             <select
               value={sort}
-              aria-label='Sắp xếp sản phẩm'
+              aria-label={t('products.list.sortAria')}
               onChange={(event) => setSort(event.target.value as SortId)}
-              className='bg-transparent font-semibold text-ink outline-none'
+              className='w-40 bg-transparent font-semibold text-ink outline-none'
             >
               {sortOptions.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
+                <option key={item} value={item}>
+                  {t(`products.sort.${item}`)}
                 </option>
               ))}
             </select>
           </label>
 
           <label className='flex h-11 items-center gap-2 rounded-full border border-rose-soft bg-canvas px-4 text-sm'>
-            <span className='shrink-0 font-semibold text-muted'>Giá</span>
+            <StableText i18nKey='products.list.priceLabel' align='start' className='shrink-0 font-semibold text-muted' />
             <select
               value={price}
-              aria-label='Lọc theo khoảng giá'
+              aria-label={t('products.list.priceAria')}
               onChange={(event) => setPrice(event.target.value as PriceFilterId)}
-              className='bg-transparent font-semibold text-ink outline-none'
+              className='w-44 bg-transparent font-semibold text-ink outline-none'
             >
               {priceFilters.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
+                <option key={item} value={item}>
+                  {t(`products.priceFilters.${item}`)}
                 </option>
               ))}
             </select>
           </label>
 
-          <div className='flex items-center justify-end gap-1' role='group' aria-label='Kiểu hiển thị'>
+          <div className='flex items-center justify-end gap-1' role='group' aria-label={t('products.list.layout')}>
             <button
               type='button'
               aria-pressed={layout === 'grid'}
-              aria-label='Xem dạng lưới'
+              aria-label={t('products.list.grid')}
               onClick={() => setLayout('grid')}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${
                 layout === 'grid' ? 'bg-clinic text-white' : 'text-muted hover:text-clinic'
@@ -261,7 +271,7 @@ export function ProductsPage() {
             <button
               type='button'
               aria-pressed={layout === 'list'}
-              aria-label='Xem dạng danh sách'
+              aria-label={t('products.list.listView')}
               onClick={() => setLayout('list')}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${
                 layout === 'list' ? 'bg-clinic text-white' : 'text-muted hover:text-clinic'
@@ -273,9 +283,9 @@ export function ProductsPage() {
         </div>
 
         <p className='mt-4 text-sm text-muted' role='status'>
-          {visible.length} sản phẩm
-          {addedIds.size > 0 ? ` · ${addedIds.size} trong giỏ` : ''}
-          {savedIds.size > 0 ? ` · ${savedIds.size} yêu thích` : ''}
+          {t('products.list.count', { count: visible.length })}
+          {addedIds.size > 0 ? t('products.list.inCart', { count: addedIds.size }) : ''}
+          {savedIds.size > 0 ? t('products.list.saved', { count: savedIds.size }) : ''}
         </p>
 
         {visible.length === 0 ? (
@@ -283,16 +293,14 @@ export function ProductsPage() {
             <span className='mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-mist text-clinic'>
               <Icon name='search_off' size={32} />
             </span>
-            <h2 className='mt-4 text-xl font-extrabold text-ink'>Không có sản phẩm khớp bộ lọc</h2>
-            <p className='mx-auto mt-2 max-w-md text-sm leading-6 text-muted'>
-              Thử từ khóa khác, hoặc xem lại toàn bộ bộ sưu tập.
-            </p>
+            <h2 className='mt-4 text-xl font-extrabold text-ink'>{t('products.list.emptyTitle')}</h2>
+            <p className='mx-auto mt-2 max-w-md text-sm leading-6 text-muted'>{t('products.list.emptyText')}</p>
             <button
               type='button'
               onClick={resetFilters}
               className='mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-clinic px-6 py-2.5 text-sm font-semibold text-white'
             >
-              Xem tất cả sản phẩm
+              <StableText i18nKey='products.list.showAll' />
             </button>
           </div>
         ) : (
@@ -319,27 +327,25 @@ export function ProductsPage() {
       <section className='px-4 pb-16 sm:px-6'>
         <div className='mx-auto flex max-w-6xl flex-col gap-8 rounded-[1.75rem] bg-mist px-6 py-10 sm:px-10 lg:flex-row lg:items-center lg:justify-between'>
           <div className='max-w-xl'>
-            <p className='text-xs font-bold tracking-[0.28em] text-clinic uppercase'>Tư vấn làn da</p>
+            <p className='text-xs font-bold tracking-[0.28em] text-clinic uppercase'>{t('products.list.adviceEyebrow')}</p>
             <h2 className='mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl'>
-              Bạn băn khoăn sản phẩm nào phù hợp với làn da của mình?
+              {t('products.list.adviceTitle')}
             </h2>
-            <p className='mt-3 text-sm leading-7 text-muted'>
-              Bác sĩ lắng nghe tình trạng da và gợi ý routine đúng, thay vì để bạn đoán giữa các lọ serum.
-            </p>
+            <p className='mt-3 text-sm leading-7 text-muted'>{t('products.list.adviceText')}</p>
           </div>
           <div className='flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col'>
             <Link
-              to='/#dich-vu'
+              to='/services'
               className='inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-6 py-2.5 text-sm font-semibold text-clinic transition hover:bg-white'
             >
-              Xem liệu trình
+              <StableText i18nKey='products.list.viewTreatments' />
             </Link>
             <Link
               to='/booking'
               className='inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-clinic px-6 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
             >
               <Icon name='calendar_month' size={18} />
-              Đặt lịch tư vấn da
+              <StableText i18nKey='products.list.bookSkinConsult' />
             </Link>
           </div>
         </div>

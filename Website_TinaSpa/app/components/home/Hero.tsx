@@ -1,46 +1,73 @@
-import { Link } from 'react-router'
-import { hero } from '~/data/home'
+import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { heroLinks } from '~/data/home'
+import { MotionLink, fadeUp, pressable, scaleIn, stagger } from '~/components/ui/motion'
+import { StableText } from '~/components/ui/StableText'
 
 export interface HeroProps {
   readonly className?: string
 }
 
 export function Hero({ className = '' }: HeroProps) {
+  const { t } = useTranslation()
+
   return (
     <section className={className}>
       <div className='mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:py-20'>
-        <div>
-          <p className='mb-4 text-sm font-semibold tracking-wide text-clinic'>{hero.eyebrow}</p>
-          <h1 className='max-w-xl text-4xl font-extrabold leading-[1.15] tracking-tight text-ink sm:text-5xl'>
-            {hero.title}
-          </h1>
-          <p className='mt-5 max-w-lg text-base leading-7 text-muted'>{hero.description}</p>
-          <div className='mt-8 flex flex-wrap items-center gap-3'>
-            <Link
-              to={hero.primaryCta.href}
-              className='inline-flex min-h-11 items-center justify-center rounded-full bg-clinic px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
+        <motion.div variants={stagger(0.12, 0.1)} initial='hidden' animate='show'>
+          <motion.p variants={fadeUp} className='mb-4 text-sm font-semibold tracking-wide text-clinic'>
+            <StableText i18nKey='hero.eyebrow' block />
+          </motion.p>
+          <motion.h1
+            variants={fadeUp}
+            className='max-w-xl text-4xl font-extrabold leading-[1.15] tracking-tight text-ink sm:text-5xl'
+          >
+            <StableText i18nKey='hero.title' block />
+          </motion.h1>
+          <motion.p variants={fadeUp} className='mt-5 max-w-lg text-base leading-7 text-muted'>
+            <StableText i18nKey='hero.description' block />
+          </motion.p>
+          <motion.div variants={fadeUp} className='mt-8 flex flex-wrap items-center gap-3'>
+            <MotionLink
+              to={heroLinks.primary}
+              {...pressable}
+              className='inline-flex min-h-11 items-center justify-center rounded-full bg-clinic px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_var(--color-whisper-shadow)] transition-colors hover:bg-clinic-deep'
             >
-              {hero.primaryCta.label}
-            </Link>
-            <Link
-              to={hero.secondaryCta.href}
-              className='inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-6 py-3 text-sm font-semibold text-clinic transition hover:bg-white'
+              <StableText i18nKey='hero.primaryCta' />
+            </MotionLink>
+            <MotionLink
+              to={heroLinks.secondary}
+              {...pressable}
+              className='inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-6 py-3 text-sm font-semibold text-clinic transition-colors hover:bg-white'
             >
-              {hero.secondaryCta.label}
-            </Link>
-          </div>
-        </div>
+              <StableText i18nKey='hero.secondaryCta' />
+            </MotionLink>
+          </motion.div>
+        </motion.div>
 
-        <div className='relative mx-auto w-full max-w-[420px]'>
-          <div className='absolute inset-4 rounded-[2rem] bg-clinic/15 blur-2xl' />
-          <div className='relative overflow-hidden rounded-[2rem] bg-mist shadow-[0_20px_50px_var(--color-whisper-shadow)]'>
+        <motion.div
+          variants={scaleIn}
+          initial='hidden'
+          animate='show'
+          className='relative mx-auto w-full max-w-[420px]'
+        >
+          <motion.div
+            className='absolute inset-4 rounded-[2rem] bg-clinic/15 blur-2xl'
+            animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.05, 1] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className='relative overflow-hidden rounded-[2rem] bg-mist shadow-[0_20px_50px_var(--color-whisper-shadow)]'
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          >
             <img
-              src={hero.portrait.src}
-              alt={hero.portrait.alt}
+              src={heroLinks.portrait}
+              alt={t('hero.portraitAlt')}
               className='aspect-[4/5] h-full w-full object-cover object-top'
             />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   )

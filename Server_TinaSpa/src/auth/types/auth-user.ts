@@ -1,5 +1,5 @@
 export type AuthUser = {
-  userAID: bigint;
+  userAID: string;
   userID: string;
   phone: string;
   fullName: string;

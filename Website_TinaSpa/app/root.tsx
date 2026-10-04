@@ -1,6 +1,10 @@
+import { useEffect } from 'react'
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { MotionConfig } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 import type { Route } from './+types/root'
+import { applyDetectedLanguage } from './i18n'
 import './app.css'
 
 export const links: Route.LinksFunction = () => [
@@ -13,7 +17,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap'
+    href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap'
   },
   {
     rel: 'stylesheet',
@@ -22,8 +26,11 @@ export const links: Route.LinksFunction = () => [
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  // Subscribing here re-renders <Meta /> so route titles follow the active language.
+  const { i18n } = useTranslation()
+
   return (
-    <html lang='vi'>
+    <html lang={i18n.resolvedLanguage ?? 'vi'}>
       <head>
         <meta charSet='utf-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1' />
@@ -40,17 +47,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />
+  useEffect(() => {
+    void applyDetectedLanguage()
+  }, [])
+
+  return (
+    <MotionConfig reducedMotion='user'>
+      <Outlet />
+    </MotionConfig>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = 'Đã có lỗi'
-  let details = 'Đã xảy ra sự cố không mong muốn.'
+  const { t } = useTranslation()
+  let message = t('error.title')
+  let details = t('error.details')
   let stack: string | undefined
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? '404' : 'Lỗi'
-    details = error.status === 404 ? 'Không tìm thấy trang bạn đang tìm.' : error.statusText || details
+    message = error.status === 404 ? '404' : t('error.generic')
+    details = error.status === 404 ? t('error.notFound') : error.statusText || details
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message
     stack = error.stack

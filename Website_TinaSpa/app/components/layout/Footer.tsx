@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
-import { brand, footerColumns } from '~/data/home'
+import { useTranslation } from 'react-i18next'
+import { brand, useFooterColumns } from '~/data/home'
 import { Icon } from '~/components/ui/Icon'
 
 export interface FooterProps {
@@ -7,18 +8,31 @@ export interface FooterProps {
 }
 
 export function Footer({ className = '' }: FooterProps) {
+  const { t } = useTranslation()
+  const footerColumns = useFooterColumns()
+
   return (
-    <footer id='lien-he' className={`bg-surface ${className}`}>
+    <footer id='lien-he' className={`relative isolate overflow-hidden bg-surface ${className}`}>
+      {/* 1. Ảnh nền footer mờ */}
+      <img
+        src='/images/footer.png'
+        alt=''
+        aria-hidden='true'
+        loading='lazy'
+        className='absolute inset-0 -z-20 h-full w-full object-cover opacity-50'
+      />
+
+      {/* 2. Lớp phủ hòa trộn giúp chữ và biểu tượng giữ độ tương phản tốt */}
+      <div className='absolute inset-0 -z-10 bg-surface/60' />
+
       <div className='mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-4'>
         <div className='space-y-4'>
           <img src={brand.logo} alt={brand.name} className='h-14 w-auto' />
-          <p className='max-w-xs text-sm leading-6 text-muted'>
-            Phòng khám thẩm mỹ ấm áp, nơi bác sĩ và liệu trình spa gặp nhau để chăm sóc da bền vững.
-          </p>
+          <p className='max-w-xs text-sm leading-6 text-muted'>{t('footer.tagline')}</p>
         </div>
 
         <div>
-          <h2 className='mb-4 text-sm font-extrabold tracking-wide text-ink'>Khám phá</h2>
+          <h2 className='mb-4 text-sm font-extrabold tracking-wide text-ink'>{t('footer.explore')}</h2>
           <ul className='space-y-2.5'>
             {footerColumns.explore.map((item) => (
               <li key={item.label}>
@@ -31,7 +45,7 @@ export function Footer({ className = '' }: FooterProps) {
         </div>
 
         <div>
-          <h2 className='mb-4 text-sm font-extrabold tracking-wide text-ink'>Dịch vụ</h2>
+          <h2 className='mb-4 text-sm font-extrabold tracking-wide text-ink'>{t('footer.services')}</h2>
           <ul className='space-y-2.5'>
             {footerColumns.care.map((item) => (
               <li key={item.label}>
@@ -44,10 +58,10 @@ export function Footer({ className = '' }: FooterProps) {
         </div>
 
         <div className='space-y-3'>
-          <h2 className='mb-4 text-sm font-extrabold tracking-wide text-ink'>Liên hệ</h2>
+          <h2 className='mb-4 text-sm font-extrabold tracking-wide text-ink'>{t('footer.contact')}</h2>
           <p className='flex items-start gap-2 text-sm text-muted'>
             <Icon name='location_on' className='mt-0.5 text-clinic' />
-            {brand.address}
+            {t('brand.address')}
           </p>
           <p className='flex items-center gap-2 text-sm text-muted'>
             <Icon name='call' className='text-clinic' />
@@ -64,9 +78,9 @@ export function Footer({ className = '' }: FooterProps) {
         </div>
       </div>
 
-      <div className='border-t border-rose-soft/70'>
+      <div className='relative z-10 border-t border-rose-soft/70'>
         <p className='mx-auto max-w-6xl px-4 py-5 text-center text-xs text-muted sm:px-6'>
-          © {new Date().getFullYear()} {brand.name}. Giữ gìn nét đẹp tự nhiên của bạn.
+          © {new Date().getFullYear()} {brand.name}. {t('footer.copyright')}
         </p>
       </div>
     </footer>

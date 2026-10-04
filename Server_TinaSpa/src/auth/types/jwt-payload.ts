@@ -1,4 +1,4 @@
-/** sub = userID (Business ID), không dùng userAID để tránh lộ khóa kỹ thuật tăng tuần tự. */
+/** sub = userID (Business ID). API không trả userAID. */
 export type JwtAccessPayload = {
   sub: string;
   phone: string;

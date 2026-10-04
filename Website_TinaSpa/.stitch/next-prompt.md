@@ -17,3 +17,4 @@ Trang dịch vụ Dr Tina Beauty: catalog liệu trình (khám da, trị mụn, 
 - Cards: Generously rounded, whisper rose shadows
 - Layout: Centered max-width container, wave dividers between sections
 - No harsh black, no neon glow, no cold hospital blue
+- Bilingual VI/EN: header has a VI/EN pill switcher; buttons, nav, tabs and chips keep a fixed width sized for the longest language; headings and paragraphs above controls reserve the height of the longest language so switching never shifts layout

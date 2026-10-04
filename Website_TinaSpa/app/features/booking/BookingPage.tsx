@@ -1,6 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { services } from '~/data/home'
+import { useTranslation } from 'react-i18next'
+import { useServices } from '~/data/home'
 import { Icon } from '~/components/ui/Icon'
+import { StableText } from '~/components/ui/StableText'
 
 const timeSlots = ['08:00 – 10:00', '10:00 – 12:00', '13:00 – 15:00', '15:00 – 17:00', '17:00 – 20:00'] as const
 
@@ -33,18 +35,20 @@ function todayIso() {
 
 function validate(values: BookingValues) {
   const errors: Partial<Record<FieldName, string>> = {}
-  if (values.name.trim().length < 2) errors.name = 'Xin hãy cho biết họ và tên.'
+  if (values.name.trim().length < 2) errors.name = 'booking.errors.name'
   if (!/^(0|\+84)\d{8,10}$/.test(values.phone.replaceAll(/\s/g, ''))) {
-    errors.phone = 'Số điện thoại chưa đúng.'
+    errors.phone = 'booking.errors.phone'
   }
-  if (!values.service) errors.service = 'Hãy chọn dịch vụ bạn quan tâm.'
-  if (!values.date) errors.date = 'Hãy chọn ngày mong muốn.'
-  else if (values.date < todayIso()) errors.date = 'Ngày hẹn cần từ hôm nay trở đi.'
-  if (!values.time) errors.time = 'Hãy chọn khung giờ.'
+  if (!values.service) errors.service = 'booking.errors.service'
+  if (!values.date) errors.date = 'booking.errors.date'
+  else if (values.date < todayIso()) errors.date = 'booking.errors.datePast'
+  if (!values.time) errors.time = 'booking.errors.time'
   return errors
 }
 
 export function BookingPage() {
+  const { t } = useTranslation()
+  const services = useServices()
   const [values, setValues] = useState<BookingValues>(emptyValues)
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({})
   const [submitted, setSubmitted] = useState(false)
@@ -60,6 +64,12 @@ export function BookingPage() {
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length === 0) setSubmitted(true)
   }
+
+  const errorText = (field: FieldName) => {
+    const key = errors[field]
+    return key ? t(key) : undefined
+  }
+  const serviceTitle = services.find((item) => item.id === values.service)?.title ?? values.service
 
   return (
     <section className='booking-page relative overflow-hidden bg-[#FFF8FA]'>
@@ -79,60 +89,79 @@ export function BookingPage() {
           </p>
 
           <h1 className='mt-5 font-["Cormorant_Garamond",serif] text-5xl leading-none font-semibold tracking-[0.08em] text-[#3A2930] uppercase sm:text-6xl lg:text-7xl'>
-            Đặt lịch hẹn
+            <StableText i18nKey='booking.title' block />
           </h1>
           <p className='mt-3 font-["Dancing_Script",cursive] text-4xl leading-tight text-[#D4145A] sm:text-5xl'>
-            Dành một chút thời gian cho bản thân
+            <StableText i18nKey='booking.tagline' block />
           </p>
           <p className='mt-5 max-w-xl text-sm leading-7 text-[#3A2930]/75'>
-            Thư giãn, tái tạo năng lượng và chăm sóc sắc đẹp cùng Dr Tina Beauty.
-            <span className='mt-1 block'>
-              Chúng tôi luôn sẵn sàng đồng hành cùng bạn trên hành trình tự tin và rạng rỡ hơn.
-            </span>
+            <StableText i18nKey='booking.intro' block />
+            <StableText i18nKey='booking.introMore' block className='mt-1' />
           </p>
           <p className='mt-5 font-["Dancing_Script",cursive] text-2xl text-[#E83E78] sm:text-[1.85rem]'>
-            Đẹp hơn · Khỏe hơn · Hạnh phúc hơn
+            <StableText i18nKey='booking.motto' block />
           </p>
 
           {submitted ? (
             <div className='mt-14 max-w-lg'>
-              <p className='font-["Dancing_Script",cursive] text-4xl text-[#D4145A]'>Cảm ơn {values.name.trim()}</p>
+              <p className='font-["Dancing_Script",cursive] text-4xl text-[#D4145A]'>
+                {t('booking.thanks', { name: values.name.trim() })}
+              </p>
               <p className='mt-4 text-sm leading-7 text-[#3A2930]/80'>
-                Lịch {values.service.toLowerCase()} vào {values.date.split('-').reverse().join('/')} ({values.time}) đã
-                được ghi nhận. Chúng tôi sẽ gọi {values.phone.trim()} để xác nhận cùng bạn.
+                {t('booking.confirmation', {
+                  service: serviceTitle.toLowerCase(),
+                  date: values.date.split('-').reverse().join('/'),
+                  time: values.time,
+                  phone: values.phone.trim()
+                })}
               </p>
             </div>
           ) : (
             <form className='mt-12' onSubmit={onSubmit} noValidate>
               <div className='grid items-stretch gap-y-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-0 lg:gap-y-0'>
                 <div className='flex flex-col gap-10 lg:pr-10'>
-                  <UnderlineField id='booking-name' label='Họ và tên' icon='person' error={errors.name}>
+                  <UnderlineField
+                    id='booking-name'
+                    label={t('booking.fields.name')}
+                    icon='person'
+                    error={errorText('name')}
+                  >
                     <input
                       id='booking-name'
                       name='name'
                       autoComplete='name'
-                      placeholder='Nhập họ và tên của bạn'
+                      placeholder={t('booking.fields.namePlaceholder')}
                       value={values.name}
                       aria-invalid={Boolean(errors.name)}
                       onChange={(event) => update('name', event.target.value)}
                       className={inputClass}
                     />
                   </UnderlineField>
-                  <UnderlineField id='booking-phone' label='Số điện thoại' icon='call' error={errors.phone}>
+                  <UnderlineField
+                    id='booking-phone'
+                    label={t('booking.fields.phone')}
+                    icon='call'
+                    error={errorText('phone')}
+                  >
                     <input
                       id='booking-phone'
                       name='phone'
                       type='tel'
                       autoComplete='tel'
                       inputMode='tel'
-                      placeholder='Nhập số điện thoại'
+                      placeholder={t('booking.fields.phonePlaceholder')}
                       value={values.phone}
                       aria-invalid={Boolean(errors.phone)}
                       onChange={(event) => update('phone', event.target.value)}
                       className={inputClass}
                     />
                   </UnderlineField>
-                  <UnderlineField id='booking-service' label='Dịch vụ quan tâm' icon='spa' error={errors.service}>
+                  <UnderlineField
+                    id='booking-service'
+                    label={t('booking.fields.service')}
+                    icon='spa'
+                    error={errorText('service')}
+                  >
                     <select
                       id='booking-service'
                       name='service'
@@ -141,9 +170,9 @@ export function BookingPage() {
                       onChange={(event) => update('service', event.target.value)}
                       className={`${inputClass} appearance-none ${values.service ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
                     >
-                      <option value=''>Chọn dịch vụ</option>
+                      <option value=''>{t('booking.fields.servicePlaceholder')}</option>
                       {services.map((item) => (
-                        <option key={item.title} value={item.title}>
+                        <option key={item.id} value={item.id}>
                           {item.title}
                         </option>
                       ))}
@@ -159,7 +188,12 @@ export function BookingPage() {
                 </div>
 
                 <div className='flex flex-col gap-10 lg:pl-10'>
-                  <UnderlineField id='booking-date' label='Ngày mong muốn' icon='calendar_month' error={errors.date}>
+                  <UnderlineField
+                    id='booking-date'
+                    label={t('booking.fields.date')}
+                    icon='calendar_month'
+                    error={errorText('date')}
+                  >
                     <input
                       id='booking-date'
                       name='date'
@@ -171,7 +205,12 @@ export function BookingPage() {
                       className={`${inputClass} ${values.date ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
                     />
                   </UnderlineField>
-                  <UnderlineField id='booking-time' label='Khung giờ' icon='schedule' error={errors.time}>
+                  <UnderlineField
+                    id='booking-time'
+                    label={t('booking.fields.time')}
+                    icon='schedule'
+                    error={errorText('time')}
+                  >
                     <select
                       id='booking-time'
                       name='time'
@@ -180,7 +219,7 @@ export function BookingPage() {
                       onChange={(event) => update('time', event.target.value)}
                       className={`${inputClass} appearance-none ${values.time ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
                     >
-                      <option value=''>Chọn khung giờ</option>
+                      <option value=''>{t('booking.fields.timePlaceholder')}</option>
                       {timeSlots.map((slot) => (
                         <option key={slot} value={slot}>
                           {slot}
@@ -189,11 +228,16 @@ export function BookingPage() {
                     </select>
                     <Icon name='expand_more' size={18} className='pointer-events-none text-[#D4145A]' />
                   </UnderlineField>
-                  <UnderlineField id='booking-note' label='Ghi chú' icon='chat_bubble' error={errors.note}>
+                  <UnderlineField
+                    id='booking-note'
+                    label={t('booking.fields.note')}
+                    icon='chat_bubble'
+                    error={errorText('note')}
+                  >
                     <input
                       id='booking-note'
                       name='note'
-                      placeholder='Để lại ghi chú (nếu có)'
+                      placeholder={t('booking.fields.notePlaceholder')}
                       value={values.note}
                       onChange={(event) => update('note', event.target.value)}
                       className={inputClass}
@@ -208,12 +252,12 @@ export function BookingPage() {
                   className='inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#D4145A] px-8 py-3 text-[13px] font-semibold tracking-[0.14em] text-white uppercase transition duration-300 ease-out hover:-translate-y-px hover:bg-[#C90F50]'
                 >
                   <Icon name='calendar_month' size={18} className='text-white' />
-                  Xác nhận đặt lịch
+                  <StableText i18nKey='booking.submit' />
                   <span aria-hidden>→</span>
                 </button>
                 <p className='mt-4 flex items-center gap-2 text-xs text-[#8A6573]'>
                   <Icon name='call' size={14} className='text-[#D4145A]' />
-                  Chúng tôi sẽ liên hệ xác nhận lịch hẹn của bạn.
+                  {t('booking.contactNote')}
                 </p>
               </div>
             </form>

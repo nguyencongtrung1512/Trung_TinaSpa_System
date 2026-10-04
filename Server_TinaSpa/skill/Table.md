@@ -1,6 +1,6 @@
 # Table Design — Product, ProductDetail, Service
 
-Tuân thủ `Role.md`: AID là PK, ID là Business ID (`YYYYMMDDXXXXXX`, sinh bởi `"generateBusinessID"`),
+Tuân thủ `Role.md`: AID là PK `VARCHAR(20)` cùng dạng `YYYYMMDDXXXXXX` (sinh bởi `"generateBusinessID"`), ID là Business ID `VARCHAR(14)`,
 3 field language, camelCase, audit trước `note`, `note` luôn cuối, FK tham chiếu AID.
 
 Nguồn nghiệp vụ:
@@ -18,7 +18,7 @@ Sản phẩm bán lẻ (serum, kem dưỡng, chống nắng, mặt nạ, dưỡn
 
 | # | Column | Type | Null | Mô tả |
 |---|---|---|---|---|
-| 1 | productAID | BIGSERIAL | PK | Khóa kỹ thuật |
+| 1 | productAID | VARCHAR(20) | PK | Mã dạng YYYYMMDDXXXXXX, DEFAULT `generateBusinessID('Product')` |
 | 2 | productID | VARCHAR(14) | NOT NULL, UNIQUE | Business ID, DEFAULT `generateBusinessID('Product')` |
 | 3 | nameVietnamese | VARCHAR(255) | NOT NULL | Tên sản phẩm (VD: Luminous Elixir) |
 | 4 | nameEnglish | VARCHAR(255) | NULL | |
@@ -39,9 +39,9 @@ Sản phẩm bán lẻ (serum, kem dưỡng, chống nắng, mặt nạ, dưỡn
 | 19 | volume | VARCHAR(30) | NULL | Dung tích (30ml, 50g...) |
 | 20 | status | VARCHAR(20) | NOT NULL, DEFAULT `ACTIVE` | `ACTIVE` \| `INACTIVE` |
 | 21 | createdAt | TIMESTAMP | NOT NULL | Dùng cho sắp xếp "Mới nhất" |
-| 22 | createdByAID | BIGINT | NULL | |
+| 22 | createdByAID | VARCHAR(20) | NULL | |
 | 23 | updatedAt | TIMESTAMP | NOT NULL | |
-| 24 | updatedByAID | BIGINT | NULL | |
+| 24 | updatedByAID | VARCHAR(20) | NULL | |
 | 25 | deletedAt | TIMESTAMP | NULL | Soft delete |
 | 26 | note | TEXT | NULL | Luôn cuối |
 
@@ -63,12 +63,12 @@ Nội dung chi tiết 1–n của Product. Mỗi dòng là một mục trong tra
 
 | # | Column | Type | Null | Mô tả |
 |---|---|---|---|---|
-| 1 | productDetailAID | BIGSERIAL | PK | |
+| 1 | productDetailAID | VARCHAR(20) | PK | DEFAULT `generateBusinessID('ProductDetail')` |
 | 2 | productDetailID | VARCHAR(14) | NOT NULL, UNIQUE | DEFAULT `generateBusinessID('ProductDetail')` |
 | 3 | nameVietnamese | VARCHAR(255) | NOT NULL | Tiêu đề mục (EFFECT title, INGREDIENT name...) |
 | 4 | nameEnglish | VARCHAR(255) | NULL | |
 | 5 | nameCambodia | VARCHAR(255) | NULL | |
-| 6 | productAID | BIGINT | NOT NULL, FK | → `Product.productAID` (ON DELETE CASCADE) |
+| 6 | productAID | VARCHAR(20) | NOT NULL, FK | → `Product.productAID` (ON DELETE CASCADE) |
 | 7 | detailType | VARCHAR(20) | NOT NULL | `STORY` \| `HIGHLIGHT` \| `INGREDIENT` \| `USAGE` \| `NOTE` \| `EFFECT` \| `GALLERY` |
 | 8 | contentVietnamese | TEXT | NULL | Nội dung |
 | 9 | contentEnglish | TEXT | NULL | |
@@ -78,9 +78,9 @@ Nội dung chi tiết 1–n của Product. Mỗi dòng là một mục trong tra
 | 13 | imageAlt | VARCHAR(255) | NULL | |
 | 14 | sortOrder | INTEGER | NOT NULL, DEFAULT 0 | Thứ tự trong cùng `detailType` |
 | 15 | createdAt | TIMESTAMP | NOT NULL | |
-| 16 | createdByAID | BIGINT | NULL | |
+| 16 | createdByAID | VARCHAR(20) | NULL | |
 | 17 | updatedAt | TIMESTAMP | NOT NULL | |
-| 18 | updatedByAID | BIGINT | NULL | |
+| 18 | updatedByAID | VARCHAR(20) | NULL | |
 | 19 | note | TEXT | NULL | Luôn cuối |
 
 ---
@@ -93,7 +93,7 @@ Dịch vụ spa như ảnh "Combo Package": mỗi dòng gồm **tên** (Perfectl
 
 | # | Column | Type | Null | Mô tả |
 |---|---|---|---|---|
-| 1 | serviceAID | BIGSERIAL | PK | |
+| 1 | serviceAID | VARCHAR(20) | PK | DEFAULT `generateBusinessID('Service')` |
 | 2 | serviceID | VARCHAR(14) | NOT NULL, UNIQUE | DEFAULT `generateBusinessID('Service')` |
 | 3 | nameVietnamese | VARCHAR(255) | NOT NULL | Tên dịch vụ (Perfectly Polished) |
 | 4 | nameEnglish | VARCHAR(255) | NULL | |
@@ -113,9 +113,9 @@ Dịch vụ spa như ảnh "Combo Package": mỗi dòng gồm **tên** (Perfectl
 | 18 | sortOrder | INTEGER | NOT NULL, DEFAULT 0 | Thứ tự trong nhóm |
 | 19 | status | VARCHAR(20) | NOT NULL, DEFAULT `ACTIVE` | `ACTIVE` \| `INACTIVE` |
 | 20 | createdAt | TIMESTAMP | NOT NULL | |
-| 21 | createdByAID | BIGINT | NULL | |
+| 21 | createdByAID | VARCHAR(20) | NULL | |
 | 22 | updatedAt | TIMESTAMP | NOT NULL | |
-| 23 | updatedByAID | BIGINT | NULL | |
+| 23 | updatedByAID | VARCHAR(20) | NULL | |
 | 24 | deletedAt | TIMESTAMP | NULL | Soft delete |
 | 25 | note | TEXT | NULL | Luôn cuối |
 
@@ -142,7 +142,7 @@ Service
 
 ```sql
 CREATE TABLE "Product" (
-    "productAID" BIGSERIAL PRIMARY KEY,
+    "productAID" VARCHAR(20) PRIMARY KEY DEFAULT "generateBusinessID"('Product'),
     "productID" VARCHAR(14) NOT NULL DEFAULT "generateBusinessID"('Product'),
 
     "nameVietnamese" VARCHAR(255) NOT NULL,
@@ -166,9 +166,9 @@ CREATE TABLE "Product" (
     "status" VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
 
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdByAID" BIGINT,
+    "createdByAID" VARCHAR(20),
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedByAID" BIGINT,
+    "updatedByAID" VARCHAR(20),
     "deletedAt" TIMESTAMP,
 
     "note" TEXT,
@@ -185,14 +185,14 @@ CREATE INDEX "IX_Product_category" ON "Product" ("category");
 CREATE INDEX "IX_Product_status" ON "Product" ("status");
 
 CREATE TABLE "ProductDetail" (
-    "productDetailAID" BIGSERIAL PRIMARY KEY,
+    "productDetailAID" VARCHAR(20) PRIMARY KEY DEFAULT "generateBusinessID"('ProductDetail'),
     "productDetailID" VARCHAR(14) NOT NULL DEFAULT "generateBusinessID"('ProductDetail'),
 
     "nameVietnamese" VARCHAR(255) NOT NULL,
     "nameEnglish" VARCHAR(255),
     "nameCambodia" VARCHAR(255),
 
-    "productAID" BIGINT NOT NULL,
+    "productAID" VARCHAR(20) NOT NULL,
     "detailType" VARCHAR(20) NOT NULL,
     "contentVietnamese" TEXT,
     "contentEnglish" TEXT,
@@ -203,9 +203,9 @@ CREATE TABLE "ProductDetail" (
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
 
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdByAID" BIGINT,
+    "createdByAID" VARCHAR(20),
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedByAID" BIGINT,
+    "updatedByAID" VARCHAR(20),
 
     "note" TEXT,
 
@@ -220,7 +220,7 @@ CREATE TABLE "ProductDetail" (
 CREATE INDEX "IX_ProductDetail_productAID_detailType" ON "ProductDetail" ("productAID", "detailType", "sortOrder");
 
 CREATE TABLE "Service" (
-    "serviceAID" BIGSERIAL PRIMARY KEY,
+    "serviceAID" VARCHAR(20) PRIMARY KEY DEFAULT "generateBusinessID"('Service'),
     "serviceID" VARCHAR(14) NOT NULL DEFAULT "generateBusinessID"('Service'),
 
     "nameVietnamese" VARCHAR(255) NOT NULL,
@@ -243,9 +243,9 @@ CREATE TABLE "Service" (
     "status" VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
 
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdByAID" BIGINT,
+    "createdByAID" VARCHAR(20),
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedByAID" BIGINT,
+    "updatedByAID" VARCHAR(20),
     "deletedAt" TIMESTAMP,
 
     "note" TEXT,
@@ -268,7 +268,7 @@ CREATE INDEX "IX_Service_status" ON "Service" ("status");
 /// category: SERUM | CREAM | SUNSCREEN | MASK | EYE (CHECK "CK_Product_category")
 /// status: ACTIVE | INACTIVE (CHECK "CK_Product_status")
 model Product {
-  productAID            BigInt    @id @default(autoincrement())
+  productAID            String    @id @default(dbgenerated("\"generateBusinessID\"('Product'::text)")) @db.VarChar(20)
   productID             String    @unique(map: "UQ_Product_productID") @default(dbgenerated("\"generateBusinessID\"('Product'::text)")) @db.VarChar(14)
 
   nameVietnamese        String    @db.VarChar(255)
@@ -296,9 +296,9 @@ model Product {
   status                String    @default("ACTIVE") @db.VarChar(20)
 
   createdAt             DateTime  @default(now())
-  createdByAID          BigInt?
+  createdByAID          String?   @db.VarChar(20)
   updatedAt             DateTime  @default(now()) @updatedAt
-  updatedByAID          BigInt?
+  updatedByAID          String?   @db.VarChar(20)
   deletedAt             DateTime?
 
   note                  String?
@@ -311,14 +311,14 @@ model Product {
 
 /// detailType: STORY | HIGHLIGHT | INGREDIENT | USAGE | NOTE | EFFECT | GALLERY (CHECK "CK_ProductDetail_detailType")
 model ProductDetail {
-  productDetailAID  BigInt   @id @default(autoincrement())
+  productDetailAID  String   @id @default(dbgenerated("\"generateBusinessID\"('ProductDetail'::text)")) @db.VarChar(20)
   productDetailID   String   @unique(map: "UQ_ProductDetail_productDetailID") @default(dbgenerated("\"generateBusinessID\"('ProductDetail'::text)")) @db.VarChar(14)
 
   nameVietnamese    String   @db.VarChar(255)
   nameEnglish       String?  @db.VarChar(255)
   nameCambodia      String?  @db.VarChar(255)
 
-  productAID        BigInt
+  productAID        String   @db.VarChar(20)
   detailType        String   @db.VarChar(20)
   contentVietnamese String?
   contentEnglish    String?
@@ -329,9 +329,9 @@ model ProductDetail {
   sortOrder         Int      @default(0)
 
   createdAt         DateTime @default(now())
-  createdByAID      BigInt?
+  createdByAID      String?  @db.VarChar(20)
   updatedAt         DateTime @default(now()) @updatedAt
-  updatedByAID      BigInt?
+  updatedByAID      String?  @db.VarChar(20)
 
   note              String?
 
@@ -343,7 +343,7 @@ model ProductDetail {
 /// category: COMBO_PACKAGE | NAIL | SKIN_CARE | BODY_CARE | HAIR ... (UPPERCASE)
 /// status: ACTIVE | INACTIVE (CHECK "CK_Service_status")
 model Service {
-  serviceAID                 BigInt    @id @default(autoincrement())
+  serviceAID                 String    @id @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(20)
   serviceID                  String    @unique(map: "UQ_Service_serviceID") @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(14)
 
   nameVietnamese             String    @db.VarChar(255)
@@ -366,9 +366,9 @@ model Service {
   status                     String    @default("ACTIVE") @db.VarChar(20)
 
   createdAt                  DateTime  @default(now())
-  createdByAID               BigInt?
+  createdByAID               String?   @db.VarChar(20)
   updatedAt                  DateTime  @default(now()) @updatedAt
-  updatedByAID               BigInt?
+  updatedByAID               String?   @db.VarChar(20)
   deletedAt                  DateTime?
 
   note                       String?
@@ -394,7 +394,7 @@ VALUES
 ## 8. Checklist
 
 ```text
-[x] Có <tableName>AID, là PRIMARY KEY (BIGSERIAL)
+[x] Có <tableName>AID, là PRIMARY KEY VARCHAR(20), mã YYYYMMDDXXXXXX
 [x] Có <tableName>ID, NOT NULL, UNIQUE, format YYYYMMDDXXXXXX (generateBusinessID)
 [x] Không có generic id / uuid / code
 [x] Có nameVietnamese, nameEnglish, nameCambodia

@@ -20,5 +20,8 @@ export default defineConfig({
   preview: {
     port: 5057
   },
+  optimizeDeps: {
+    include: ['i18next', 'i18next-browser-languagedetector', 'react-i18next']
+  },
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), devtoolsJson()]
 })

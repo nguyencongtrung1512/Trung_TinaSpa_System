@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react'
+
 export type AuthUser = {
   userID: string
   phone: string
@@ -42,6 +44,37 @@ export function loadSession(): AuthSession | null {
 
 export function saveSession(session: AuthSession) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+  window.dispatchEvent(new Event('tina-session'))
+}
+
+export function clearSession() {
+  window.localStorage.removeItem(STORAGE_KEY)
+  window.dispatchEvent(new Event('tina-session'))
+}
+
+let cachedRaw: string | null = null
+let cachedSession: AuthSession | null = null
+
+function sessionSnapshot() {
+  const raw = window.localStorage.getItem(STORAGE_KEY)
+  if (raw !== cachedRaw) {
+    cachedRaw = raw
+    cachedSession = loadSession()
+  }
+  return cachedSession
+}
+
+export function useSession() {
+  return useSyncExternalStore(subscribeSession, sessionSnapshot, () => null)
+}
+
+function subscribeSession(onChange: () => void) {
+  window.addEventListener('storage', onChange)
+  window.addEventListener('tina-session', onChange)
+  return () => {
+    window.removeEventListener('storage', onChange)
+    window.removeEventListener('tina-session', onChange)
+  }
 }
 
 export function login(input: { phone: string; password: string }) {

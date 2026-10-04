@@ -1,5 +1,6 @@
 import { BookingPage } from '~/features/booking/BookingPage'
 import { SiteShell } from '~/components/layout/SiteShell'
+import i18n from '~/i18n'
 
 export function links() {
   return [
@@ -12,11 +13,8 @@ export function links() {
 
 export function meta() {
   return [
-    { title: 'Đặt lịch hẹn — Dr Tina Beauty' },
-    {
-      name: 'description',
-      content: 'Dành một chút thời gian cho bản thân. Đặt lịch chăm sóc sắc đẹp cùng Dr Tina Beauty.'
-    }
+    { title: i18n.t('meta.booking.title') },
+    { name: 'description', content: i18n.t('meta.booking.description') }
   ]
 }
 

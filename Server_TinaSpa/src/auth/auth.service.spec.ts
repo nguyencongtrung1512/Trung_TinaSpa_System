@@ -40,7 +40,7 @@ describe('AuthService', () => {
   };
 
   const user = {
-    userAID: 1n,
+    userAID: '20261004000001',
     userID: '20260930000017',
     phone: '0901234567',
     passwordHash: 'hashed-password',
@@ -55,7 +55,7 @@ describe('AuthService', () => {
   };
 
   const storedRefreshToken = (overrides: Record<string, unknown> = {}) => ({
-    refreshTokenAID: 10n,
+    refreshTokenAID: '20261004000010',
     refreshTokenID: '20260930000023',
     userAID: user.userAID,
     tokenJti: 'token-1',
@@ -222,7 +222,7 @@ describe('AuthService', () => {
       const result = await authService.refresh('old-refresh-token');
 
       expect(prisma.refreshToken.update).toHaveBeenCalledWith({
-        where: { refreshTokenAID: 10n },
+        where: { refreshTokenAID: '20261004000010' },
         data: { revokedAt: expect.any(Date) },
       });
       expect(usersService.findByUserAID).toHaveBeenCalledWith(user.userAID);

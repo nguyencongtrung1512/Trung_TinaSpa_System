@@ -1,30 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import {
-  categoryLabel,
-  formatPrice,
-  relatedProducts,
-  type ProductItem
-} from '~/data/products'
+import { useTranslation } from 'react-i18next'
+import { categoryLabel, formatPrice, useRelatedProducts, type ProductItem } from '~/data/products'
 import { Icon } from '~/components/ui/Icon'
+import { StableText } from '~/components/ui/StableText'
+import i18n from '~/i18n'
 
-const tabs = [
-  { id: 'story', label: 'Mô tả' },
-  { id: 'ingredients', label: 'Thành phần' },
-  { id: 'usage', label: 'Cách dùng' },
-  { id: 'notes', label: 'Lưu ý' }
-] as const
+const tabs = ['story', 'ingredients', 'usage', 'notes'] as const
 
-type TabId = (typeof tabs)[number]['id']
+type TabId = (typeof tabs)[number]
 
-const trustPoints = [
-  { icon: 'verified', label: 'Đã kiểm nghiệm' },
-  { icon: 'spa', label: 'Thành phần dịu' },
-  { icon: 'favorite', label: 'Da nhạy cảm' }
-] as const
+const trustPoints = ['verified', 'spa', 'favorite'] as const
 
 function formatRating(value: number) {
-  return value.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  return value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 }
 
 function Stars({ rating }: { readonly rating: number }) {
@@ -44,12 +33,13 @@ export interface ProductDetailPageProps {
 }
 
 export function ProductDetailPage({ product }: ProductDetailPageProps) {
+  const { t } = useTranslation()
   const [shot, setShot] = useState(0)
   const [qty, setQty] = useState(1)
   const [tab, setTab] = useState<TabId>('story')
   const [notice, setNotice] = useState('')
   const activeShot = product.gallery[shot] ?? product.gallery[0]
-  const companions = relatedProducts(product.id)
+  const companions = useRelatedProducts(product.id)
 
   function changeQty(next: number) {
     setQty(Math.min(10, Math.max(1, next)))
@@ -59,13 +49,13 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
   return (
     <div className='bg-canvas'>
       <section className='mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12'>
-        <nav aria-label='Đường dẫn' className='flex flex-wrap items-center gap-2 text-sm text-muted'>
+        <nav aria-label={t('products.detail.breadcrumb')} className='flex flex-wrap items-center gap-2 text-sm text-muted'>
           <Link to='/' className='transition hover:text-clinic'>
-            Trang chủ
+            <StableText i18nKey='nav.home' align='start' />
           </Link>
           <span aria-hidden>/</span>
           <Link to='/products' className='transition hover:text-clinic'>
-            Sản phẩm
+            <StableText i18nKey='nav.products' align='start' />
           </Link>
           <span aria-hidden>/</span>
           <span className='font-semibold text-ink'>{product.name}</span>
@@ -80,7 +70,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                 className='aspect-[4/5] w-full rounded-[1.15rem] object-cover sm:aspect-[5/4]'
               />
             </div>
-            <div className='mt-4 grid grid-cols-4 gap-3' role='group' aria-label='Ảnh sản phẩm'>
+            <div className='mt-4 grid grid-cols-4 gap-3' role='group' aria-label={t('products.detail.gallery')}>
               {product.gallery.map((item, index) => {
                 const selected = index === shot
                 return (
@@ -110,8 +100,8 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             <p className='mt-3 flex items-center gap-2 text-sm text-muted'>
               <Stars rating={product.rating} />
               <span>
-                <span className='sr-only'>Đánh giá </span>
-                {formatRating(product.rating)} ({product.reviews} nhận xét)
+                <span className='sr-only'>{t('products.list.rating')}</span>
+                {formatRating(product.rating)} ({t('products.detail.reviews', { count: product.reviews })})
               </span>
             </p>
             <p className='mt-4 text-sm leading-7 text-muted'>{product.description}</p>
@@ -121,27 +111,29 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
               {product.compareAt ? (
                 <p className='pb-1 text-sm text-muted line-through'>{formatPrice(product.compareAt)}</p>
               ) : null}
-              <p className='pb-1 text-sm font-semibold text-clinic'>Còn hàng</p>
+              <p className='pb-1 text-sm font-semibold text-clinic'>
+                <StableText i18nKey='products.detail.inStock' align='start' />
+              </p>
             </div>
-            <p className='mt-1 text-xs text-muted'>Dung tích {product.volume} · Dùng sau liệu trình tại phòng khám</p>
+            <p className='mt-1 text-xs text-muted'>{t('products.detail.volume', { volume: product.volume })}</p>
 
             <div className='mt-6 flex items-center gap-3'>
               <div className='inline-flex items-center rounded-full border border-rose-soft bg-surface'>
                 <button
                   type='button'
-                  aria-label='Giảm số lượng'
+                  aria-label={t('products.detail.decrease')}
                   onClick={() => changeQty(qty - 1)}
                   className='inline-flex h-11 w-11 items-center justify-center text-ink'
                 >
                   <Icon name='remove' size={18} />
                 </button>
                 <span className='min-w-8 text-center text-sm font-extrabold text-ink' aria-live='polite'>
-                  <span className='sr-only'>Số lượng </span>
+                  <span className='sr-only'>{t('products.detail.quantity')}</span>
                   {qty}
                 </span>
                 <button
                   type='button'
-                  aria-label='Tăng số lượng'
+                  aria-label={t('products.detail.increase')}
                   onClick={() => changeQty(qty + 1)}
                   className='inline-flex h-11 w-11 items-center justify-center text-ink'
                 >
@@ -152,11 +144,11 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
 
             <button
               type='button'
-              onClick={() => setNotice(`Đã thêm ${qty} ${product.name} vào giỏ.`)}
+              onClick={() => setNotice(t('products.detail.added', { qty, name: product.name }))}
               className='mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-clinic px-6 text-sm font-semibold text-white shadow-[0_12px_28px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
             >
               <Icon name='shopping_bag' size={18} />
-              Thêm vào giỏ hàng
+              {t('products.detail.addToCart')}
             </button>
             <p className='sr-only' aria-live='polite'>
               {notice}
@@ -164,12 +156,12 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             {notice ? <p className='mt-3 text-sm font-semibold text-clinic'>{notice}</p> : null}
 
             <ul className='mt-8 grid grid-cols-3 gap-3'>
-              {trustPoints.map((item) => (
-                <li key={item.icon} className='text-center'>
+              {trustPoints.map((icon) => (
+                <li key={icon} className='text-center'>
                   <span className='mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-mist text-clinic'>
-                    <Icon name={item.icon} size={22} />
+                    <Icon name={icon} size={22} />
                   </span>
-                  <span className='mt-2 block text-xs font-semibold text-ink'>{item.label}</span>
+                  <span className='mt-2 block text-xs font-semibold text-ink'>{t(`products.detail.trust.${icon}`)}</span>
                 </li>
               ))}
             </ul>
@@ -181,24 +173,24 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
         <div
           className='flex gap-2 overflow-x-auto border-b border-rose-soft/80'
           role='tablist'
-          aria-label='Thông tin sản phẩm'
+          aria-label={t('products.detail.info')}
         >
           {tabs.map((item) => {
-            const selected = tab === item.id
+            const selected = tab === item
             return (
               <button
-                key={item.id}
+                key={item}
                 type='button'
                 role='tab'
-                id={`product-tab-${item.id}`}
+                id={`product-tab-${item}`}
                 aria-selected={selected}
-                aria-controls={`product-panel-${item.id}`}
-                onClick={() => setTab(item.id)}
+                aria-controls={`product-panel-${item}`}
+                onClick={() => setTab(item)}
                 className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition ${
                   selected ? 'border-clinic text-clinic' : 'border-transparent text-muted hover:text-ink'
                 }`}
               >
-                {item.label}
+                <StableText i18nKey={`products.detail.tabs.${item}`} />
               </button>
             )
           })}
@@ -213,7 +205,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           >
             {tab === 'story' ? (
               <div>
-                <h2 className='text-lg font-extrabold text-ink'>Vì sao phòng khám chọn sản phẩm này</h2>
+                <h2 className='text-lg font-extrabold text-ink'>{t('products.detail.whyTitle')}</h2>
                 {product.story.map((paragraph) => (
                   <p key={paragraph} className='mt-3 text-sm leading-7 text-muted'>
                     {paragraph}
@@ -231,7 +223,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             ) : null}
             {tab === 'ingredients' ? (
               <div>
-                <h2 className='text-lg font-extrabold text-ink'>Thành phần nổi bật</h2>
+                <h2 className='text-lg font-extrabold text-ink'>{t('products.detail.ingredientsTitle')}</h2>
                 <ul className='mt-4 space-y-3'>
                   {product.ingredients.map((item) => (
                     <li key={item} className='flex items-start gap-3 text-sm leading-6 text-ink'>
@@ -244,7 +236,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             ) : null}
             {tab === 'usage' ? (
               <div>
-                <h2 className='text-lg font-extrabold text-ink'>Cách dùng tại nhà</h2>
+                <h2 className='text-lg font-extrabold text-ink'>{t('products.detail.usageTitle')}</h2>
                 <ol className='mt-4 space-y-4'>
                   {product.usage.map((item, index) => (
                     <li key={item} className='flex items-start gap-3 text-sm leading-6 text-ink'>
@@ -259,7 +251,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             ) : null}
             {tab === 'notes' ? (
               <div>
-                <h2 className='text-lg font-extrabold text-ink'>Lưu ý khi dùng</h2>
+                <h2 className='text-lg font-extrabold text-ink'>{t('products.detail.notesTitle')}</h2>
                 <ul className='mt-4 space-y-3'>
                   {product.notes.map((item) => (
                     <li key={item} className='flex items-start gap-3 text-sm leading-6 text-ink'>
@@ -273,7 +265,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           </div>
 
           <aside className='rounded-[1.5rem] bg-mist p-6 sm:p-8'>
-            <h2 className='text-lg font-extrabold text-ink'>Công dụng chính</h2>
+            <h2 className='text-lg font-extrabold text-ink'>{t('products.detail.effectsTitle')}</h2>
             <ul className='mt-5 space-y-4'>
               {product.effects.map((item) => (
                 <li key={item.title} className='rounded-2xl bg-surface px-4 py-4'>
@@ -292,10 +284,10 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
       <section className='mx-auto max-w-6xl px-4 py-12 sm:px-6'>
         <div className='flex items-end justify-between gap-4'>
           <h2 className='text-2xl font-extrabold tracking-tight text-ink sm:text-3xl'>
-            Liệu trình chăm sóc kết hợp
+            {t('products.detail.relatedTitle')}
           </h2>
           <Link to='/products' className='shrink-0 text-sm font-semibold text-clinic hover:text-clinic-deep'>
-            Xem tất cả
+            <StableText i18nKey='common.viewAll' align='end' />
           </Link>
         </div>
         <div className='mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>

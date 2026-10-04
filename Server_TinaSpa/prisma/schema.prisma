@@ -9,7 +9,7 @@ datasource db {
 
 /// role: ADMIN | MANAGER | STAFF | CUSTOMER (CHECK constraint "CK_User_role" trong DB)
 model User {
-  userAID      BigInt   @id @default(autoincrement())
+  userAID      String   @id @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(20)
   userID       String   @unique(map: "UQ_User_userID") @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(14)
   phone        String   @unique(map: "UQ_User_phone") @db.VarChar(20)
   passwordHash String   @db.VarChar(255)
@@ -17,9 +17,9 @@ model User {
   role         String   @default("CUSTOMER") @db.VarChar(20)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  createdByAID BigInt?
+  createdByAID String?  @db.VarChar(20)
   updatedAt    DateTime @default(now()) @updatedAt
-  updatedByAID BigInt?
+  updatedByAID String?  @db.VarChar(20)
   note         String?
 
   refreshTokens RefreshToken[]
@@ -28,17 +28,17 @@ model User {
 }
 
 model RefreshToken {
-  refreshTokenAID BigInt    @id @default(autoincrement())
+  refreshTokenAID String    @id @default(dbgenerated("\"generateBusinessID\"('RefreshToken'::text)")) @db.VarChar(20)
   refreshTokenID  String    @unique(map: "UQ_RefreshToken_refreshTokenID") @default(dbgenerated("\"generateBusinessID\"('RefreshToken'::text)")) @db.VarChar(14)
-  userAID         BigInt
+  userAID         String    @db.VarChar(20)
   tokenJti        String    @unique(map: "UQ_RefreshToken_tokenJti") @db.VarChar(100)
   tokenHash       String    @unique(map: "UQ_RefreshToken_tokenHash") @db.VarChar(255)
   expiresAt       DateTime
   revokedAt       DateTime?
   createdAt       DateTime  @default(now())
-  createdByAID    BigInt?
+  createdByAID    String?   @db.VarChar(20)
   updatedAt       DateTime  @default(now()) @updatedAt
-  updatedByAID    BigInt?
+  updatedByAID    String?   @db.VarChar(20)
   note            String?
 
   user User @relation(fields: [userAID], references: [userAID], onDelete: Cascade, map: "FK_RefreshToken_userAID")

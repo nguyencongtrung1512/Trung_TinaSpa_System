@@ -32,7 +32,17 @@ Giao diện phòng khám thẩm mỹ ấm, sáng và tin cậy. Nền hồng ph�
 - Chuyển section bằng dải sóng SVG, không dùng đường kẻ cứng
 - Dưới 768px: mọi lưới đổ 1 cột, menu hamburger, ảnh hero thu nhỏ dưới copy
 
-## 6. Design System Notes for Stitch Generation
+## 6. Song ngữ VI/EN & chống giật layout
+Website hỗ trợ tiếng Việt (mặc định) và tiếng Anh. Câu chữ hai ngôn ngữ dài ngắn khác nhau, nên mọi khối chữ có thể đẩy phần tử khác đi đều phải **giữ cố định kích thước theo bản dài nhất**. Nhờ vậy khi bấm VI/EN, không nút, tab hay đoạn văn nào bị nhảy.
+- **Kỹ thuật:** component `StableText` (`app/components/ui/StableText.tsx`) render mọi bản dịch chồng lên nhau trong cùng một ô grid. Chỉ bản đang dùng hiển thị, các bản còn lại `invisible` (cũng bị ẩn khỏi trình đọc màn hình).
+  - Mặc định (inline): giữ **chiều rộng** lớn nhất. Dùng cho nút, link điều hướng, tab, chip lọc, nhãn cạnh control.
+  - `block`: giữ **chiều cao** lớn nhất. Dùng cho tiêu đề và đoạn văn nằm phía trên nút hoặc nội dung quan trọng (hero, đầu trang, thẻ kết quả, thông tin cơ sở).
+  - `align`: `start` | `center` | `end`, theo căn lề của khối chứa.
+- **Select / input có giá trị là chữ:** đặt chiều rộng cố định (vd. `w-40`, `w-44`) đủ cho bản dài nhất.
+- **Không cần cố định:** văn bản dài cuối section (mô tả sản phẩm, nội dung tab chi tiết), alt ảnh, `aria-label`, meta title. Những chỗ này dùng `t()` bình thường.
+- **Thiết kế mới:** chừa chỗ cho bản tiếng Anh/Việt dài hơn khoảng 30%. Không đặt nút có chữ vào khung có chiều rộng cứng quá sát chữ.
+
+## 7. Design System Notes for Stitch Generation
 **Copy this block into every baton prompt:**
 
 **DESIGN SYSTEM (REQUIRED):**
@@ -50,3 +60,4 @@ Giao diện phòng khám thẩm mỹ ấm, sáng và tin cậy. Nền hồng ph�
 - Cards: Generously rounded, whisper rose shadows
 - Layout: Centered max-width container, wave dividers between sections
 - No harsh black, no neon glow, no cold hospital blue
+- Bilingual VI/EN: header has a VI/EN pill switcher; buttons, nav, tabs and chips keep a fixed width sized for the longest language; headings and paragraphs above controls reserve the height of the longest language so switching never shifts layout

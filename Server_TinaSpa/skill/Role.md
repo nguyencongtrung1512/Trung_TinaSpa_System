@@ -65,10 +65,11 @@ serviceDetailAID
 Ví dụ:
 
 ```sql
-"customerAID" BIGSERIAL PRIMARY KEY
+"customerAID" VARCHAR(20) PRIMARY KEY DEFAULT "generateBusinessID"('Customer')
 ```
 
-Hoặc sử dụng kiểu dữ liệu tương đương nếu kiến trúc database yêu cầu.
+Mã AID cùng dạng Business ID `YYYYMMDDXXXXXX`, lưu trong `VARCHAR(20)`.
+PostgreSQL không có `nvarchar`; `VARCHAR` đã lưu Unicode, tương đương `nvarchar(20)`.
 3.3. Không được tạo generic ID
 KHÔNG được tạo:
 
@@ -483,7 +484,7 @@ Khi tạo table, ưu tiên thứ tự:
 
 ```sql
 CREATE TABLE "Service" (
-    "serviceAID" BIGSERIAL PRIMARY KEY,
+    "serviceAID" VARCHAR(20) PRIMARY KEY DEFAULT "generateBusinessID"('Service'),
 
     "serviceID" VARCHAR(14) NOT NULL UNIQUE,
 
@@ -495,10 +496,10 @@ CREATE TABLE "Service" (
     "description" TEXT,
 
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdByAID" BIGINT,
+    "createdByAID" VARCHAR(20),
 
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedByAID" BIGINT,
+    "updatedByAID" VARCHAR(20),
 
     "note" TEXT
 );
@@ -528,7 +529,7 @@ Ví dụ:
 
 ```prisma
 model Service {
-  serviceAID      BigInt   @id @default(autoincrement())
+  serviceAID      String   @id @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(20)
   serviceID       String   @unique
 
   nameVietnamese  String
@@ -539,9 +540,9 @@ model Service {
   description     String?
 
   createdAt       DateTime @default(now())
-  createdByAID    BigInt?
+  createdByAID    String?  @db.VarChar(20)
   updatedAt       DateTime @updatedAt
-  updatedByAID    BigInt?
+  updatedByAID    String?  @db.VarChar(20)
 
   note            String?
 }

@@ -1,14 +1,11 @@
 import { SiteShell } from '~/components/layout/SiteShell'
 import { ProductsPage } from '~/features/products/ProductsPage'
+import i18n from '~/i18n'
 
 export function meta() {
   return [
-    { title: 'Sản phẩm — Dr Tina Beauty' },
-    {
-      name: 'description',
-      content:
-        'Tinh chất, kem dưỡng, chống nắng và mặt nạ phục hồi được Dr Tina Beauty chọn lọc cho làn da sau liệu trình.'
-    }
+    { title: i18n.t('meta.products.title') },
+    { name: 'description', content: i18n.t('meta.products.description') }
   ]
 }
 

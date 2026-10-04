@@ -1,10 +1,8 @@
 import { LoginPage } from '~/components/start/login/LoginPage'
+import i18n from '~/i18n'
 
 export function meta() {
-  return [
-    { title: 'Đăng nhập — Dr Tina Beauty' },
-    { name: 'description', content: 'Đăng nhập hoặc đăng ký cổng khách hàng Dr Tina Beauty để quản lý lịch hẹn và phác đồ trị liệu.' }
-  ]
+  return [{ title: i18n.t('meta.login.title') }, { name: 'description', content: i18n.t('meta.login.description') }]
 }
 
 export default function Login() {
