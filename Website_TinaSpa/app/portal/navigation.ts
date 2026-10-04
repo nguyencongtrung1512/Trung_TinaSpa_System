@@ -156,7 +156,7 @@ const managerNavigation: readonly PortalNavGroup[] = [
         label: 'Dịch vụ & Menu trị liệu',
         icon: 'spa',
         to: '/portal/manager/dich-vu',
-        summary: 'Dịch vụ, giá và thời lượng đang mở tại chi nhánh.'
+        summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
       },
       {
         label: 'Sản phẩm',
@@ -229,6 +229,17 @@ const adminNavigation: readonly PortalNavGroup[] = [
         icon: 'settings',
         to: '/portal/admin/cau-hinh',
         summary: 'Thiết lập dùng chung cho toàn bộ cổng.'
+      }
+    ]
+  },
+  {
+    label: 'Danh mục',
+    items: [
+      {
+        label: 'Dịch vụ & Menu trị liệu',
+        icon: 'spa',
+        to: '/portal/admin/dich-vu',
+        summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
       }
     ]
   }

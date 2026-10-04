@@ -5,6 +5,7 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ObserveModule } from './observe.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { ServiceCatalogModule } from './service-catalog/service-catalog.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module.js';
     PrismaModule,
     AuthModule,
     UsersModule,
+    ServiceCatalogModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({

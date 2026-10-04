@@ -47,6 +47,79 @@ model RefreshToken {
   @@index([expiresAt], map: "IX_RefreshToken_expiresAt")
 }
 
+/// status: ACTIVE | INACTIVE (CHECK "CK_ServiceCategory_status")
+model ServiceCategory {
+  serviceCategoryAID    String    @id @default(dbgenerated("\"generateBusinessID\"('ServiceCategory'::text)")) @db.VarChar(20)
+  serviceCategoryID     String    @unique(map: "UQ_ServiceCategory_serviceCategoryID") @default(dbgenerated("\"generateBusinessID\"('ServiceCategory'::text)")) @db.VarChar(14)
+
+  nameVietnamese        String    @db.VarChar(255)
+  nameEnglish           String?   @db.VarChar(255)
+  nameCambodia          String?   @db.VarChar(255)
+
+  slug                  String    @unique(map: "UQ_ServiceCategory_slug") @db.VarChar(50)
+  descriptionVietnamese String?
+  descriptionEnglish    String?
+  descriptionCambodia   String?
+  icon                  String?   @db.VarChar(50)
+  image                 String?
+  imageAlt              String?   @db.VarChar(255)
+  isFeatured            Boolean   @default(false)
+  isBookable            Boolean   @default(true)
+  sortOrder             Int       @default(0)
+  status                String    @default("ACTIVE") @db.VarChar(20)
+
+  createdAt             DateTime  @default(now())
+  createdByAID          String?   @db.VarChar(20)
+  updatedAt             DateTime  @default(now()) @updatedAt
+  updatedByAID          String?   @db.VarChar(20)
+  deletedAt             DateTime?
+
+  note                  String?
+
+  services Service[]
+
+  @@index([status, sortOrder], map: "IX_ServiceCategory_status_sortOrder")
+}
+
+/// status: ACTIVE | INACTIVE (CHECK "CK_Service_status")
+model Service {
+  serviceAID                 String    @id @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(20)
+  serviceID                  String    @unique(map: "UQ_Service_serviceID") @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(14)
+
+  nameVietnamese             String    @db.VarChar(255)
+  nameEnglish                String?   @db.VarChar(255)
+  nameCambodia               String?   @db.VarChar(255)
+
+  serviceCategoryAID         String    @db.VarChar(20)
+  slug                       String    @unique(map: "UQ_Service_slug") @db.VarChar(150)
+  shortDescriptionVietnamese String?   @db.VarChar(500)
+  shortDescriptionEnglish    String?   @db.VarChar(500)
+  shortDescriptionCambodia   String?   @db.VarChar(500)
+  descriptionVietnamese      String?
+  descriptionEnglish         String?
+  descriptionCambodia        String?
+  price                      Decimal   @db.Decimal(12, 0)
+  durationMinutes            Int?
+  image                      String?
+  imageAlt                   String?   @db.VarChar(255)
+  isBookable                 Boolean   @default(true)
+  sortOrder                  Int       @default(0)
+  status                     String    @default("ACTIVE") @db.VarChar(20)
+
+  createdAt                  DateTime  @default(now())
+  createdByAID               String?   @db.VarChar(20)
+  updatedAt                  DateTime  @default(now()) @updatedAt
+  updatedByAID               String?   @db.VarChar(20)
+  deletedAt                  DateTime?
+
+  note                       String?
+
+  serviceCategory ServiceCategory @relation(fields: [serviceCategoryAID], references: [serviceCategoryAID], onDelete: Restrict, map: "FK_Service_serviceCategoryAID")
+
+  @@index([serviceCategoryAID, sortOrder], map: "IX_Service_serviceCategoryAID_sortOrder")
+  @@index([status], map: "IX_Service_status")
+}
+
 model BusinessIdCounter {
   tableName   String   @db.VarChar(100)
   counterDate DateTime @db.Date

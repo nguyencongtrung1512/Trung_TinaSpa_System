@@ -3,6 +3,7 @@ import { Navigate, Outlet, useParams, useRoutes, type RouteObject } from 'react-
 import { useSession } from '~/lib/auth'
 import { PortalShell } from '~/portal/layout/PortalShell'
 import { ManagerOverviewPage } from '~/portal/manager/ManagerOverviewPage'
+import { ServiceCatalogPage } from '~/portal/manager/services/ServiceCatalogPage'
 import { findNavItem } from '~/portal/navigation'
 import { PortalSectionPage } from '~/portal/pages/PortalSectionPage'
 import { RoleHomePage } from '~/portal/pages/RoleHomePage'
@@ -23,6 +24,11 @@ const homePages: Record<PortalRole, ReactNode> = {
   admin: <RoleHomePage role='admin' />
 }
 
+const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
+  manager: [{ path: 'dich-vu', element: <ServiceCatalogPage role='manager' /> }],
+  admin: [{ path: 'dich-vu', element: <ServiceCatalogPage role='admin' /> }]
+}
+
 function routesForRole(role: PortalRole): RouteObject[] {
   return [
     { index: true, element: <Navigate to={`/portal/${role}`} replace /> },
@@ -35,6 +41,7 @@ function routesForRole(role: PortalRole): RouteObject[] {
       ),
       children: [
         { index: true, element: homePages[role] },
+        ...(sectionPages[role] ?? []),
         { path: ':section', element: <PortalSectionGate role={role} /> }
       ]
     },

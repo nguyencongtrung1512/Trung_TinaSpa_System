@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedServiceCatalog } from './service-catalog.seed.js';
 
 const prisma = new PrismaClient();
 
 const BCRYPT_SALT_ROUNDS = 12;
 
-async function main() {
+async function seedAdmin() {
   const phone = process.env.SEED_ADMIN_PHONE;
   const password = process.env.SEED_ADMIN_PASSWORD;
   const fullName = process.env.SEED_ADMIN_FULLNAME ?? 'Administrator';
@@ -27,7 +28,8 @@ async function main() {
 }
 
 try {
-  await main();
+  await seedAdmin();
+  await seedServiceCatalog(prisma);
 } finally {
   await prisma.$disconnect();
 }

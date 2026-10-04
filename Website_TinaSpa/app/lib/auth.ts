@@ -85,7 +85,7 @@ export function register(input: { phone: string; password: string; fullName: str
   return requestAuth('/api/auth/register', input)
 }
 
-function apiUrl(path: string) {
+export function apiUrl(path: string) {
   const base = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
   return `${base}${path}`
 }
@@ -136,7 +136,7 @@ function translate(message: string) {
   return errorMessages[message] ?? 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.'
 }
 
-function isSession(value: unknown): value is AuthSession {
+export function isSession(value: unknown): value is AuthSession {
   if (!value || typeof value !== 'object') return false
 
   const session = value as Partial<AuthSession>
