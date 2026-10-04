@@ -5,11 +5,13 @@ import { PortalShell } from '~/portal/layout/PortalShell'
 import { ManagerOverviewPage } from '~/portal/manager/ManagerOverviewPage'
 import { ServiceCatalogPage } from '~/portal/manager/services/ServiceCatalogPage'
 import { findNavItem } from '~/portal/navigation'
+import { PortalProfilePage } from '~/portal/pages/PortalProfilePage'
 import { PortalSectionPage } from '~/portal/pages/PortalSectionPage'
 import { RoleHomePage } from '~/portal/pages/RoleHomePage'
 import { portalRoleFromSession } from '~/portal/access'
 import { StaffDeskPage } from '~/portal/staff/StaffDeskPage'
 import type { PortalRole } from '~/portal/types'
+import { UserListPage } from '~/portal/users/UserListPage'
 
 function PortalSectionGate({ role }: { readonly role: PortalRole }) {
   const { section } = useParams()
@@ -25,8 +27,50 @@ const homePages: Record<PortalRole, ReactNode> = {
 }
 
 const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
-  manager: [{ path: 'dich-vu', element: <ServiceCatalogPage role='manager' /> }],
-  admin: [{ path: 'dich-vu', element: <ServiceCatalogPage role='admin' /> }]
+  manager: [
+    { path: 'dich-vu', element: <ServiceCatalogPage role='manager' /> },
+    {
+      path: 'khach-hang',
+      element: (
+        <UserListPage
+          role='manager'
+          title='Khách hàng'
+          description='Tài khoản khách hàng đã đăng ký trên website.'
+          roles={['CUSTOMER']}
+          entityLabel='khách hàng'
+        />
+      )
+    },
+    {
+      path: 'nhan-vien',
+      element: (
+        <UserListPage
+          role='manager'
+          title='Nhân viên'
+          description='Tài khoản chuyên viên và nhân viên của chi nhánh.'
+          roles={['STAFF']}
+          entityLabel='nhân viên'
+          canCreateStaff
+        />
+      )
+    }
+  ],
+  admin: [
+    { path: 'dich-vu', element: <ServiceCatalogPage role='admin' /> },
+    {
+      path: 'nguoi-dung',
+      element: (
+        <UserListPage
+          role='admin'
+          title='Người dùng'
+          description='Toàn bộ tài khoản khách hàng, nhân viên, quản lý và quản trị.'
+          roles={['CUSTOMER', 'STAFF', 'MANAGER', 'ADMIN']}
+          entityLabel='người dùng'
+          canCreateStaff
+        />
+      )
+    }
+  ]
 }
 
 function routesForRole(role: PortalRole): RouteObject[] {
@@ -41,6 +85,7 @@ function routesForRole(role: PortalRole): RouteObject[] {
       ),
       children: [
         { index: true, element: homePages[role] },
+        { path: 'ho-so', element: <PortalProfilePage role={role} /> },
         ...(sectionPages[role] ?? []),
         { path: ':section', element: <PortalSectionGate role={role} /> }
       ]

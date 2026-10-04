@@ -139,13 +139,13 @@ const managerNavigation: readonly PortalNavGroup[] = [
         label: 'Khách hàng',
         icon: 'group',
         to: '/portal/manager/khach-hang',
-        summary: 'Hồ sơ khách hàng chi nhánh đang quản lý.'
+        summary: 'Tài khoản khách hàng đã đăng ký trên website.'
       },
       {
         label: 'Nhân viên',
         icon: 'badge',
         to: '/portal/manager/nhan-vien',
-        summary: 'Chuyên viên, ca làm và phân công phòng.'
+        summary: 'Tài khoản chuyên viên và nhân viên của chi nhánh.'
       }
     ]
   },

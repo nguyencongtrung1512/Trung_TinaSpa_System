@@ -4,8 +4,13 @@ export type AuthUser = {
   userID: string
   phone: string
   fullName: string
+  avatar?: string | null
+  address?: string | null
+  dateOfBirth?: string | null
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null
   role: string
   isActive: boolean
+  createdAt?: string
 }
 
 export type AuthSession = {

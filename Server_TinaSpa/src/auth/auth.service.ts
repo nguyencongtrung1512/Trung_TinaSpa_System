@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { createTokenId, hashToken } from '../common/utils/crypto.util.js';
 import { asJwtExpiresIn, expiresAtFromNow } from '../common/utils/expires.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import { UsersService } from '../users/users.service.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -106,6 +107,14 @@ export class AuthService {
       throw new ForbiddenException('Account is inactive');
     }
 
+    return {
+      user: this.usersService.toPublicUser(user),
+      roles: this.usersService.getRoleNames(user),
+    };
+  }
+
+  async updateMe(userAID: string, dto: UpdateProfileDto) {
+    const user = await this.usersService.updateProfile(userAID, dto);
     return {
       user: this.usersService.toPublicUser(user),
       roles: this.usersService.getRoleNames(user),

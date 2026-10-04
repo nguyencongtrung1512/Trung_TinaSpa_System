@@ -27,7 +27,8 @@ const en: typeof vi = {
     },
     contact: {
       title: 'Contact — Dr Tina Beauty',
-      description: 'Addresses, hotlines, opening hours and directions to TinaSpa locations in Ho Chi Minh City and Hanoi.'
+      description:
+        'Addresses, hotlines, opening hours and directions to TinaSpa locations in Ho Chi Minh City and Hanoi.'
     },
     products: {
       title: 'Products — Dr Tina Beauty',
@@ -41,7 +42,43 @@ const en: typeof vi = {
     },
     login: {
       title: 'Sign in — Dr Tina Beauty',
-      description: 'Sign in or register for the Dr Tina Beauty client portal to manage appointments and treatment plans.'
+      description:
+        'Sign in or register for the Dr Tina Beauty client portal to manage appointments and treatment plans.'
+    },
+    account: {
+      title: 'My profile — Dr Tina Beauty',
+      description: 'Update the personal details in your Dr Tina Beauty account.'
+    }
+  },
+  account: {
+    eyebrow: 'My account',
+    title: 'Personal profile',
+    intro: 'Keep your details up to date so Dr Tina can care for you better.',
+    portalLink: 'Open work portal',
+    logout: 'Sign out',
+    phone: 'Phone number',
+    phoneHint: 'Contact the clinic if you need to change your phone number.',
+    fullName: 'Full name',
+    gender: 'Gender',
+    genderNone: 'Not specified',
+    genders: { FEMALE: 'Female', MALE: 'Male', OTHER: 'Other' },
+    dateOfBirth: 'Date of birth',
+    age: '{{count}} years old',
+    address: 'Address',
+    addressPlaceholder: 'Street, ward, district, city',
+    avatar: 'Profile photo',
+    avatarHint: 'Paste an image link (URL).',
+    save: 'Save changes',
+    saving: 'Saving...',
+    saved: 'Profile updated.',
+    retry: 'Try again',
+    memberSince: 'Member since {{date}}',
+    roles: { CUSTOMER: 'Client', STAFF: 'Staff', MANAGER: 'Manager', ADMIN: 'Administrator' },
+    errors: {
+      fullName: 'Full name needs at least 2 characters.',
+      dateOfBirth: 'Date of birth cannot be in the future.',
+      load: 'Could not load your profile. Please try again.',
+      save: 'Could not save your profile. Please try again.'
     }
   },
   error: {
@@ -172,7 +209,8 @@ const en: typeof vi = {
       items: {
         spaPedicure: {
           summary: 'Herbal foot soak, heel scrub and polish',
-          description: 'Warm herbal foot soak, heel scrub, cuticle care and polish, finished with a 10-minute foot massage.'
+          description:
+            'Warm herbal foot soak, heel scrub, cuticle care and polish, finished with a 10-minute foot massage.'
         },
         gelPedicure: {
           summary: 'Toenail care with long-lasting gel polish',
@@ -730,10 +768,7 @@ const en: typeof vi = {
           'Dab around the orbital bone without rubbing the eyelids.',
           'Pat gently until absorbed. Use before face moisturizer.'
         ],
-        notes: [
-          'Do not use on inflamed eyelids.',
-          'If it stings, stop and ask your doctor before using it again.'
-        ],
+        notes: ['Do not use on inflamed eyelids.', 'If it stings, stop and ask your doctor before using it again.'],
         gallery: [
           'Peptide Firming Eye cream tube on stone',
           'Luminous Elixir serum',

@@ -9,5 +9,6 @@ export default [
   route('products/:productId', 'routes/product-detail.tsx'),
   route('booking', 'routes/booking.tsx'),
   route('login', 'routes/login.tsx'),
+  route('account', 'routes/account.tsx'),
   route('portal/*', 'routes/portal.tsx')
 ] satisfies RouteConfig

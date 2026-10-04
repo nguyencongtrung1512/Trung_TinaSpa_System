@@ -5,7 +5,7 @@ import { brand, useNavLinks } from '~/data/home'
 import { Icon } from '~/components/ui/Icon'
 import { LanguageSwitcher } from '~/components/ui/LanguageSwitcher'
 import { StableText } from '~/components/ui/StableText'
-import { loadSession } from '~/lib/auth'
+import { useSession } from '~/lib/auth'
 
 export interface HeaderProps {
   readonly className?: string
@@ -19,15 +19,11 @@ function isActivePath(href: string, pathname: string, hash: string) {
 
 export function Header({ className = '' }: HeaderProps) {
   const [open, setOpen] = useState(false)
-  const [accountName, setAccountName] = useState<string | null>(null)
+  const accountName = useSession()?.user.fullName ?? null
   const [isScrolled, setIsScrolled] = useState(false) // State kiểm tra đã scroll chưa
   const location = useLocation()
   const { t } = useTranslation()
   const navLinks = useNavLinks()
-
-  useEffect(() => {
-    setAccountName(loadSession()?.user.fullName ?? null)
-  }, [location.pathname])
 
   // Lắng nghe sự kiện cuộn trang (scroll)
   useEffect(() => {
@@ -84,8 +80,8 @@ export function Header({ className = '' }: HeaderProps) {
         <div className='flex items-center gap-3'>
           <LanguageSwitcher />
           <Link
-            to='/login'
-            aria-current={location.pathname === '/login' ? 'page' : undefined}
+            to={accountName ? '/account' : '/login'}
+            aria-current={location.pathname === (accountName ? '/account' : '/login') ? 'page' : undefined}
             className='hidden max-w-40 truncate rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic transition hover:bg-mist sm:inline-flex'
           >
             {accountName ?? <StableText i18nKey='common.login' />}
@@ -128,7 +124,7 @@ export function Header({ className = '' }: HeaderProps) {
               );
             })}
             <Link
-              to='/login'
+              to={accountName ? '/account' : '/login'}
               onClick={() => setOpen(false)}
               className='mt-2 inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic'
             >

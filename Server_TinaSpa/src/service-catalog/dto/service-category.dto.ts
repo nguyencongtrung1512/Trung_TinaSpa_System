@@ -15,7 +15,7 @@ import {
   SLUG_PATTERN,
   type CatalogStatus,
 } from '../service-catalog.constants.js';
-import { QueryBoolean, Trim } from './transforms.js';
+import { QueryBoolean, Trim } from '../../common/decorators/transforms.js';
 
 const SLUG_MESSAGE = 'slug must be lowercase letters, digits and single dashes';
 

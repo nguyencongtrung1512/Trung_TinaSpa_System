@@ -40,6 +40,41 @@ const vi = {
     login: {
       title: 'Đăng nhập — Dr Tina Beauty',
       description: 'Đăng nhập hoặc đăng ký cổng khách hàng Dr Tina Beauty để quản lý lịch hẹn và phác đồ trị liệu.'
+    },
+    account: {
+      title: 'Hồ sơ của tôi — Dr Tina Beauty',
+      description: 'Cập nhật thông tin cá nhân trong tài khoản Dr Tina Beauty.'
+    }
+  },
+  account: {
+    eyebrow: 'Tài khoản của tôi',
+    title: 'Hồ sơ cá nhân',
+    intro: 'Cập nhật thông tin để Dr Tina chăm sóc bạn chu đáo hơn.',
+    portalLink: 'Vào cổng làm việc',
+    logout: 'Đăng xuất',
+    phone: 'Số điện thoại',
+    phoneHint: 'Liên hệ chi nhánh nếu cần đổi số điện thoại.',
+    fullName: 'Họ và tên',
+    gender: 'Giới tính',
+    genderNone: 'Chưa chọn',
+    genders: { FEMALE: 'Nữ', MALE: 'Nam', OTHER: 'Khác' },
+    dateOfBirth: 'Ngày sinh',
+    age: '{{count}} tuổi',
+    address: 'Địa chỉ',
+    addressPlaceholder: 'Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành',
+    avatar: 'Ảnh đại diện',
+    avatarHint: 'Dán đường dẫn ảnh (URL).',
+    save: 'Lưu thay đổi',
+    saving: 'Đang lưu...',
+    saved: 'Đã cập nhật hồ sơ.',
+    retry: 'Thử lại',
+    memberSince: 'Thành viên từ {{date}}',
+    roles: { CUSTOMER: 'Khách hàng', STAFF: 'Nhân viên', MANAGER: 'Quản lý', ADMIN: 'Quản trị' },
+    errors: {
+      fullName: 'Họ tên cần ít nhất 2 ký tự.',
+      dateOfBirth: 'Ngày sinh không được ở tương lai.',
+      load: 'Không tải được hồ sơ. Vui lòng thử lại.',
+      save: 'Không lưu được hồ sơ. Vui lòng thử lại.'
     }
   },
   error: {

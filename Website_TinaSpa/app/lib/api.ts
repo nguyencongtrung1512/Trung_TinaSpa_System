@@ -22,6 +22,7 @@ const apiMessages: Record<string, string> = {
   'Service category still has services': 'Nhóm vẫn còn dịch vụ. Hãy xóa hoặc chuyển các dịch vụ sang nhóm khác trước.',
   'Service category not found': 'Không tìm thấy nhóm dịch vụ.',
   'Service not found': 'Không tìm thấy dịch vụ.',
+  'Phone number already registered': 'Số điện thoại đã được dùng cho tài khoản khác.',
   'Insufficient role': 'Tài khoản không có quyền thực hiện thao tác này.',
   Unauthorized: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
 }

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -37,5 +47,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser('userID') userID: string) {
     return this.authService.me(userID);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateMe(
+    @CurrentUser('userAID') userAID: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateMe(userAID, dto);
   }
 }
