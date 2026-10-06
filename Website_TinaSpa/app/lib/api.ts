@@ -24,6 +24,11 @@ const apiMessages: Record<string, string> = {
   'Service not found': 'Không tìm thấy dịch vụ.',
   'Phone number already registered': 'Số điện thoại đã được dùng cho tài khoản khác.',
   'Insufficient role': 'Tài khoản không có quyền thực hiện thao tác này.',
+  'File storage is not configured': 'Kho lưu trữ ảnh chưa được cấu hình. Vui lòng liên hệ quản trị viên.',
+  'File extension does not match content type': 'Đuôi tệp không khớp với định dạng ảnh.',
+  'Unsupported file extension': 'Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.',
+  'Unsupported content type': 'Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.',
+  'Object not found': 'Không tìm thấy tệp.',
   Unauthorized: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
 }
 
@@ -97,6 +102,8 @@ async function readApiError(response: Response) {
     const messages = Array.isArray(data.message) ? data.message.map(String) : [String(data.message)]
     const known = messages.map((message) => apiMessages[message])
     if (known.every(Boolean)) return known.join(' ')
+    if (response.status === 403) return apiMessages['Insufficient role']
+    if (response.status === 413) return 'Tệp vượt quá dung lượng cho phép.'
     return response.status === 400 ? `Dữ liệu chưa hợp lệ: ${messages.join('; ')}` : fallback
   } catch {
     return fallback

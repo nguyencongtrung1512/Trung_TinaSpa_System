@@ -63,7 +63,13 @@ const vi = {
     address: 'Địa chỉ',
     addressPlaceholder: 'Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành',
     avatar: 'Ảnh đại diện',
-    avatarHint: 'Dán đường dẫn ảnh (URL).',
+    avatarUpload: {
+      choose: 'Chọn ảnh',
+      replace: 'Đổi ảnh',
+      remove: 'Gỡ ảnh',
+      uploading: 'Đang tải lên',
+      hint: 'JPG, PNG, WEBP, GIF · tối đa {{size}} MB. Nhấn "Lưu thay đổi" để cập nhật.'
+    },
     save: 'Lưu thay đổi',
     saving: 'Đang lưu...',
     saved: 'Đã cập nhật hồ sơ.',

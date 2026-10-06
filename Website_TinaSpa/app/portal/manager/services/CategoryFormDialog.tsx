@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon } from '~/components/ui/Icon'
+import { ImageUpload } from '~/components/ui/ImageUpload'
 import { catalogApi, toSlug, type CatalogCategory, type CatalogStatus, type CategoryPayload } from './catalog.api'
 import {
   Field,
@@ -101,6 +102,7 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string>()
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const activeLanguage = formLanguages.find((item) => item.code === language) ?? formLanguages[0]
 
   function update<K extends keyof CategoryFormValues>(field: K, value: CategoryFormValues[K]) {
@@ -114,6 +116,7 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
   }
 
   async function submit() {
+    if (uploading) return
     const nextErrors = validate(values)
     setErrors(nextErrors)
     if (nextErrors.nameVietnamese) setLanguage('vi')
@@ -152,9 +155,9 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
           <button type='button' className={outlineButtonClass} onClick={onClose}>
             Hủy
           </button>
-          <button type='submit' className={primaryButtonClass} disabled={busy}>
+          <button type='submit' className={primaryButtonClass} disabled={busy || uploading}>
             <Icon name='save' size={18} />
-            {busy ? 'Đang lưu...' : category ? 'Lưu thay đổi' : 'Thêm nhóm'}
+            {busy ? 'Đang lưu...' : uploading ? 'Đang tải ảnh...' : category ? 'Lưu thay đổi' : 'Thêm nhóm'}
           </button>
         </>
       }
@@ -252,23 +255,19 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
             </select>
           )}
         </Field>
-        <Field label='Ảnh khối menu' hint='Đường dẫn ảnh, VD: /images/p1.png' className='sm:col-span-2'>
+        <Field
+          label='Ảnh khối menu'
+          hint='Tải ảnh lên hoặc dán đường dẫn, VD: /images/p1.png'
+          className='sm:col-span-2'
+        >
           {(id) => (
-            <div className='flex items-center gap-3'>
-              <input
-                id={id}
-                className={inputClass}
-                value={values.image}
-                onChange={(event) => update('image', event.target.value)}
-              />
-              {values.image ? (
-                <img
-                  src={values.image}
-                  alt=''
-                  className='size-11 shrink-0 rounded-xl border border-rose-soft object-cover'
-                />
-              ) : null}
-            </div>
+            <ImageUpload
+              id={id}
+              folder='services'
+              value={values.image}
+              onChange={(url) => update('image', url)}
+              onUploadingChange={setUploading}
+            />
           )}
         </Field>
         <Field label='Mô tả ảnh (alt)' className='sm:col-span-2'>

@@ -67,7 +67,13 @@ const en: typeof vi = {
     address: 'Address',
     addressPlaceholder: 'Street, ward, district, city',
     avatar: 'Profile photo',
-    avatarHint: 'Paste an image link (URL).',
+    avatarUpload: {
+      choose: 'Choose photo',
+      replace: 'Change photo',
+      remove: 'Remove photo',
+      uploading: 'Uploading',
+      hint: 'JPG, PNG, WEBP, GIF · up to {{size}} MB. Press "Save changes" to apply.'
+    },
     save: 'Save changes',
     saving: 'Saving...',
     saved: 'Profile updated.',

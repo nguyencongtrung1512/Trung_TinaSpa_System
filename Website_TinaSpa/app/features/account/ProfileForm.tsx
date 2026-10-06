@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '~/components/ui/Icon'
+import { ImageUpload } from '~/components/ui/ImageUpload'
 import type { AuthUser } from '~/lib/auth'
 import { fetchMyProfile, updateMyProfile } from '~/lib/profile'
+import { MAX_IMAGE_SIZE_MB } from '~/lib/storage'
 import { Field, FormError, inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
 
 type Gender = NonNullable<AuthUser['gender']>
@@ -59,6 +61,7 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
   const [notice, setNotice] = useState(false)
   const [busy, setBusy] = useState(false)
   const [avatarBroken, setAvatarBroken] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const dirty = (Object.keys(values) as (keyof ProfileValues)[]).some((key) => values[key] !== saved[key])
   const avatar = values.avatar.trim()
@@ -71,6 +74,7 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
   }
 
   async function submit() {
+    if (uploading) return
     const nextErrors: ProfileErrors = {}
     if (values.fullName.trim().length < 2) nextErrors.fullName = t('account.errors.fullName')
     if (values.dateOfBirth && values.dateOfBirth > todayISO()) nextErrors.dateOfBirth = t('account.errors.dateOfBirth')
@@ -188,14 +192,22 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
             />
           )}
         </Field>
-        <Field label={t('account.avatar')} hint={t('account.avatarHint')}>
+        <Field label={t('account.avatar')}>
           {(id) => (
-            <input
+            <ImageUpload
               id={id}
-              className={inputClass}
+              folder='avatars'
               value={values.avatar}
-              onChange={(event) => update('avatar', event.target.value)}
-              placeholder='https://...'
+              onChange={(url) => update('avatar', url)}
+              onUploadingChange={setUploading}
+              allowUrlInput={false}
+              labels={{
+                choose: t('account.avatarUpload.choose'),
+                replace: t('account.avatarUpload.replace'),
+                remove: t('account.avatarUpload.remove'),
+                uploading: t('account.avatarUpload.uploading'),
+                hint: t('account.avatarUpload.hint', { size: MAX_IMAGE_SIZE_MB })
+              }}
             />
           )}
         </Field>
@@ -221,7 +233,7 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
             {t('account.saved')}
           </p>
         ) : null}
-        <button type='submit' className={primaryButtonClass} disabled={busy || !dirty}>
+        <button type='submit' className={primaryButtonClass} disabled={busy || uploading || !dirty}>
           <Icon name='save' size={18} />
           {busy ? t('account.saving') : t('account.save')}
         </button>
