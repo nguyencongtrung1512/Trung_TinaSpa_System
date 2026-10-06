@@ -7,11 +7,16 @@ import type { PortalRole } from '~/portal/types'
 export interface PortalSidebarProps {
   readonly role: PortalRole
   readonly onNavigate?: () => void
+  readonly className?: string
 }
 
-export function PortalSidebar({ role, onNavigate }: PortalSidebarProps) {
+export function PortalSidebar({ role, onNavigate, className }: PortalSidebarProps) {
   return (
-    <div className='flex min-h-0 flex-col gap-4 rounded-[28px] bg-white p-4 shadow-[0_16px_40px_rgba(190,24,96,0.05)]'>
+    <div
+      className={`flex h-full min-h-0 flex-col gap-4 rounded-[28px] bg-white p-4 shadow-[0_16px_40px_rgba(190,24,96,0.05)] ${
+        className ?? ''
+      }`}
+    >
       <nav aria-label='Mục làm việc' className='-mx-1 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-1'>
         {portalNavigation[role].map((group) => (
           <section key={group.label}>

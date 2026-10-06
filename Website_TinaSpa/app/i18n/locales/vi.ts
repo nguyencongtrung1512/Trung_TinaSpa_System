@@ -452,29 +452,42 @@ const vi = {
     motto: 'Đẹp hơn · Khỏe hơn · Hạnh phúc hơn',
     thanks: 'Cảm ơn {{name}}',
     confirmation:
-      'Lịch {{service}} vào {{date}} ({{time}}) đã được ghi nhận. Chúng tôi sẽ gọi {{phone}} để xác nhận cùng bạn.',
+      'Lịch hẹn tại {{branch}} vào {{date}} lúc {{time}} đã được ghi nhận. Chúng tôi sẽ gọi {{phone}} để xác nhận cùng bạn.',
+    code: 'Mã lịch hẹn: {{code}}',
+    openHours: 'Giờ nhận khách: {{open}} – {{close}}',
     fields: {
       name: 'Họ và tên',
       namePlaceholder: 'Nhập họ và tên của bạn',
       phone: 'Số điện thoại',
       phonePlaceholder: 'Nhập số điện thoại',
-      service: 'Dịch vụ quan tâm',
-      servicePlaceholder: 'Chọn dịch vụ',
+      branch: 'Khu vực',
+      branchPlaceholder: 'Chọn khu vực',
       date: 'Ngày mong muốn',
-      time: 'Khung giờ',
-      timePlaceholder: 'Chọn khung giờ',
+      time: 'Giờ hẹn',
+      timePlaceholder: 'Chọn giờ hẹn',
+      timeNeedBranch: 'Chọn khu vực trước',
+      timeNone: 'Hôm nay đã hết giờ nhận khách',
       note: 'Ghi chú',
       notePlaceholder: 'Để lại ghi chú (nếu có)'
     },
     errors: {
       name: 'Xin hãy cho biết họ và tên.',
       phone: 'Số điện thoại chưa đúng.',
-      service: 'Hãy chọn dịch vụ bạn quan tâm.',
+      branch: 'Hãy chọn khu vực bạn muốn đến.',
+      branchesLoad: 'Không tải được danh sách khu vực. Vui lòng tải lại trang.',
       date: 'Hãy chọn ngày mong muốn.',
       datePast: 'Ngày hẹn cần từ hôm nay trở đi.',
-      time: 'Hãy chọn khung giờ.'
+      time: 'Hãy chọn giờ hẹn.',
+      submit: 'Không gửi được lịch hẹn. Vui lòng thử lại.'
     },
     submit: 'Xác nhận đặt lịch',
+    submitting: 'Đang gửi...',
+    toast: {
+      sending: 'Đang gửi lịch hẹn...',
+      success: 'Đặt lịch thành công',
+      successMessage: 'Lịch lúc {{time}} ngày {{date}}. Chúng tôi sẽ gọi xác nhận sớm.',
+      error: 'Chưa đặt được lịch'
+    },
     contactNote: 'Chúng tôi sẽ liên hệ xác nhận lịch hẹn của bạn.'
   },
   products: {

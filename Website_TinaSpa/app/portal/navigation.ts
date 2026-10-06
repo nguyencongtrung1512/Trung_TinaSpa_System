@@ -29,9 +29,7 @@ export const portalActors: Record<PortalRole, PortalActor> = {
 
 export const portalActions: Record<PortalRole, readonly PortalAction[]> = {
   staff: [
-    { label: 'Khách hàng', icon: 'person_add', to: '/portal/staff/khach-hang', tone: 'outline' },
-    { label: 'Đặt lịch mới', icon: 'event', to: '/portal/staff/lich-hen', tone: 'outline' },
-    { label: 'Check-in nhanh', icon: 'bolt', to: '/portal/staff/lich-hen', tone: 'solid' }
+    { label: 'Check-in nhanh', icon: 'bolt', tone: 'solid' }
   ],
   manager: [
     { label: 'Duyệt bài viết', icon: 'rate_review', to: '/portal/manager/duyet-bai-viet', tone: 'outline' },
@@ -61,28 +59,10 @@ const staffNavigation: readonly PortalNavGroup[] = [
     label: 'Khách hàng & lịch',
     items: [
       {
-        label: 'Khách hàng của tôi',
-        icon: 'group',
-        to: '/portal/staff/khach-hang',
-        summary: 'Danh sách khách được phân công cho nhân viên chăm sóc.'
-      },
-      {
-        label: 'Lịch hẹn hôm nay',
+        label: 'Lịch hẹn',
         icon: 'calendar_month',
         to: '/portal/staff/lich-hen',
-        summary: 'Toàn bộ lịch trong ngày, gồm các khung giờ chưa hiện trên bàn làm việc.',
-        badge: 8
-      }
-    ]
-  },
-  {
-    label: 'Chăm sóc & phác đồ',
-    items: [
-      {
-        label: 'Lộ trình điều trị',
-        icon: 'timeline',
-        to: '/portal/staff/lo-trinh',
-        summary: 'Các bước đang thực hiện theo phác đồ của khách.'
+        summary: 'Lịch khách đặt qua website theo khu vực: xác nhận và chỉnh thời gian.'
       }
     ]
   },
@@ -132,8 +112,7 @@ const managerNavigation: readonly PortalNavGroup[] = [
         label: 'Lịch hẹn',
         icon: 'calendar_month',
         to: '/portal/manager/lich-hen',
-        summary: 'Toàn bộ lịch đặt của chi nhánh theo ngày và phòng.',
-        badge: 5
+        summary: 'Lịch khách đặt qua website theo ngày và khu vực.'
       },
       {
         label: 'Khách hàng',
@@ -206,6 +185,12 @@ const adminNavigation: readonly PortalNavGroup[] = [
         icon: 'dashboard',
         to: '/portal/admin',
         summary: 'Điểm vào cổng quản trị.'
+      },
+      {
+        label: 'Lịch hẹn',
+        icon: 'calendar_month',
+        to: '/portal/admin/lich-hen',
+        summary: 'Lịch khách đặt qua website theo ngày và khu vực.'
       }
     ]
   },
@@ -228,7 +213,7 @@ const adminNavigation: readonly PortalNavGroup[] = [
         label: 'Cấu hình',
         icon: 'settings',
         to: '/portal/admin/cau-hinh',
-        summary: 'Thiết lập dùng chung cho toàn bộ cổng.'
+        summary: 'Thiết lập dùng chung cho toàn bộ cổng, chương trình khuyến mãi.'
       }
     ]
   },

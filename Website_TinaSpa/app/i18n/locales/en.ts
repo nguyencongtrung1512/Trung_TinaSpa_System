@@ -457,29 +457,42 @@ const en: typeof vi = {
     motto: 'More beautiful · Healthier · Happier',
     thanks: 'Thank you, {{name}}',
     confirmation:
-      'Your {{service}} appointment on {{date}} ({{time}}) has been received. We will call {{phone}} to confirm with you.',
+      'Your appointment at {{branch}} on {{date}} at {{time}} has been received. We will call {{phone}} to confirm with you.',
+    code: 'Booking code: {{code}}',
+    openHours: 'Opening hours: {{open}} – {{close}}',
     fields: {
       name: 'Full name',
       namePlaceholder: 'Enter your full name',
       phone: 'Phone number',
       phonePlaceholder: 'Enter your phone number',
-      service: 'Service of interest',
-      servicePlaceholder: 'Choose a service',
+      branch: 'Location',
+      branchPlaceholder: 'Choose a location',
       date: 'Preferred date',
-      time: 'Time slot',
-      timePlaceholder: 'Choose a time slot',
+      time: 'Time',
+      timePlaceholder: 'Choose a time',
+      timeNeedBranch: 'Choose a location first',
+      timeNone: 'No more times available today',
       note: 'Notes',
       notePlaceholder: 'Leave a note (optional)'
     },
     errors: {
       name: 'Please tell us your full name.',
       phone: 'The phone number is not valid.',
-      service: 'Please choose a service you are interested in.',
+      branch: 'Please choose the location you want to visit.',
+      branchesLoad: 'Could not load locations. Please reload the page.',
       date: 'Please choose a preferred date.',
       datePast: 'The appointment date must be today or later.',
-      time: 'Please choose a time slot.'
+      time: 'Please choose a time.',
+      submit: 'Could not send your booking. Please try again.'
     },
     submit: 'Confirm booking',
+    submitting: 'Sending...',
+    toast: {
+      sending: 'Sending your booking...',
+      success: 'Booking received',
+      successMessage: '{{time}} on {{date}}. We will call you to confirm soon.',
+      error: 'Booking not sent'
+    },
     contactNote: 'We will contact you to confirm your appointment.'
   },
   products: {

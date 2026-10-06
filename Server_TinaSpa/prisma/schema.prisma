@@ -9,25 +9,28 @@ datasource db {
 
 /// role: ADMIN | MANAGER | STAFF | CUSTOMER (CHECK constraint "CK_User_role" trong DB)
 model User {
-  userAID      String   @id @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(20)
-  userID       String   @unique(map: "UQ_User_userID") @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(14)
-  phone        String   @unique(map: "UQ_User_phone") @db.VarChar(20)
-  passwordHash String   @db.VarChar(255)
-  fullName     String   @db.VarChar(100)
+  userAID      String    @id @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(20)
+  userID       String    @unique(map: "UQ_User_userID") @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(14)
+  phone        String    @unique(map: "UQ_User_phone") @db.VarChar(20)
+  passwordHash String    @db.VarChar(255)
+  fullName     String    @db.VarChar(100)
   avatar       String?
-  address      String?  @db.VarChar(255)
+  address      String?   @db.VarChar(255)
   dateOfBirth  DateTime? @db.Date
   /// gender: MALE | FEMALE | OTHER (CHECK "CK_User_gender")
-  gender       String?  @db.VarChar(10)
-  role         String   @default("CUSTOMER") @db.VarChar(20)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  createdByAID String?  @db.VarChar(20)
-  updatedAt    DateTime @default(now()) @updatedAt
-  updatedByAID String?  @db.VarChar(20)
+  gender       String?   @db.VarChar(10)
+  role         String    @default("CUSTOMER") @db.VarChar(20)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  createdByAID String?   @db.VarChar(20)
+  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedByAID String?   @db.VarChar(20)
   note         String?
 
-  refreshTokens RefreshToken[]
+  refreshTokens         RefreshToken[]
+  appointments          Appointment[]  @relation("AppointmentCustomer")
+  confirmedAppointments Appointment[]  @relation("AppointmentConfirmedBy")
+  servedAppointments    Appointment[]  @relation("AppointmentServedBy")
 
   @@index([role], map: "IX_User_role")
 }
@@ -54,32 +57,32 @@ model RefreshToken {
 
 /// status: ACTIVE | INACTIVE (CHECK "CK_ServiceCategory_status")
 model ServiceCategory {
-  serviceCategoryAID    String    @id @default(dbgenerated("\"generateBusinessID\"('ServiceCategory'::text)")) @db.VarChar(20)
-  serviceCategoryID     String    @unique(map: "UQ_ServiceCategory_serviceCategoryID") @default(dbgenerated("\"generateBusinessID\"('ServiceCategory'::text)")) @db.VarChar(14)
+  serviceCategoryAID String @id @default(dbgenerated("\"generateBusinessID\"('ServiceCategory'::text)")) @db.VarChar(20)
+  serviceCategoryID  String @unique(map: "UQ_ServiceCategory_serviceCategoryID") @default(dbgenerated("\"generateBusinessID\"('ServiceCategory'::text)")) @db.VarChar(14)
 
-  nameVietnamese        String    @db.VarChar(255)
-  nameEnglish           String?   @db.VarChar(255)
-  nameCambodia          String?   @db.VarChar(255)
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
 
-  slug                  String    @unique(map: "UQ_ServiceCategory_slug") @db.VarChar(50)
+  slug                  String  @unique(map: "UQ_ServiceCategory_slug") @db.VarChar(50)
   descriptionVietnamese String?
   descriptionEnglish    String?
   descriptionCambodia   String?
-  icon                  String?   @db.VarChar(50)
+  icon                  String? @db.VarChar(50)
   image                 String?
-  imageAlt              String?   @db.VarChar(255)
-  isFeatured            Boolean   @default(false)
-  isBookable            Boolean   @default(true)
-  sortOrder             Int       @default(0)
-  status                String    @default("ACTIVE") @db.VarChar(20)
+  imageAlt              String? @db.VarChar(255)
+  isFeatured            Boolean @default(false)
+  isBookable            Boolean @default(true)
+  sortOrder             Int     @default(0)
+  status                String  @default("ACTIVE") @db.VarChar(20)
 
-  createdAt             DateTime  @default(now())
-  createdByAID          String?   @db.VarChar(20)
-  updatedAt             DateTime  @default(now()) @updatedAt
-  updatedByAID          String?   @db.VarChar(20)
-  deletedAt             DateTime?
+  createdAt    DateTime  @default(now())
+  createdByAID String?   @db.VarChar(20)
+  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedByAID String?   @db.VarChar(20)
+  deletedAt    DateTime?
 
-  note                  String?
+  note String?
 
   services Service[]
 
@@ -88,41 +91,119 @@ model ServiceCategory {
 
 /// status: ACTIVE | INACTIVE (CHECK "CK_Service_status")
 model Service {
-  serviceAID                 String    @id @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(20)
-  serviceID                  String    @unique(map: "UQ_Service_serviceID") @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(14)
+  serviceAID String @id @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(20)
+  serviceID  String @unique(map: "UQ_Service_serviceID") @default(dbgenerated("\"generateBusinessID\"('Service'::text)")) @db.VarChar(14)
 
-  nameVietnamese             String    @db.VarChar(255)
-  nameEnglish                String?   @db.VarChar(255)
-  nameCambodia               String?   @db.VarChar(255)
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
 
-  serviceCategoryAID         String    @db.VarChar(20)
-  slug                       String    @unique(map: "UQ_Service_slug") @db.VarChar(150)
-  shortDescriptionVietnamese String?   @db.VarChar(500)
-  shortDescriptionEnglish    String?   @db.VarChar(500)
-  shortDescriptionCambodia   String?   @db.VarChar(500)
+  serviceCategoryAID         String  @db.VarChar(20)
+  slug                       String  @unique(map: "UQ_Service_slug") @db.VarChar(150)
+  shortDescriptionVietnamese String? @db.VarChar(500)
+  shortDescriptionEnglish    String? @db.VarChar(500)
+  shortDescriptionCambodia   String? @db.VarChar(500)
   descriptionVietnamese      String?
   descriptionEnglish         String?
   descriptionCambodia        String?
-  price                      Decimal   @db.Decimal(12, 0)
+  price                      Decimal @db.Decimal(12, 0)
   durationMinutes            Int?
   image                      String?
-  imageAlt                   String?   @db.VarChar(255)
-  isBookable                 Boolean   @default(true)
-  sortOrder                  Int       @default(0)
-  status                     String    @default("ACTIVE") @db.VarChar(20)
+  imageAlt                   String? @db.VarChar(255)
+  isBookable                 Boolean @default(true)
+  sortOrder                  Int     @default(0)
+  status                     String  @default("ACTIVE") @db.VarChar(20)
 
-  createdAt                  DateTime  @default(now())
-  createdByAID               String?   @db.VarChar(20)
-  updatedAt                  DateTime  @default(now()) @updatedAt
-  updatedByAID               String?   @db.VarChar(20)
-  deletedAt                  DateTime?
+  createdAt    DateTime  @default(now())
+  createdByAID String?   @db.VarChar(20)
+  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedByAID String?   @db.VarChar(20)
+  deletedAt    DateTime?
 
-  note                       String?
+  note String?
 
   serviceCategory ServiceCategory @relation(fields: [serviceCategoryAID], references: [serviceCategoryAID], onDelete: Restrict, map: "FK_Service_serviceCategoryAID")
 
   @@index([serviceCategoryAID, sortOrder], map: "IX_Service_serviceCategoryAID_sortOrder")
   @@index([status], map: "IX_Service_status")
+}
+
+/// Khu vực / cơ sở khách chọn khi đặt lịch.
+/// status: ACTIVE | INACTIVE (CHECK "CK_Branch_status")
+model Branch {
+  branchAID String @id @default(dbgenerated("\"generateBusinessID\"('Branch'::text)")) @db.VarChar(20)
+  branchID  String @unique(map: "UQ_Branch_branchID") @default(dbgenerated("\"generateBusinessID\"('Branch'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  slug              String  @unique(map: "UQ_Branch_slug") @db.VarChar(50)
+  addressVietnamese String? @db.VarChar(255)
+  addressEnglish    String? @db.VarChar(255)
+  addressCambodia   String? @db.VarChar(255)
+  hotline           String? @db.VarChar(100)
+  /// HH:mm, giờ nhận khách đầu tiên / cuối cùng trong ngày
+  openTime          String  @default("08:00") @db.VarChar(5)
+  closeTime         String  @default("20:00") @db.VarChar(5)
+  sortOrder         Int     @default(0)
+  status            String  @default("ACTIVE") @db.VarChar(20)
+
+  createdAt    DateTime  @default(now())
+  createdByAID String?   @db.VarChar(20)
+  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedByAID String?   @db.VarChar(20)
+  deletedAt    DateTime?
+
+  note String?
+
+  appointments Appointment[]
+
+  @@index([status, sortOrder], map: "IX_Branch_status_sortOrder")
+}
+
+/// status: PENDING | CONFIRMED | ARRIVED | IN_SERVICE | COMPLETED | CANCELLED (CHECK "CK_Appointment_status")
+model Appointment {
+  appointmentAID String @id @default(dbgenerated("\"generateBusinessID\"('Appointment'::text)")) @db.VarChar(20)
+  appointmentID  String @unique(map: "UQ_Appointment_appointmentID") @default(dbgenerated("\"generateBusinessID\"('Appointment'::text)")) @db.VarChar(14)
+
+  nameVietnamese String? @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  customerName     String    @db.VarChar(100)
+  phoneNumber      String    @db.VarChar(20)
+  customerAID      String?   @db.VarChar(20)
+  branchAID        String    @db.VarChar(20)
+  appointmentDate  DateTime  @db.Date
+  /// HH:mm
+  appointmentTime  String    @db.VarChar(5)
+  customerNote     String?
+  status           String    @default("PENDING") @db.VarChar(20)
+  confirmedAt      DateTime?
+  confirmedByAID   String?   @db.VarChar(20)
+  checkedInAt      DateTime?
+  serviceStartedAt DateTime?
+  completedAt      DateTime?
+  servedByAID      String?   @db.VarChar(20)
+  /// Dặn dò / ghi nhận của nhân viên sau buổi chăm sóc
+  serviceNote      String?
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  branch      Branch @relation(fields: [branchAID], references: [branchAID], onDelete: Restrict, map: "FK_Appointment_branchAID")
+  customer    User?  @relation("AppointmentCustomer", fields: [customerAID], references: [userAID], onDelete: SetNull, map: "FK_Appointment_customerAID")
+  confirmedBy User?  @relation("AppointmentConfirmedBy", fields: [confirmedByAID], references: [userAID], onDelete: SetNull, map: "FK_Appointment_confirmedByAID")
+  servedBy    User?  @relation("AppointmentServedBy", fields: [servedByAID], references: [userAID], onDelete: SetNull, map: "FK_Appointment_servedByAID")
+
+  @@index([appointmentDate, branchAID], map: "IX_Appointment_appointmentDate_branchAID")
+  @@index([phoneNumber], map: "IX_Appointment_phoneNumber")
+  @@index([customerAID], map: "IX_Appointment_customerAID")
 }
 
 model BusinessIdCounter {

@@ -7,9 +7,10 @@ import type { PortalRole } from '~/portal/types'
 
 export interface PortalUserCardProps {
   readonly role: PortalRole
+  readonly className?: string
 }
 
-export function PortalUserCard({ role }: PortalUserCardProps) {
+export function PortalUserCard({ role, className }: PortalUserCardProps) {
   const actor = portalActors[role]
   const session = useSession()
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ export function PortalUserCard({ role }: PortalUserCardProps) {
   }
 
   return (
-    <div className='flex items-center gap-3 border-t border-rose-soft/60 px-1 pt-4'>
+    <div className={`mt-auto shrink-0 flex items-center gap-3 border-t border-rose-soft/60 px-1 pt-4 ${className ?? ''}`}>
       <Link
         to={`/portal/${role}/ho-so`}
         title='Hồ sơ của tôi'

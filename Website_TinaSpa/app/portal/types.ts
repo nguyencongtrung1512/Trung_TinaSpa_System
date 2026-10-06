@@ -12,7 +12,8 @@ export interface PortalActor {
 export interface PortalAction {
   readonly label: string
   readonly icon: string
-  readonly to: string
+  /** Omit for features not built yet; clicking shows an "in development" toast. */
+  readonly to?: string
   readonly tone: 'outline' | 'solid'
 }
 

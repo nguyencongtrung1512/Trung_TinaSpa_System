@@ -21,7 +21,7 @@ export function PortalShell({ role, children }: PortalShellProps) {
 
       <div className='mx-auto flex max-w-[1500px] gap-4 px-4 py-4 sm:px-6'>
         <div className='hidden w-[248px] shrink-0 lg:block'>
-          <div className='sticky top-24 flex max-h-[calc(100dvh-7rem)] flex-col'>
+          <div className='sticky top-24 flex h-[calc(100dvh-7rem)] flex-col'>
             <PortalSidebar role={role} />
           </div>
         </div>

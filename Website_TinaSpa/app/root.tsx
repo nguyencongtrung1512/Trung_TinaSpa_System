@@ -4,6 +4,7 @@ import { MotionConfig } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 
 import type { Route } from './+types/root'
+import { ToastProvider } from './components/ui/toast-view'
 import { applyDetectedLanguage } from './i18n'
 import './app.css'
 
@@ -53,7 +54,9 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion='user'>
-      <Outlet />
+      <ToastProvider>
+        <Outlet />
+      </ToastProvider>
     </MotionConfig>
   )
 }

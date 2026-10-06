@@ -79,19 +79,43 @@ export function Header({ className = '' }: HeaderProps) {
 
         <div className='flex items-center gap-3'>
           <LanguageSwitcher />
-          <Link
-            to={accountName ? '/account' : '/login'}
-            aria-current={location.pathname === (accountName ? '/account' : '/login') ? 'page' : undefined}
-            className='hidden max-w-40 truncate rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic transition hover:bg-mist sm:inline-flex'
-          >
-            {accountName ?? <StableText i18nKey='common.login' />}
-          </Link>
+
+          {/* Chưa đăng nhập: hiện nút Đăng nhập. Đã đăng nhập: ẩn hoàn toàn */}
+          {!accountName ? (
+            <Link
+              to='/login'
+              aria-current={location.pathname === '/login' ? 'page' : undefined}
+              className='hidden whitespace-nowrap rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic transition hover:bg-mist sm:inline-flex'
+            >
+              <StableText i18nKey='common.login' />
+            </Link>
+          ) : null}
+
           <Link
             to='/booking'
             className='hidden whitespace-nowrap rounded-full bg-clinic px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep sm:inline-flex'
           >
             <StableText i18nKey='common.bookNow' />
           </Link>
+
+          {/* Đã đăng nhập: hiện tên tài khoản ở ngoài cùng bên phải */}
+          {accountName ? (
+            <Link
+              to='/account'
+              title={accountName}
+              aria-current={location.pathname === '/account' ? 'page' : undefined}
+              className='hidden max-w-44 items-center gap-2 rounded-full border border-clinic/30 bg-mist/60 py-1.5 pl-1.5 pr-4 text-sm font-semibold text-clinic transition hover:border-clinic hover:bg-mist sm:inline-flex'
+            >
+              <span
+                aria-hidden='true'
+                className='flex size-8 shrink-0 items-center justify-center rounded-full bg-clinic text-white'
+              >
+                <Icon name='person' className='text-[20px]' />
+              </span>
+              <span className='truncate'>{accountName}</span>
+            </Link>
+          ) : null}
+
           <button
             type='button'
             className='inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-ink lg:hidden'
@@ -121,15 +145,28 @@ export function Header({ className = '' }: HeaderProps) {
                 >
                   {item.label}
                 </Link>
-              );
+              )
             })}
-            <Link
-              to={accountName ? '/account' : '/login'}
-              onClick={() => setOpen(false)}
-              className='mt-2 inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic'
-            >
-              {accountName ?? t('common.login')}
-            </Link>
+
+            {/* Đã đăng nhập: chỉ hiện tên tài khoản, ẩn nút Đăng nhập */}
+            {accountName ? (
+              <Link
+                to='/account'
+                onClick={() => setOpen(false)}
+                aria-current={location.pathname === '/account' ? 'page' : undefined}
+                className='mt-2 inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic'
+              >
+                <span className='truncate'>{accountName}</span>
+              </Link>
+            ) : (
+              <Link
+                to='/login'
+                onClick={() => setOpen(false)}
+                className='mt-2 inline-flex min-h-11 items-center justify-center rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic'
+              >
+                {t('common.login')}
+              </Link>
+            )}
             <Link
               to='/booking'
               onClick={() => setOpen(false)}

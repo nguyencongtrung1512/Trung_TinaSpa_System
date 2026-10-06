@@ -144,7 +144,7 @@ export function ContactPage() {
 
               <div className='mt-8 flex flex-col items-start gap-3'>
                 <Link
-                  to='/booking'
+                  to={`/booking?branch=${branch.id}`}
                   className='inline-flex min-h-11 items-center gap-2 rounded-full bg-clinic px-6 py-2.5 text-xs font-bold tracking-wide text-white uppercase shadow-[0_10px_24px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
                 >
                   <Icon name='calendar_month' size={18} />

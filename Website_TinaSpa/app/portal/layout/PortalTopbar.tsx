@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { Icon } from '~/components/ui/Icon'
+import { useToast } from '~/components/ui/toast-view'
 import { portalActions, portalActors } from '~/portal/navigation'
 import type { PortalRole } from '~/portal/types'
 
@@ -11,6 +12,7 @@ export interface PortalTopbarProps {
 
 export function PortalTopbar({ role, menuOpen, onMenuToggle }: PortalTopbarProps) {
   const actor = portalActors[role]
+  const toast = useToast()
 
   return (
     <header className='sticky top-0 z-30 border-b border-rose-soft/50 bg-white/95 backdrop-blur'>
@@ -42,20 +44,32 @@ export function PortalTopbar({ role, menuOpen, onMenuToggle }: PortalTopbarProps
 
         <div className='ml-auto flex items-center gap-2'>
           <div className='hidden items-center gap-2 md:flex'>
-            {portalActions[role].map((action) => (
-              <Link
-                key={action.label}
-                to={action.to}
-                className={
-                  action.tone === 'solid'
-                    ? 'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-clinic px-4 py-2.5 text-xs font-bold tracking-wide whitespace-nowrap text-white uppercase shadow-[0_10px_24px_rgba(225,29,116,0.25)] transition hover:bg-clinic-deep'
-                    : 'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-soft bg-white px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-ink transition hover:border-clinic hover:text-clinic'
-                }
-              >
-                <Icon name={action.icon} size={18} />
-                {action.label}
-              </Link>
-            ))}
+            {portalActions[role].map((action) => {
+              const className =
+                action.tone === 'solid'
+                  ? 'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-clinic px-4 py-2.5 text-xs font-bold tracking-wide whitespace-nowrap text-white uppercase shadow-[0_10px_24px_rgba(225,29,116,0.25)] transition hover:bg-clinic-deep'
+                  : 'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-soft bg-white px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-ink transition hover:border-clinic hover:text-clinic'
+              const content = (
+                <>
+                  <Icon name={action.icon} size={18} />
+                  {action.label}
+                </>
+              )
+              return action.to ? (
+                <Link key={action.label} to={action.to} className={className}>
+                  {content}
+                </Link>
+              ) : (
+                <button
+                  key={action.label}
+                  type='button'
+                  className={className}
+                  onClick={() => toast.info(`${action.label} đang được phát triển`, 'Tính năng này sẽ sớm ra mắt.')}
+                >
+                  {content}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>

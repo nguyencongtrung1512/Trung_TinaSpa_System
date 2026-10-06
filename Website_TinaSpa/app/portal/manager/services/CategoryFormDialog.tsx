@@ -147,7 +147,7 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
     <PortalDialog
       open={open}
       title={category ? 'Sửa nhóm dịch vụ' : 'Thêm nhóm dịch vụ'}
-      description='Nhóm hiển thị thành tab lọc và khối menu ở trang Dịch vụ, card nổi bật ở trang chủ và ô "Dịch vụ quan tâm" khi đặt lịch.'
+      description='Nhóm hiển thị thành tab lọc và khối menu ở trang Dịch vụ, card nổi bật ở trang chủ và ô "Khu vực" khi đặt lịch.'
       onClose={onClose}
       onSubmit={() => void submit()}
       footer={
@@ -289,7 +289,7 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
         />
         <Toggle
           label='Cho phép đặt lịch'
-          description='Hiện trong ô "Dịch vụ quan tâm".'
+          description='Hiện trong ô "Khu vực".'
           checked={values.isBookable}
           onChange={(value) => update('isBookable', value)}
         />

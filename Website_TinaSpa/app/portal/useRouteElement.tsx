@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react'
 import { Navigate, Outlet, useParams, useRoutes, type RouteObject } from 'react-router'
 import { useSession } from '~/lib/auth'
+import { AppointmentsPage } from '~/portal/appointments/AppointmentsPage'
 import { PortalShell } from '~/portal/layout/PortalShell'
 import { ManagerOverviewPage } from '~/portal/manager/ManagerOverviewPage'
 import { ServiceCatalogPage } from '~/portal/manager/services/ServiceCatalogPage'
@@ -27,7 +28,9 @@ const homePages: Record<PortalRole, ReactNode> = {
 }
 
 const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
+  staff: [{ path: 'lich-hen', element: <AppointmentsPage role='staff' /> }],
   manager: [
+    { path: 'lich-hen', element: <AppointmentsPage role='manager' /> },
     { path: 'dich-vu', element: <ServiceCatalogPage role='manager' /> },
     {
       path: 'khach-hang',
@@ -56,6 +59,7 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
     }
   ],
   admin: [
+    { path: 'lich-hen', element: <AppointmentsPage role='admin' /> },
     { path: 'dich-vu', element: <ServiceCatalogPage role='admin' /> },
     {
       path: 'nguoi-dung',

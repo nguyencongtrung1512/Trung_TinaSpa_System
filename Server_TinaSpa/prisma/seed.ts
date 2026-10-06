@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedBranches } from './branch.seed.js';
 import { seedServiceCatalog } from './service-catalog.seed.js';
 
 const prisma = new PrismaClient();
@@ -30,6 +31,7 @@ async function seedAdmin() {
 try {
   await seedAdmin();
   await seedServiceCatalog(prisma);
+  await seedBranches(prisma);
 } finally {
   await prisma.$disconnect();
 }

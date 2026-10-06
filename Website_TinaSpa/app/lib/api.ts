@@ -29,6 +29,13 @@ const apiMessages: Record<string, string> = {
   'Unsupported file extension': 'Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.',
   'Unsupported content type': 'Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.',
   'Object not found': 'Không tìm thấy tệp.',
+  'Branch not found': 'Khu vực không tồn tại hoặc đã ngừng nhận lịch.',
+  'Appointment not found': 'Không tìm thấy lịch hẹn.',
+  'Appointment already exists on this date': 'Số điện thoại này đã có lịch hẹn trong ngày đã chọn.',
+  'Appointment time has passed': 'Giờ hẹn đã qua, vui lòng chọn thời gian khác.',
+  'Appointment time is outside opening hours': 'Giờ hẹn nằm ngoài giờ mở cửa của khu vực.',
+  'Only pending appointments can be confirmed': 'Chỉ xác nhận được lịch đang chờ xác nhận.',
+  'Customer has already checked in': 'Khách đã check-in, không thể đổi thời gian hoặc khu vực.',
   Unauthorized: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
 }
 

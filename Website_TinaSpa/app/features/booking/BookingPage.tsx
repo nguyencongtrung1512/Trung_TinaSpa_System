@@ -1,15 +1,25 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { useServices } from '~/data/home'
 import { Icon } from '~/components/ui/Icon'
 import { StableText } from '~/components/ui/StableText'
-
-const timeSlots = ['08:00 – 10:00', '10:00 – 12:00', '13:00 – 15:00', '15:00 – 17:00', '17:00 – 20:00'] as const
+import { useToast } from '~/components/ui/toast-view'
+import { currentLanguage } from '~/i18n'
+import {
+  bookingApi,
+  branchAddress,
+  branchName,
+  localDateIso,
+  localTime,
+  timeOptions,
+  type Branch,
+  type BookingReceipt
+} from '~/lib/booking'
 
 interface BookingValues {
   readonly name: string
   readonly phone: string
-  readonly service: string
+  readonly branch: string
   readonly date: string
   readonly time: string
   readonly note: string
@@ -18,7 +28,7 @@ interface BookingValues {
 const emptyValues: BookingValues = {
   name: '',
   phone: '',
-  service: '',
+  branch: '',
   date: '',
   time: '',
   note: ''
@@ -26,50 +36,113 @@ const emptyValues: BookingValues = {
 
 type FieldName = keyof BookingValues
 
-function todayIso() {
-  const now = new Date()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${now.getFullYear()}-${month}-${day}`
-}
-
 function validate(values: BookingValues) {
   const errors: Partial<Record<FieldName, string>> = {}
   if (values.name.trim().length < 2) errors.name = 'booking.errors.name'
   if (!/^(0|\+84)\d{8,10}$/.test(values.phone.replaceAll(/\s/g, ''))) {
     errors.phone = 'booking.errors.phone'
   }
-  if (!values.service) errors.service = 'booking.errors.service'
+  if (!values.branch) errors.branch = 'booking.errors.branch'
   if (!values.date) errors.date = 'booking.errors.date'
-  else if (values.date < todayIso()) errors.date = 'booking.errors.datePast'
+  else if (values.date < localDateIso()) errors.date = 'booking.errors.datePast'
   if (!values.time) errors.time = 'booking.errors.time'
   return errors
 }
 
 export function BookingPage() {
-  const { t } = useTranslation()
-  const services = useServices()
+  const { t, i18n } = useTranslation()
+  const language = i18n.resolvedLanguage ?? currentLanguage()
+  const [searchParams] = useSearchParams()
+  const [branches, setBranches] = useState<Branch[]>([])
+  const [branchesError, setBranchesError] = useState(false)
   const [values, setValues] = useState<BookingValues>(emptyValues)
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({})
-  const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const toast = useToast()
+  const [receipt, setReceipt] = useState<BookingReceipt | null>(null)
+
+  useEffect(() => {
+    let active = true
+    bookingApi
+      .listBranches()
+      .then((items) => {
+        if (!active) return
+        setBranches(items)
+        const preset =
+          items.find((item) => item.slug === searchParams.get('branch')) ?? (items.length === 1 ? items[0] : undefined)
+        if (preset) setValues((current) => (current.branch ? current : { ...current, branch: preset.branchID }))
+      })
+      .catch(() => {
+        if (active) setBranchesError(true)
+      })
+    return () => {
+      active = false
+    }
+  }, [searchParams])
+
+  const selectedBranch = branches.find((item) => item.branchID === values.branch)
+
+  const availableTimes = useMemo(() => {
+    if (!selectedBranch) return []
+    const times = timeOptions(selectedBranch.openTime, selectedBranch.closeTime)
+    if (values.date !== localDateIso()) return times
+    const now = localTime()
+    return times.filter((time) => time > now)
+  }, [selectedBranch, values.date])
 
   function update(field: FieldName, value: string) {
-    setValues((current) => ({ ...current, [field]: value }))
+    setValues((current) => {
+      const next = { ...current, [field]: value }
+      return field === 'branch' || field === 'date' ? { ...next, time: '' } : next
+    })
     setErrors((current) => ({ ...current, [field]: undefined }))
   }
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextErrors = validate(values)
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length === 0) setSubmitted(true)
+    if (Object.keys(nextErrors).length > 0) return
+
+    setSubmitting(true)
+    const toastID = toast.loading(
+      t('booking.toast.sending'),
+      selectedBranch ? branchName(selectedBranch, language) : undefined
+    )
+    try {
+      const note = values.note.trim()
+      const created = await bookingApi.create({
+        customerName: values.name.trim(),
+        phoneNumber: values.phone.replaceAll(/\s/g, ''),
+        branchID: values.branch,
+        appointmentDate: values.date,
+        appointmentTime: values.time,
+        ...(note ? { customerNote: note } : {})
+      })
+      setReceipt(created)
+      toast.update(toastID, {
+        type: 'success',
+        title: t('booking.toast.success'),
+        message: t('booking.toast.successMessage', {
+          time: created.appointmentTime,
+          date: created.appointmentDate.split('-').reverse().join('/')
+        })
+      })
+    } catch (error) {
+      toast.update(toastID, {
+        type: 'error',
+        title: t('booking.toast.error'),
+        message: error instanceof Error ? error.message : t('booking.errors.submit')
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const errorText = (field: FieldName) => {
     const key = errors[field]
     return key ? t(key) : undefined
   }
-  const serviceTitle = services.find((item) => item.id === values.service)?.title ?? values.service
 
   return (
     <section className='booking-page relative overflow-hidden bg-[#FFF8FA]'>
@@ -88,36 +161,40 @@ export function BookingPage() {
             Spa & Aesthetics
           </p>
 
-          <h1 className='mt-5 font-["Cormorant_Garamond",serif] text-5xl leading-none font-semibold tracking-[0.08em] text-[#3A2930] uppercase sm:text-6xl lg:text-7xl'>
+          <h1 className='font-["Cormorant_Garamond",serif] text-5xl leading-none font-semibold tracking-[0.08em] text-[#3A2930] uppercase sm:text-6xl lg:text-7xl'>
             <StableText i18nKey='booking.title' block />
           </h1>
-          <p className='mt-3 font-["Dancing_Script",cursive] text-4xl leading-tight text-[#D4145A] sm:text-5xl'>
+          <p className='font-["Dancing_Script",cursive] text-4xl leading-none text-[#D4145A] sm:text-5xl'>
             <StableText i18nKey='booking.tagline' block />
           </p>
-          <p className='mt-5 max-w-xl text-sm leading-7 text-[#3A2930]/75'>
+          {/* <p className='mt-5 max-w-xl text-sm leading-7 text-[#3A2930]/75'>
             <StableText i18nKey='booking.intro' block />
             <StableText i18nKey='booking.introMore' block className='mt-1' />
-          </p>
-          <p className='mt-5 font-["Dancing_Script",cursive] text-2xl text-[#E83E78] sm:text-[1.85rem]'>
+          </p> */}
+          {/* <p className='mt-5 font-["Dancing_Script",cursive] text-2xl text-[#E83E78] sm:text-[1.85rem]'>
             <StableText i18nKey='booking.motto' block />
-          </p>
+          </p> */}
 
-          {submitted ? (
+          {receipt ? (
             <div className='mt-14 max-w-lg'>
               <p className='font-["Dancing_Script",cursive] text-4xl text-[#D4145A]'>
-                {t('booking.thanks', { name: values.name.trim() })}
+                {t('booking.thanks', { name: receipt.customerName })}
               </p>
               <p className='mt-4 text-sm leading-7 text-[#3A2930]/80'>
                 {t('booking.confirmation', {
-                  service: serviceTitle.toLowerCase(),
-                  date: values.date.split('-').reverse().join('/'),
-                  time: values.time,
+                  branch: branchName(receipt.branch, language),
+                  date: receipt.appointmentDate.split('-').reverse().join('/'),
+                  time: receipt.appointmentTime,
                   phone: values.phone.trim()
                 })}
               </p>
+              <p className='mt-3 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-xs font-semibold text-[#3A2930]'>
+                <Icon name='confirmation_number' size={16} className='text-[#D4145A]' />
+                {t('booking.code', { code: receipt.appointmentID })}
+              </p>
             </div>
           ) : (
-            <form className='mt-12' onSubmit={onSubmit} noValidate>
+            <form className='mt-12' onSubmit={(event) => void onSubmit(event)} noValidate>
               <div className='grid items-stretch gap-y-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-0 lg:gap-y-0'>
                 <div className='flex flex-col gap-10 lg:pr-10'>
                   <UnderlineField
@@ -157,23 +234,24 @@ export function BookingPage() {
                     />
                   </UnderlineField>
                   <UnderlineField
-                    id='booking-service'
-                    label={t('booking.fields.service')}
-                    icon='spa'
-                    error={errorText('service')}
+                    id='booking-branch'
+                    label={t('booking.fields.branch')}
+                    icon='location_on'
+                    error={errorText('branch') ?? (branchesError ? t('booking.errors.branchesLoad') : undefined)}
+                    hint={selectedBranch ? (branchAddress(selectedBranch, language) ?? undefined) : undefined}
                   >
                     <select
-                      id='booking-service'
-                      name='service'
-                      value={values.service}
-                      aria-invalid={Boolean(errors.service)}
-                      onChange={(event) => update('service', event.target.value)}
-                      className={`${inputClass} appearance-none ${values.service ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
+                      id='booking-branch'
+                      name='branch'
+                      value={values.branch}
+                      aria-invalid={Boolean(errors.branch)}
+                      onChange={(event) => update('branch', event.target.value)}
+                      className={`${inputClass} appearance-none ${values.branch ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
                     >
-                      <option value=''>{t('booking.fields.servicePlaceholder')}</option>
-                      {services.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.title}
+                      <option value=''>{t('booking.fields.branchPlaceholder')}</option>
+                      {branches.map((item) => (
+                        <option key={item.branchID} value={item.branchID}>
+                          {branchName(item, language)}
                         </option>
                       ))}
                     </select>
@@ -198,7 +276,7 @@ export function BookingPage() {
                       id='booking-date'
                       name='date'
                       type='date'
-                      min={todayIso()}
+                      min={localDateIso()}
                       value={values.date}
                       aria-invalid={Boolean(errors.date)}
                       onChange={(event) => update('date', event.target.value)}
@@ -210,17 +288,29 @@ export function BookingPage() {
                     label={t('booking.fields.time')}
                     icon='schedule'
                     error={errorText('time')}
+                    hint={
+                      selectedBranch
+                        ? t('booking.openHours', { open: selectedBranch.openTime, close: selectedBranch.closeTime })
+                        : undefined
+                    }
                   >
                     <select
                       id='booking-time'
                       name='time'
                       value={values.time}
+                      disabled={!selectedBranch}
                       aria-invalid={Boolean(errors.time)}
                       onChange={(event) => update('time', event.target.value)}
-                      className={`${inputClass} appearance-none ${values.time ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
+                      className={`${inputClass} appearance-none disabled:cursor-not-allowed ${values.time ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
                     >
-                      <option value=''>{t('booking.fields.timePlaceholder')}</option>
-                      {timeSlots.map((slot) => (
+                      <option value=''>
+                        {selectedBranch
+                          ? availableTimes.length > 0
+                            ? t('booking.fields.timePlaceholder')
+                            : t('booking.fields.timeNone')
+                          : t('booking.fields.timeNeedBranch')}
+                      </option>
+                      {availableTimes.map((slot) => (
                         <option key={slot} value={slot}>
                           {slot}
                         </option>
@@ -237,6 +327,7 @@ export function BookingPage() {
                     <input
                       id='booking-note'
                       name='note'
+                      maxLength={1000}
                       placeholder={t('booking.fields.notePlaceholder')}
                       value={values.note}
                       onChange={(event) => update('note', event.target.value)}
@@ -249,10 +340,11 @@ export function BookingPage() {
               <div className='mt-12 flex flex-col items-center'>
                 <button
                   type='submit'
-                  className='inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#D4145A] px-8 py-3 text-[13px] font-semibold tracking-[0.14em] text-white uppercase transition duration-300 ease-out hover:-translate-y-px hover:bg-[#C90F50]'
+                  disabled={submitting}
+                  className='inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#D4145A] px-8 py-3 text-[13px] font-semibold tracking-[0.14em] text-white uppercase transition duration-300 ease-out hover:-translate-y-px hover:bg-[#C90F50] disabled:cursor-wait disabled:opacity-70'
                 >
                   <Icon name='calendar_month' size={18} className='text-white' />
-                  <StableText i18nKey='booking.submit' />
+                  {submitting ? t('booking.submitting') : <StableText i18nKey='booking.submit' />}
                   <span aria-hidden>→</span>
                 </button>
                 <p className='mt-4 flex items-center gap-2 text-xs text-[#8A6573]'>
@@ -276,12 +368,14 @@ function UnderlineField({
   label,
   icon,
   error,
+  hint,
   children
 }: {
   readonly id: string
   readonly label: string
   readonly icon: string
   readonly error?: string
+  readonly hint?: string
   readonly children: ReactNode
 }) {
   return (
@@ -293,7 +387,11 @@ function UnderlineField({
         <Icon name={icon} size={18} className='shrink-0 text-[#D4145A]' />
         {children}
       </div>
-      {error ? <p className='mt-1.5 text-xs text-[#D4145A]'>{error}</p> : null}
+      {error ? (
+        <p className='mt-1.5 text-xs text-[#D4145A]'>{error}</p>
+      ) : hint ? (
+        <p className='mt-1.5 text-xs text-[#8A6573]'>{hint}</p>
+      ) : null}
     </div>
   )
 }
