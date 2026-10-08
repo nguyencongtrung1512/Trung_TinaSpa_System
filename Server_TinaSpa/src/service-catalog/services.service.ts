@@ -120,12 +120,15 @@ export class ServicesService {
   }
 
   async create(dto: CreateServiceDto, userAID: string): Promise<ServiceResponse> {
-    const { serviceCategoryID, ...data } = dto;
+    const { serviceCategoryID, sortOrder, ...data } = dto;
     const category = await this.categories.getRecord(serviceCategoryID);
+    const nextSortOrder =
+      sortOrder ?? (await this.nextSortOrder(category.serviceCategoryAID));
     try {
       const service = await this.prisma.service.create({
         data: {
           ...data,
+          sortOrder: nextSortOrder,
           serviceCategoryAID: category.serviceCategoryAID,
           createdByAID: userAID,
           updatedByAID: userAID,
@@ -146,16 +149,24 @@ export class ServicesService {
     dto: UpdateServiceDto,
     userAID: string,
   ): Promise<ServiceResponse> {
-    await this.getRecord(serviceID);
-    const { serviceCategoryID, ...data } = dto;
+    const current = await this.getRecord(serviceID);
+    const { serviceCategoryID, sortOrder, ...data } = dto;
     const category = serviceCategoryID
       ? await this.categories.getRecord(serviceCategoryID)
       : undefined;
+    const movedTo =
+      category && category.serviceCategoryAID !== current.serviceCategoryAID
+        ? category
+        : undefined;
+    const nextSortOrder =
+      sortOrder ??
+      (movedTo ? await this.nextSortOrder(movedTo.serviceCategoryAID) : undefined);
     try {
       const service = await this.prisma.service.update({
         where: { serviceID },
         data: {
           ...data,
+          ...(nextSortOrder !== undefined ? { sortOrder: nextSortOrder } : {}),
           ...(category ? { serviceCategoryAID: category.serviceCategoryAID } : {}),
           updatedByAID: userAID,
         },
@@ -176,6 +187,14 @@ export class ServicesService {
       where: { serviceAID: service.serviceAID },
       data: { deletedAt: new Date(), updatedByAID: userAID },
     });
+  }
+
+  private async nextSortOrder(serviceCategoryAID: string): Promise<number> {
+    const result = await this.prisma.service.aggregate({
+      where: { serviceCategoryAID, deletedAt: null },
+      _max: { sortOrder: true },
+    });
+    return (result._max.sortOrder ?? 0) + 1;
   }
 
   private async getRecord(serviceID: string): Promise<Service> {

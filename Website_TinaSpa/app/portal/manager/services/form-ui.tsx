@@ -163,53 +163,6 @@ export function Toggle({
   )
 }
 
-export const formLanguages = [
-  { code: 'vi', label: 'Tiếng Việt', suffix: 'Vietnamese' },
-  { code: 'en', label: 'English', suffix: 'English' },
-  { code: 'km', label: 'ភាសាខ្មែរ', suffix: 'Cambodia' }
-] as const
-
-export type FormLanguage = (typeof formLanguages)[number]
-
-export function LanguageTabs({
-  value,
-  onChange,
-  missing = []
-}: {
-  readonly value: FormLanguage['code']
-  readonly onChange: (code: FormLanguage['code']) => void
-  readonly missing?: readonly FormLanguage['code'][]
-}) {
-  return (
-    <div
-      role='tablist'
-      aria-label='Ngôn ngữ nội dung'
-      className='inline-flex rounded-full border border-rose-soft bg-mist p-1'
-    >
-      {formLanguages.map((language) => {
-        const active = language.code === value
-        return (
-          <button
-            key={language.code}
-            type='button'
-            role='tab'
-            aria-selected={active}
-            onClick={() => onChange(language.code)}
-            className={`relative rounded-full px-4 py-1.5 text-xs font-bold transition ${
-              active ? 'bg-white text-clinic-deep shadow-sm' : 'text-ink/60 hover:text-ink'
-            }`}
-          >
-            {language.label}
-            {missing.includes(language.code) ? (
-              <span className='absolute top-1 right-1.5 size-1.5 rounded-full bg-clinic' aria-label='Có lỗi' />
-            ) : null}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 export function ConfirmDialog({
   open,
   title,

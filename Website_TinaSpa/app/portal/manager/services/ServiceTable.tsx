@@ -61,14 +61,7 @@ export function ServiceTable({
                       {service.shortDescriptionVietnamese}
                     </p>
                   ) : null}
-                  <p className='mt-1 flex items-center gap-2 text-[11px] text-muted/80'>
-                    <span className='font-mono'>{service.slug}</span>
-                    {service.isBookable ? null : (
-                      <span className='rounded-full bg-amber-50 px-2 py-0.5 font-bold text-amber-700'>
-                        Không đặt lịch
-                      </span>
-                    )}
-                  </p>
+                  <p className='mt-1 font-mono text-[11px] text-muted/80'>{service.slug}</p>
                 </td>
                 {showCategory ? <td className='px-4 py-3 text-ink/80'>{service.category?.nameVietnamese}</td> : null}
                 <td className='px-4 py-3 text-right font-bold whitespace-nowrap text-ink'>

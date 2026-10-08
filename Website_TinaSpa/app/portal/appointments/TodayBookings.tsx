@@ -40,7 +40,7 @@ export function TodayBookings({
           Khách đặt hẹn website — chờ xác nhận
           <span className='text-sm font-medium text-muted'>{loading ? '…' : `${items.length} lịch`}</span>
         </h2>
-        <Link to={`/portal/${role}/lich-hen`} className='text-sm font-semibold text-clinic'>
+        <Link to={`/portal/${role}/appointments`} className='text-sm font-semibold text-clinic'>
           Quản lý lịch hẹn →
         </Link>
       </div>

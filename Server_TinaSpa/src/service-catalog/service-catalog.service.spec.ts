@@ -10,7 +10,10 @@ describe('Service catalog', () => {
   let servicesService: ServicesService;
   let prisma: {
     serviceCategory: Record<'findMany' | 'findFirst' | 'create' | 'update', ReturnType<typeof vi.fn>>;
-    service: Record<'findMany' | 'findFirst' | 'create' | 'update' | 'count', ReturnType<typeof vi.fn>>;
+    service: Record<
+      'findMany' | 'findFirst' | 'create' | 'update' | 'count' | 'aggregate',
+      ReturnType<typeof vi.fn>
+    >;
   };
 
   const now = new Date();
@@ -56,8 +59,6 @@ describe('Service catalog', () => {
     descriptionCambodia: null,
     price: new Prisma.Decimal(390000),
     durationMinutes: null,
-    image: null,
-    imageAlt: null,
     isBookable: true,
     sortOrder: 1,
     status: 'ACTIVE',
@@ -90,6 +91,7 @@ describe('Service catalog', () => {
         create: vi.fn(),
         update: vi.fn(),
         count: vi.fn(),
+        aggregate: vi.fn(),
       },
     };
 
@@ -170,11 +172,13 @@ describe('Service catalog', () => {
   describe('ServicesService', () => {
     it('creates a service under the category resolved from its Business ID', async () => {
       prisma.serviceCategory.findFirst.mockResolvedValue(category);
+      prisma.service.aggregate.mockResolvedValue({ _max: { sortOrder: 3 } });
       prisma.service.create.mockResolvedValue({ ...service(), serviceCategory: category });
 
       const result = await servicesService.create(
         {
           nameVietnamese: 'Perfectly Polished',
+          nameEnglish: 'Perfectly Polished',
           serviceCategoryID: category.serviceCategoryID,
           slug: 'perfectly-polished',
           price: 390000,
@@ -186,6 +190,7 @@ describe('Service catalog', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             serviceCategoryAID: category.serviceCategoryAID,
+            sortOrder: 4,
             createdByAID: 'admin-aid',
             updatedByAID: 'admin-aid',
           }),
@@ -200,7 +205,13 @@ describe('Service catalog', () => {
 
       await expect(
         servicesService.create(
-          { nameVietnamese: 'X', serviceCategoryID: 'missing', slug: 'x', price: 1 },
+          {
+            nameVietnamese: 'X',
+            nameEnglish: 'X',
+            serviceCategoryID: 'missing',
+            slug: 'x',
+            price: 1,
+          },
           'admin-aid',
         ),
       ).rejects.toBeInstanceOf(NotFoundException);

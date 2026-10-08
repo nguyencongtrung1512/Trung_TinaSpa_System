@@ -24,8 +24,6 @@ export type ServiceResponse = {
   descriptionCambodia: string | null;
   price: number;
   durationMinutes: number | null;
-  image: string | null;
-  imageAlt: string | null;
   isBookable: boolean;
   sortOrder: number;
   status: string;
@@ -94,8 +92,6 @@ export function toServiceResponse(
     descriptionCambodia: service.descriptionCambodia,
     price: service.price.toNumber(),
     durationMinutes: service.durationMinutes,
-    image: service.image,
-    imageAlt: service.imageAlt,
     isBookable: service.isBookable,
     sortOrder: service.sortOrder,
     status: service.status,

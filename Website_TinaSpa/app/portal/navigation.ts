@@ -32,14 +32,14 @@ export const portalActions: Record<PortalRole, readonly PortalAction[]> = {
     { label: 'Check-in nhanh', icon: 'bolt', tone: 'solid' }
   ],
   manager: [
-    { label: 'Duyệt bài viết', icon: 'rate_review', to: '/portal/manager/duyet-bai-viet', tone: 'outline' },
-    { label: 'Nhân viên', icon: 'badge', to: '/portal/manager/nhan-vien', tone: 'outline' },
-    { label: 'Báo cáo doanh thu', icon: 'monitoring', to: '/portal/manager/doanh-thu', tone: 'solid' }
+    { label: 'Duyệt bài viết', icon: 'rate_review', to: '/portal/manager/article-review', tone: 'outline' },
+    { label: 'Nhân viên', icon: 'badge', to: '/portal/manager/staff', tone: 'outline' },
+    { label: 'Báo cáo doanh thu', icon: 'monitoring', to: '/portal/manager/revenue', tone: 'solid' }
   ],
   admin: [
-    { label: 'Người dùng', icon: 'manage_accounts', to: '/portal/admin/nguoi-dung', tone: 'outline' },
-    { label: 'Chi nhánh', icon: 'store', to: '/portal/admin/chi-nhanh', tone: 'outline' },
-    { label: 'Cấu hình', icon: 'settings', to: '/portal/admin/cau-hinh', tone: 'solid' }
+    { label: 'Người dùng', icon: 'manage_accounts', to: '/portal/admin/users', tone: 'outline' },
+    { label: 'Chi nhánh', icon: 'store', to: '/portal/admin/branches', tone: 'outline' },
+    { label: 'Cấu hình', icon: 'settings', to: '/portal/admin/settings', tone: 'solid' }
   ]
 }
 
@@ -61,7 +61,7 @@ const staffNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Lịch hẹn',
         icon: 'calendar_month',
-        to: '/portal/staff/lich-hen',
+        to: '/portal/staff/appointments',
         summary: 'Lịch khách đặt qua website theo khu vực: xác nhận và chỉnh thời gian.'
       }
     ]
@@ -72,26 +72,26 @@ const staffNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Ghi nhận kết quả',
         icon: 'photo_camera',
-        to: '/portal/staff/ket-qua',
+        to: '/portal/staff/results',
         summary: 'Ảnh và ghi chú sau buổi chăm sóc.',
         badge: 'dot'
       },
       {
         label: 'Bài viết của tôi',
         icon: 'article',
-        to: '/portal/staff/bai-viet',
+        to: '/portal/staff/articles',
         summary: 'Bản thảo kiến thức gửi quản lý duyệt.'
       },
       {
         label: 'Danh mục dịch vụ',
         icon: 'spa',
-        to: '/portal/staff/dich-vu',
+        to: '/portal/staff/services',
         summary: 'Dịch vụ đang mở tại chi nhánh.'
       },
       {
         label: 'Sản phẩm tư vấn',
         icon: 'inventory_2',
-        to: '/portal/staff/san-pham',
+        to: '/portal/staff/products',
         summary: 'Sản phẩm dùng khi kê đơn chăm sóc tại nhà.'
       }
     ]
@@ -111,19 +111,19 @@ const managerNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Lịch hẹn',
         icon: 'calendar_month',
-        to: '/portal/manager/lich-hen',
+        to: '/portal/manager/appointments',
         summary: 'Lịch khách đặt qua website theo ngày và khu vực.'
       },
       {
         label: 'Khách hàng',
         icon: 'group',
-        to: '/portal/manager/khach-hang',
+        to: '/portal/manager/customers',
         summary: 'Tài khoản khách hàng đã đăng ký trên website.'
       },
       {
         label: 'Nhân viên',
         icon: 'badge',
-        to: '/portal/manager/nhan-vien',
+        to: '/portal/manager/staff',
         summary: 'Tài khoản chuyên viên và nhân viên của chi nhánh.'
       }
     ]
@@ -134,19 +134,19 @@ const managerNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Dịch vụ & Menu trị liệu',
         icon: 'spa',
-        to: '/portal/manager/dich-vu',
+        to: '/portal/manager/services',
         summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
       },
       {
         label: 'Sản phẩm',
         icon: 'inventory_2',
-        to: '/portal/manager/san-pham',
+        to: '/portal/manager/products',
         summary: 'Sản phẩm bán lẻ và tồn kho chi nhánh.'
       },
       {
         label: 'Lộ trình chăm sóc',
         icon: 'healing',
-        to: '/portal/manager/lo-trinh',
+        to: '/portal/manager/treatments',
         summary: 'Phác đồ đang áp dụng và khách theo từng lộ trình.'
       }
     ]
@@ -157,7 +157,7 @@ const managerNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Duyệt bài viết',
         icon: 'rate_review',
-        to: '/portal/manager/duyet-bai-viet',
+        to: '/portal/manager/article-review',
         summary: 'Bài viết kiến thức nhân viên gửi lên chờ duyệt.',
         badge: '3 chờ'
       }
@@ -169,7 +169,7 @@ const managerNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Doanh thu chi nhánh',
         icon: 'payments',
-        to: '/portal/manager/doanh-thu',
+        to: '/portal/manager/revenue',
         summary: 'Doanh thu theo ngày, dịch vụ và chuyên viên.'
       }
     ]
@@ -189,7 +189,7 @@ const adminNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Lịch hẹn',
         icon: 'calendar_month',
-        to: '/portal/admin/lich-hen',
+        to: '/portal/admin/appointments',
         summary: 'Lịch khách đặt qua website theo ngày và khu vực.'
       }
     ]
@@ -200,19 +200,19 @@ const adminNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Người dùng',
         icon: 'manage_accounts',
-        to: '/portal/admin/nguoi-dung',
+        to: '/portal/admin/users',
         summary: 'Tài khoản nhân viên, quản lý và quản trị.'
       },
       {
         label: 'Chi nhánh',
         icon: 'store',
-        to: '/portal/admin/chi-nhanh',
+        to: '/portal/admin/branches',
         summary: 'Danh sách chi nhánh đang hoạt động.'
       },
       {
         label: 'Cấu hình',
         icon: 'settings',
-        to: '/portal/admin/cau-hinh',
+        to: '/portal/admin/settings',
         summary: 'Thiết lập dùng chung cho toàn bộ cổng, chương trình khuyến mãi.'
       }
     ]
@@ -223,7 +223,7 @@ const adminNavigation: readonly PortalNavGroup[] = [
       {
         label: 'Dịch vụ & Menu trị liệu',
         icon: 'spa',
-        to: '/portal/admin/dich-vu',
+        to: '/portal/admin/services',
         summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
       }
     ]

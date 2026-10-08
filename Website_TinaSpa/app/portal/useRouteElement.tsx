@@ -28,12 +28,12 @@ const homePages: Record<PortalRole, ReactNode> = {
 }
 
 const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
-  staff: [{ path: 'lich-hen', element: <AppointmentsPage role='staff' /> }],
+  staff: [{ path: 'appointments', element: <AppointmentsPage role='staff' /> }],
   manager: [
-    { path: 'lich-hen', element: <AppointmentsPage role='manager' /> },
-    { path: 'dich-vu', element: <ServiceCatalogPage role='manager' /> },
+    { path: 'appointments', element: <AppointmentsPage role='manager' /> },
+    { path: 'services', element: <ServiceCatalogPage role='manager' /> },
     {
-      path: 'khach-hang',
+      path: 'customers',
       element: (
         <UserListPage
           role='manager'
@@ -45,7 +45,7 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
       )
     },
     {
-      path: 'nhan-vien',
+      path: 'staff',
       element: (
         <UserListPage
           role='manager'
@@ -59,10 +59,10 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
     }
   ],
   admin: [
-    { path: 'lich-hen', element: <AppointmentsPage role='admin' /> },
-    { path: 'dich-vu', element: <ServiceCatalogPage role='admin' /> },
+    { path: 'appointments', element: <AppointmentsPage role='admin' /> },
+    { path: 'services', element: <ServiceCatalogPage role='admin' /> },
     {
-      path: 'nguoi-dung',
+      path: 'users',
       element: (
         <UserListPage
           role='admin'
@@ -89,7 +89,7 @@ function routesForRole(role: PortalRole): RouteObject[] {
       ),
       children: [
         { index: true, element: homePages[role] },
-        { path: 'ho-so', element: <PortalProfilePage role={role} /> },
+        { path: 'profile', element: <PortalProfilePage role={role} /> },
         ...(sectionPages[role] ?? []),
         { path: ':section', element: <PortalSectionGate role={role} /> }
       ]

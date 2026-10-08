@@ -17,7 +17,7 @@ export function ProposalBoard() {
             Chờ Quản lý duyệt
           </span>
         </h2>
-        <Link to='/portal/staff/bai-viet' className='inline-flex items-center gap-1 text-sm font-bold text-clinic'>
+        <Link to='/portal/staff/articles' className='inline-flex items-center gap-1 text-sm font-bold text-clinic'>
           <Icon name='add' size={18} />
           Tạo đề xuất mới
         </Link>
@@ -47,7 +47,7 @@ export function ProposalBoard() {
                 {proposal.statusTone === 'done' ? '✓ ' : ''}
                 {proposal.status}
               </span>
-              <Link to='/portal/staff/bai-viet' className='text-sm font-bold text-clinic'>
+              <Link to='/portal/staff/articles' className='text-sm font-bold text-clinic'>
                 {proposal.action}
               </Link>
             </div>

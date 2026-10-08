@@ -169,7 +169,7 @@ export function ServiceBoard({
             ? ' '
             : `Còn ${remaining} khách chưa hoàn thành${pendingCount > 0 ? ` · ${pendingCount} lịch đang chờ xác nhận` : ''}`}
         </p>
-        <Link to='/portal/staff/lich-hen' className='font-semibold text-clinic'>
+        <Link to='/portal/staff/appointments' className='font-semibold text-clinic'>
           Xem toàn bộ ngày →
         </Link>
       </div>

@@ -37,8 +37,6 @@ export interface CatalogService {
   readonly descriptionCambodia: string | null
   readonly price: number
   readonly durationMinutes: number | null
-  readonly image: string | null
-  readonly imageAlt: string | null
   readonly isBookable: boolean
   readonly sortOrder: number
   readonly status: CatalogStatus
@@ -48,7 +46,7 @@ export interface CatalogService {
 
 export type CategoryPayload = Omit<CatalogCategory, 'serviceCategoryID' | 'serviceCount' | 'minPrice'>
 
-export type ServicePayload = Omit<CatalogService, 'serviceID' | 'category'> & {
+export type ServicePayload = Omit<CatalogService, 'serviceID' | 'category' | 'isBookable' | 'sortOrder'> & {
   readonly serviceCategoryID: string
 }
 

@@ -308,7 +308,7 @@ export class AppointmentsService {
       by: ['phoneNumber'],
       where: {
         phoneNumber: { in: [...new Set(phoneNumbers)] },
-        status: AppointmentStatus.COMPLETED,
+        completedAt: { not: null },
       },
       _count: { _all: true },
     });

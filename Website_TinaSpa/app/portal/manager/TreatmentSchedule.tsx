@@ -45,7 +45,7 @@ export function TreatmentSchedule() {
       </ul>
 
       <Link
-        to='/portal/manager/lich-hen'
+        to='/portal/manager/appointments'
         className='mt-3 inline-flex items-center gap-1 px-1 text-sm font-semibold text-clinic'
       >
         Xem toàn bộ {todaySessionTotal} lịch hôm nay

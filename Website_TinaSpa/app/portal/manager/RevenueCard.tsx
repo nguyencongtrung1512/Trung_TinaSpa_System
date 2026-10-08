@@ -68,7 +68,7 @@ export function RevenueCard({ snapshot }: RevenueCardProps) {
             />
           </svg>
         </div>
-        <Link to='/portal/manager/doanh-thu' className='inline-flex items-center gap-1 text-sm font-bold text-clinic'>
+        <Link to='/portal/manager/revenue' className='inline-flex items-center gap-1 text-sm font-bold text-clinic'>
           Xem báo cáo chi tiết
           <Icon name='arrow_forward' size={16} />
         </Link>

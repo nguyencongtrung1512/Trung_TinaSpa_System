@@ -49,10 +49,6 @@ export function AppointmentsPage({ role }: { readonly role: PortalRole }) {
           <span>{portalRoleLabel[role]}</span>
           <span className='font-medium tracking-normal text-muted'>{formatPortalDate(new Date())}</span>
         </div>
-        <h1 className='mt-2 text-3xl font-extrabold text-ink sm:text-4xl'>Lịch hẹn</h1>
-        <p className='mt-1 text-sm text-muted'>
-          Lịch khách đặt qua website theo khu vực. Xác nhận sau khi gọi khách, hoặc chỉnh lại thời gian theo yêu cầu.
-        </p>
       </header>
 
       <div className={`${portalCardClass} mt-6 p-4`}>
@@ -135,7 +131,7 @@ export function AppointmentsPage({ role }: { readonly role: PortalRole }) {
         </div>
       </div>
 
-      <ul className='mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6'>
+      <ul className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3'>
         {counts.map(({ key, value }) => {
           const isSelected = status === key
           return (

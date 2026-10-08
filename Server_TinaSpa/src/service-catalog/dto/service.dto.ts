@@ -29,10 +29,10 @@ export class CreateServiceDto {
   nameVietnamese: string;
 
   @Trim()
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(255)
-  nameEnglish?: string | null;
+  nameEnglish: string;
 
   @Trim()
   @IsOptional()
@@ -93,17 +93,6 @@ export class CreateServiceDto {
   @IsInt()
   @Min(1)
   durationMinutes?: number | null;
-
-  @Trim()
-  @IsOptional()
-  @IsString()
-  image?: string | null;
-
-  @Trim()
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  imageAlt?: string | null;
 
   @IsOptional()
   @IsBoolean()
@@ -203,17 +192,6 @@ export class UpdateServiceDto {
   @IsInt()
   @Min(1)
   durationMinutes?: number | null;
-
-  @Trim()
-  @IsOptional()
-  @IsString()
-  image?: string | null;
-
-  @Trim()
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  imageAlt?: string | null;
 
   @DefinedOnly()
   @IsBoolean()

@@ -5,14 +5,11 @@ import { catalogApi, toSlug, type CatalogCategory, type CatalogStatus, type Cate
 import {
   Field,
   FormError,
-  LanguageTabs,
   PortalDialog,
   Toggle,
-  formLanguages,
   inputClass,
   outlineButtonClass,
-  primaryButtonClass,
-  type FormLanguage
+  primaryButtonClass
 } from './form-ui'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -98,12 +95,10 @@ export interface CategoryFormDialogProps {
 export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onSaved }: CategoryFormDialogProps) {
   const [values, setValues] = useState(() => initialValues(category, nextSortOrder))
   const [slugTouched, setSlugTouched] = useState(Boolean(category))
-  const [language, setLanguage] = useState<FormLanguage['code']>('vi')
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string>()
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const activeLanguage = formLanguages.find((item) => item.code === language) ?? formLanguages[0]
 
   function update<K extends keyof CategoryFormValues>(field: K, value: CategoryFormValues[K]) {
     const syncSlug = !slugTouched && (field === 'nameVietnamese' || field === 'nameEnglish')
@@ -119,7 +114,6 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
     if (uploading) return
     const nextErrors = validate(values)
     setErrors(nextErrors)
-    if (nextErrors.nameVietnamese) setLanguage('vi')
     if (Object.values(nextErrors).some(Boolean)) return
 
     setBusy(true)
@@ -139,9 +133,6 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
       setBusy(false)
     }
   }
-
-  const nameField = `name${activeLanguage.suffix}` as const
-  const descriptionField = `description${activeLanguage.suffix}` as const
 
   return (
     <PortalDialog
@@ -164,36 +155,51 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
     >
       <FormError message={submitError} />
 
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <p className='text-xs font-bold tracking-[0.16em] text-clinic uppercase'>Nội dung hiển thị</p>
-        <LanguageTabs value={language} onChange={setLanguage} missing={errors.nameVietnamese ? ['vi'] : []} />
-      </div>
-
-      <div className='mt-4 grid gap-4'>
-        <Field
-          label={`Tên nhóm (${activeLanguage.label})`}
-          required={language === 'vi'}
-          error={language === 'vi' ? errors.nameVietnamese : undefined}
-        >
+      <p className='text-xs font-bold tracking-[0.16em] text-clinic uppercase'>Nội dung hiển thị</p>
+      <div className='mt-4 grid gap-4 sm:grid-cols-2'>
+        <Field label='Tên tiếng Việt' required error={errors.nameVietnamese}>
           {(id) => (
             <input
               id={id}
               className={inputClass}
-              value={values[nameField]}
-              onChange={(event) => update(nameField, event.target.value)}
-              placeholder={language === 'vi' ? 'VD: Gói Combo' : ''}
+              value={values.nameVietnamese}
+              onChange={(event) => update('nameVietnamese', event.target.value)}
+              placeholder='VD: Gói Combo'
               maxLength={255}
             />
           )}
         </Field>
-        <Field label={`Mô tả nhóm (${activeLanguage.label})`} hint='Hiển thị trên card "Dịch vụ nổi bật" ở trang chủ.'>
+        <Field label='Tên English'>
+          {(id) => (
+            <input
+              id={id}
+              className={inputClass}
+              value={values.nameEnglish}
+              onChange={(event) => update('nameEnglish', event.target.value)}
+              placeholder='VD: Combo Packages'
+              maxLength={255}
+            />
+          )}
+        </Field>
+        <Field label='Mô tả nhóm (tiếng Việt)' hint='Hiển thị trên card "Dịch vụ nổi bật" ở trang chủ.'>
           {(id) => (
             <textarea
               id={id}
               rows={3}
               className={`${inputClass} resize-y`}
-              value={values[descriptionField]}
-              onChange={(event) => update(descriptionField, event.target.value)}
+              value={values.descriptionVietnamese}
+              onChange={(event) => update('descriptionVietnamese', event.target.value)}
+            />
+          )}
+        </Field>
+        <Field label='Mô tả nhóm (English)' hint='Shown on the featured services card on the homepage.'>
+          {(id) => (
+            <textarea
+              id={id}
+              rows={3}
+              className={`${inputClass} resize-y`}
+              value={values.descriptionEnglish}
+              onChange={(event) => update('descriptionEnglish', event.target.value)}
             />
           )}
         </Field>

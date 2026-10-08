@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Icon } from '~/components/ui/Icon'
-import { ImageUpload } from '~/components/ui/ImageUpload'
 import {
   catalogApi,
   formatPrice,
@@ -10,18 +9,7 @@ import {
   type CatalogStatus,
   type ServicePayload
 } from './catalog.api'
-import {
-  Field,
-  FormError,
-  LanguageTabs,
-  PortalDialog,
-  Toggle,
-  formLanguages,
-  inputClass,
-  outlineButtonClass,
-  primaryButtonClass,
-  type FormLanguage
-} from './form-ui'
+import { Field, FormError, PortalDialog, inputClass, outlineButtonClass, primaryButtonClass } from './form-ui'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -39,16 +27,12 @@ interface ServiceFormValues {
   slug: string
   price: string
   durationMinutes: string
-  image: string
-  imageAlt: string
-  isBookable: boolean
-  sortOrder: string
   status: CatalogStatus
   note: string
 }
 
 type FormErrors = Partial<
-  Record<'nameVietnamese' | 'serviceCategoryID' | 'slug' | 'price' | 'durationMinutes' | 'sortOrder', string>
+  Record<'nameVietnamese' | 'nameEnglish' | 'serviceCategoryID' | 'slug' | 'price' | 'durationMinutes', string>
 >
 
 function initialValues(service: CatalogService | null, defaultCategoryID: string): ServiceFormValues {
@@ -66,10 +50,6 @@ function initialValues(service: CatalogService | null, defaultCategoryID: string
     slug: service?.slug ?? '',
     price: service ? String(service.price) : '',
     durationMinutes: service?.durationMinutes ? String(service.durationMinutes) : '',
-    image: service?.image ?? '',
-    imageAlt: service?.imageAlt ?? '',
-    isBookable: service?.isBookable ?? true,
-    sortOrder: String(service?.sortOrder ?? 0),
     status: service?.status ?? 'ACTIVE',
     note: service?.note ?? ''
   }
@@ -80,13 +60,13 @@ const digitsOnly = (value: string) => value.replaceAll(/\D/g, '')
 function validate(values: ServiceFormValues): FormErrors {
   const errors: FormErrors = {}
   if (!values.nameVietnamese.trim()) errors.nameVietnamese = 'Nhập tên dịch vụ tiếng Việt.'
+  if (!values.nameEnglish.trim()) errors.nameEnglish = 'Nhập tên dịch vụ tiếng Anh.'
   if (!values.serviceCategoryID) errors.serviceCategoryID = 'Chọn nhóm dịch vụ.'
   if (!SLUG_PATTERN.test(values.slug)) errors.slug = 'Chỉ dùng chữ thường không dấu, số và dấu gạch ngang.'
   if (!/^\d+$/.test(values.price)) errors.price = 'Nhập giá (VND), số nguyên từ 0.'
   if (values.durationMinutes && !/^[1-9]\d*$/.test(values.durationMinutes)) {
     errors.durationMinutes = 'Thời lượng là số phút lớn hơn 0.'
   }
-  if (!/^\d+$/.test(values.sortOrder)) errors.sortOrder = 'Thứ tự là số nguyên từ 0.'
   return errors
 }
 
@@ -95,7 +75,7 @@ const blank = (value: string) => value.trim() || null
 function toPayload(values: ServiceFormValues): ServicePayload {
   return {
     nameVietnamese: values.nameVietnamese.trim(),
-    nameEnglish: blank(values.nameEnglish),
+    nameEnglish: values.nameEnglish.trim(),
     nameCambodia: blank(values.nameCambodia),
     shortDescriptionVietnamese: blank(values.shortDescriptionVietnamese),
     shortDescriptionEnglish: blank(values.shortDescriptionEnglish),
@@ -107,10 +87,6 @@ function toPayload(values: ServiceFormValues): ServicePayload {
     slug: values.slug,
     price: Number(values.price),
     durationMinutes: values.durationMinutes ? Number(values.durationMinutes) : null,
-    image: blank(values.image),
-    imageAlt: blank(values.imageAlt),
-    isBookable: values.isBookable,
-    sortOrder: Number(values.sortOrder),
     status: values.status,
     note: blank(values.note)
   }
@@ -135,12 +111,9 @@ export function ServiceFormDialog({
 }: ServiceFormDialogProps) {
   const [values, setValues] = useState(() => initialValues(service, defaultCategoryID))
   const [slugTouched, setSlugTouched] = useState(Boolean(service))
-  const [language, setLanguage] = useState<FormLanguage['code']>('vi')
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string>()
   const [busy, setBusy] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const activeLanguage = formLanguages.find((item) => item.code === language) ?? formLanguages[0]
 
   function update<K extends keyof ServiceFormValues>(field: K, value: ServiceFormValues[K]) {
     const syncSlug = !slugTouched && (field === 'nameVietnamese' || field === 'nameEnglish')
@@ -153,10 +126,8 @@ export function ServiceFormDialog({
   }
 
   async function submit() {
-    if (uploading) return
     const nextErrors = validate(values)
     setErrors(nextErrors)
-    if (nextErrors.nameVietnamese) setLanguage('vi')
     if (Object.values(nextErrors).some(Boolean)) return
 
     setBusy(true)
@@ -177,10 +148,6 @@ export function ServiceFormDialog({
     }
   }
 
-  const nameField = `name${activeLanguage.suffix}` as const
-  const shortField = `shortDescription${activeLanguage.suffix}` as const
-  const descriptionField = `description${activeLanguage.suffix}` as const
-
   return (
     <PortalDialog
       open={open}
@@ -193,59 +160,88 @@ export function ServiceFormDialog({
           <button type='button' className={outlineButtonClass} onClick={onClose}>
             Hủy
           </button>
-          <button type='submit' className={primaryButtonClass} disabled={busy || uploading}>
+          <button type='submit' className={primaryButtonClass} disabled={busy}>
             <Icon name='save' size={18} />
-            {busy ? 'Đang lưu...' : uploading ? 'Đang tải ảnh...' : service ? 'Lưu thay đổi' : 'Thêm dịch vụ'}
+            {busy ? 'Đang lưu...' : service ? 'Lưu thay đổi' : 'Thêm dịch vụ'}
           </button>
         </>
       }
     >
       <FormError message={submitError} />
 
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <p className='text-xs font-bold tracking-[0.16em] text-clinic uppercase'>Nội dung hiển thị</p>
-        <LanguageTabs value={language} onChange={setLanguage} missing={errors.nameVietnamese ? ['vi'] : []} />
-      </div>
-
-      <div className='mt-4 grid gap-4'>
-        <Field
-          label={`Tên dịch vụ (${activeLanguage.label})`}
-          required={language === 'vi'}
-          error={language === 'vi' ? errors.nameVietnamese : undefined}
-        >
+      <p className='text-xs font-bold tracking-[0.16em] text-clinic uppercase'>Nội dung hiển thị</p>
+      <div className='mt-4 grid gap-4 sm:grid-cols-2'>
+        <Field label='Tên tiếng Việt' required error={errors.nameVietnamese}>
           {(id) => (
             <input
               id={id}
               className={inputClass}
-              value={values[nameField]}
-              onChange={(event) => update(nameField, event.target.value)}
-              placeholder={language === 'vi' ? 'VD: Perfectly Polished' : ''}
+              value={values.nameVietnamese}
+              onChange={(event) => update('nameVietnamese', event.target.value)}
+              placeholder='VD: Chăm sóc móng hoàn hảo'
+              maxLength={255}
+            />
+          )}
+        </Field>
+        <Field label='Tên English' required error={errors.nameEnglish}>
+          {(id) => (
+            <input
+              id={id}
+              className={inputClass}
+              value={values.nameEnglish}
+              onChange={(event) => update('nameEnglish', event.target.value)}
+              placeholder='VD: Perfectly Polished'
               maxLength={255}
             />
           )}
         </Field>
         <Field
-          label={`Mô tả ngắn (${activeLanguage.label})`}
-          hint={`Một dòng dưới tên dịch vụ, tối đa 500 ký tự (${values[shortField].length}/500).`}
+          label='Mô tả ngắn (tiếng Việt)'
+          hint={`Một dòng dưới tên dịch vụ (${values.shortDescriptionVietnamese.length}/500).`}
         >
           {(id) => (
             <input
               id={id}
               className={inputClass}
-              value={values[shortField]}
-              onChange={(event) => update(shortField, event.target.value)}
+              value={values.shortDescriptionVietnamese}
+              onChange={(event) => update('shortDescriptionVietnamese', event.target.value)}
               maxLength={500}
             />
           )}
         </Field>
-        <Field label={`Mô tả đầy đủ (${activeLanguage.label})`} hint='Hiện khi khách bấm "+" để mở dịch vụ.'>
+        <Field
+          label='Mô tả ngắn (English)'
+          hint={`One line under the service name (${values.shortDescriptionEnglish.length}/500).`}
+        >
+          {(id) => (
+            <input
+              id={id}
+              className={inputClass}
+              value={values.shortDescriptionEnglish}
+              onChange={(event) => update('shortDescriptionEnglish', event.target.value)}
+              maxLength={500}
+            />
+          )}
+        </Field>
+        <Field label='Mô tả đầy đủ (tiếng Việt)' hint='Hiện khi khách bấm "+" để mở dịch vụ.'>
           {(id) => (
             <textarea
               id={id}
               rows={3}
               className={`${inputClass} resize-y`}
-              value={values[descriptionField]}
-              onChange={(event) => update(descriptionField, event.target.value)}
+              value={values.descriptionVietnamese}
+              onChange={(event) => update('descriptionVietnamese', event.target.value)}
+            />
+          )}
+        </Field>
+        <Field label='Mô tả đầy đủ (English)' hint='Shown when the guest expands the service.'>
+          {(id) => (
+            <textarea
+              id={id}
+              rows={3}
+              className={`${inputClass} resize-y`}
+              value={values.descriptionEnglish}
+              onChange={(event) => update('descriptionEnglish', event.target.value)}
             />
           )}
         </Field>
@@ -313,17 +309,6 @@ export function ServiceFormDialog({
             />
           )}
         </Field>
-        <Field label='Thứ tự trong nhóm' error={errors.sortOrder}>
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              inputMode='numeric'
-              value={values.sortOrder}
-              onChange={(event) => update('sortOrder', digitsOnly(event.target.value))}
-            />
-          )}
-        </Field>
         <Field label='Trạng thái'>
           {(id) => (
             <select
@@ -335,34 +320,6 @@ export function ServiceFormDialog({
               <option value='ACTIVE'>Đang mở</option>
               <option value='INACTIVE'>Tạm ẩn</option>
             </select>
-          )}
-        </Field>
-        <Field label='Ảnh riêng' hint='Để trống sẽ dùng ảnh của nhóm.' className='sm:col-span-2'>
-          {(id) => (
-            <ImageUpload
-              id={id}
-              folder='services'
-              value={values.image}
-              onChange={(url) => update('image', url)}
-              onUploadingChange={setUploading}
-            />
-          )}
-        </Field>
-        <Toggle
-          label='Cho phép đặt lịch'
-          description='Khách chọn được dịch vụ này khi đặt lịch.'
-          checked={values.isBookable}
-          onChange={(value) => update('isBookable', value)}
-        />
-        <Field label='Mô tả ảnh (alt)'>
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              value={values.imageAlt}
-              onChange={(event) => update('imageAlt', event.target.value)}
-              maxLength={255}
-            />
           )}
         </Field>
         <Field label='Ghi chú nội bộ' className='sm:col-span-2'>
