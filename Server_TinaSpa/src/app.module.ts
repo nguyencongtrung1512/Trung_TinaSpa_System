@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { BlogModule } from './blog/blog.module.js';
 import { BranchesModule } from './branches/branches.module.js';
 import { CustomerServicesModule } from './customer-services/customer-services.module.js';
 import { ObserveModule } from './observe.js';
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module.js';
     BranchesModule,
     AppointmentsModule,
     CustomerServicesModule,
+    BlogModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({

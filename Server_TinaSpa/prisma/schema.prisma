@@ -34,6 +34,7 @@ model User {
   confirmedAppointments Appointment[]  @relation("AppointmentConfirmedBy")
   servedAppointments    Appointment[]  @relation("AppointmentServedBy")
   customerServices      CustomerService[] @relation("CustomerServiceCustomer")
+  authoredBlogs         Blog[]            @relation("BlogAuthor")
 
   @@index([role], map: "IX_User_role")
 }
@@ -239,6 +240,68 @@ model CustomerService {
 
   @@index([customerAID, usedAt], map: "IX_CustomerService_customerAID_usedAt")
   @@index([serviceAID], map: "IX_CustomerService_serviceAID")
+}
+
+/// Danh mục bài viết. Không có deletedAt: tắt hiển thị bằng isActive.
+model BlogCategory {
+  blogCategoryAID String @id @default(dbgenerated("\"generateBusinessID\"('BlogCategory'::text)")) @db.VarChar(20)
+  blogCategoryID  String @unique(map: "UQ_BlogCategory_blogCategoryID") @default(dbgenerated("\"generateBusinessID\"('BlogCategory'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  slug         String  @unique(map: "UQ_BlogCategory_slug") @db.VarChar(255)
+  description  String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  note String?
+
+  blogs Blog[]
+
+  @@index([isActive, displayOrder], map: "IX_BlogCategory_isActive_displayOrder")
+}
+
+/// status: DRAFT | PUBLISHED | HIDDEN (CHECK "CK_Blog_status"); PUBLISHED bắt buộc có publishedAt (CHECK "CK_Blog_publishedAt")
+/// content là HTML đã được lọc bằng sanitizeBlogHtml trước khi lưu.
+/// nameVietnamese / nameEnglish / nameCambodia là tiêu đề bài viết.
+model Blog {
+  blogAID String @id @default(dbgenerated("\"generateBusinessID\"('Blog'::text)")) @db.VarChar(20)
+  blogID  String @unique(map: "UQ_Blog_blogID") @default(dbgenerated("\"generateBusinessID\"('Blog'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  blogCategoryAID String    @db.VarChar(20)
+  slug            String    @unique(map: "UQ_Blog_slug") @db.VarChar(255)
+  summary         String?
+  content         String?
+  thumbnailURL    String?
+  authorAID       String?   @db.VarChar(20)
+  status          String    @default("DRAFT") @db.VarChar(30)
+  publishedAt     DateTime?
+  isFeatured      Boolean   @default(false)
+  viewCount       Int       @default(0)
+  metaTitle       String?   @db.VarChar(255)
+  metaDescription String?   @db.VarChar(320)
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  blogCategory BlogCategory @relation(fields: [blogCategoryAID], references: [blogCategoryAID], onDelete: Restrict, map: "FK_Blog_blogCategoryAID")
+  author       User?        @relation("BlogAuthor", fields: [authorAID], references: [userAID], onDelete: SetNull, map: "FK_Blog_authorAID")
+
+  @@index([blogCategoryAID], map: "IX_Blog_blogCategoryAID")
+  @@index([status, publishedAt(sort: Desc)], map: "IX_Blog_status_publishedAt")
 }
 
 model BusinessIdCounter {
