@@ -7,9 +7,10 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import type { AuthUser } from '../auth/types/auth-user.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { BlogCategoriesService } from './blog-categories.service.js';
-import { ManageBlog } from './blog.constants.js';
+import { ViewBlogManagement, WriteBlog, WriteBlogCategory } from './blog.constants.js';
 import { BlogService } from './blog.service.js';
 import { SaveBlogCategoryDto } from './dto/blog-category.dto.js';
 import {
@@ -28,19 +29,19 @@ export class BlogCategoriesController {
   }
 
   @Get('manage')
-  @ManageBlog()
+  @ViewBlogManagement()
   listForManage() {
     return this.categories.listForManage();
   }
 
   @Post()
-  @ManageBlog()
+  @WriteBlogCategory()
   create(@Body() dto: SaveBlogCategoryDto, @CurrentUser('userAID') userAID: string) {
     return this.categories.create(dto, userAID);
   }
 
   @Patch(':blogCategoryID')
-  @ManageBlog()
+  @WriteBlogCategory()
   update(
     @Param('blogCategoryID') blogCategoryID: string,
     @Body() dto: SaveBlogCategoryDto,
@@ -59,13 +60,16 @@ export class BlogController {
   }
 
   @Get('manage')
-  @ManageBlog()
-  listForManage(@Query() query: ManageBlogsQueryDto) {
-    return this.blogs.listForManage(query);
+  @ViewBlogManagement()
+  listForManage(
+    @Query() query: ManageBlogsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.blogs.listForManage(query, actor);
   }
 
   @Get('manage/:blogID')
-  @ManageBlog()
+  @ViewBlogManagement()
   findForManage(@Param('blogID') blogID: string) {
     return this.blogs.findForManage(blogID);
   }
@@ -76,18 +80,18 @@ export class BlogController {
   }
 
   @Post()
-  @ManageBlog()
-  create(@Body() dto: SaveBlogDto, @CurrentUser('userAID') userAID: string) {
-    return this.blogs.create(dto, userAID);
+  @WriteBlog()
+  create(@Body() dto: SaveBlogDto, @CurrentUser() actor: AuthUser) {
+    return this.blogs.create(dto, actor);
   }
 
   @Patch(':blogID')
-  @ManageBlog()
+  @WriteBlog()
   update(
     @Param('blogID') blogID: string,
     @Body() dto: SaveBlogDto,
-    @CurrentUser('userAID') userAID: string,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.blogs.update(blogID, dto, userAID);
+    return this.blogs.update(blogID, dto, actor);
   }
 }

@@ -71,7 +71,7 @@ const staffNavigation: readonly PortalNavGroup[] = [
         label: 'Bài viết của tôi',
         icon: 'article',
         to: '/portal/staff/articles',
-        summary: 'Bản thảo kiến thức gửi quản lý duyệt.'
+        summary: 'Viết bài mới (bản nháp) và chỉnh sửa bản nháp gửi quản lý xuất bản.'
       },
       {
         label: 'Danh mục dịch vụ',
@@ -155,8 +155,7 @@ const managerNavigation: readonly PortalNavGroup[] = [
         label: 'Duyệt bài viết',
         icon: 'rate_review',
         to: '/portal/manager/article-review',
-        summary: 'Bài viết kiến thức nhân viên gửi lên chờ duyệt.',
-        badge: '3 chờ'
+        summary: 'Bài viết nhân viên gửi lên: xem, chỉnh sửa, xuất bản hoặc ẩn.'
       }
     ]
   },
@@ -223,6 +222,12 @@ const adminNavigation: readonly PortalNavGroup[] = [
   {
     label: 'Danh mục',
     items: [
+      {
+        label: 'Bài viết',
+        icon: 'article',
+        to: '/portal/admin/blogs',
+        summary: 'Danh sách bài viết của website (chỉ xem).'
+      },
       {
         label: 'Dịch vụ & Menu trị liệu',
         icon: 'spa',

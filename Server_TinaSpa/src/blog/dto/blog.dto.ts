@@ -149,6 +149,12 @@ export class ListBlogsQueryDto {
 }
 
 export class ManageBlogsQueryDto extends ListBlogsQueryDto {
+  /** Only posts written by the signed-in user. */
+  @IsOptional()
+  @QueryBoolean()
+  @IsBoolean()
+  mine?: boolean;
+
   @IsOptional()
   @IsIn(BLOG_STATUSES)
   status?: BlogStatus;

@@ -17,8 +17,15 @@ export const BLOG_STATUSES = Object.values(BlogStatus);
 /** content is limited to stay under the 100 KB default JSON body limit with the other fields. */
 export const BLOG_CONTENT_MAX_LENGTH = 80_000;
 
-export const ManageBlog = () =>
-  applyDecorators(
-    UseGuards(JwtAuthGuard, RolesGuard),
-    Roles(RoleName.ADMIN, RoleName.MANAGER),
-  );
+const guard = (...roles: RoleName[]) =>
+  applyDecorators(UseGuards(JwtAuthGuard, RolesGuard), Roles(...roles));
+
+/** Read the management lists: staff, manager and admin can all see every post. */
+export const ViewBlogManagement = () =>
+  guard(RoleName.ADMIN, RoleName.MANAGER, RoleName.STAFF);
+
+/** Create / edit posts: staff write drafts, manager writes and publishes. Admin is read-only. */
+export const WriteBlog = () => guard(RoleName.MANAGER, RoleName.STAFF);
+
+/** Categories are maintained by the manager only. */
+export const WriteBlogCategory = () => guard(RoleName.MANAGER);

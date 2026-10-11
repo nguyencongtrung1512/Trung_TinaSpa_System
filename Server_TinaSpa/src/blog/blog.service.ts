@@ -1,10 +1,13 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import type { AuthUser } from '../auth/types/auth-user.js';
+import { RoleName } from '../common/constants/roles.js';
 import { sanitizeBlogHtml } from '../common/utils/html-sanitizer.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { isUniqueViolation } from '../service-catalog/service-catalog.constants.js';
@@ -139,9 +142,13 @@ export class BlogService {
     return toResponse(record, { content: true });
   }
 
-  async listForManage(query: ManageBlogsQueryDto): Promise<BlogListResponse> {
+  async listForManage(
+    query: ManageBlogsQueryDto,
+    actor: AuthUser,
+  ): Promise<BlogListResponse> {
     return this.page(
       {
+        ...(query.mine ? { authorAID: actor.userAID } : {}),
         ...(query.status ? { status: query.status } : {}),
         ...(query.categoryID
           ? { blogCategory: { blogCategoryID: query.categoryID } }
@@ -155,6 +162,7 @@ export class BlogService {
     );
   }
 
+  /** Every management role may read every post; editing is restricted in `update`. */
   async findForManage(blogID: string): Promise<BlogResponse> {
     return toResponse(await this.getRecord(blogID), {
       content: true,
@@ -162,7 +170,10 @@ export class BlogService {
     });
   }
 
-  async create(dto: SaveBlogDto, actorAID: string): Promise<BlogResponse> {
+  async create(dto: SaveBlogDto, actor: AuthUser): Promise<BlogResponse> {
+    const actorAID = actor.userAID;
+    const manager = actor.roles.includes(RoleName.MANAGER);
+    if (!manager) this.assertDraftOnly(dto);
     if (!dto.nameVietnamese) {
       throw new BadRequestException('nameVietnamese should not be empty');
     }
@@ -172,11 +183,10 @@ export class BlogService {
     }
 
     const category = await this.getCategory(dto.blogCategoryID);
-    const { status, publishedAt } = this.resolvePublishing(
-      dto.status ?? BlogStatus.DRAFT,
-      dto.publishedAt,
-      null,
-    );
+    // Staff posts always start as drafts; only a manager may publish.
+    const { status, publishedAt } = manager
+      ? this.resolvePublishing(dto.status ?? BlogStatus.DRAFT, dto.publishedAt, null)
+      : { status: BlogStatus.DRAFT, publishedAt: null };
 
     try {
       const record = await this.prisma.blog.create({
@@ -192,7 +202,7 @@ export class BlogService {
           authorAID: actorAID,
           status,
           publishedAt,
-          isFeatured: dto.isFeatured ?? false,
+          isFeatured: manager ? (dto.isFeatured ?? false) : false,
           metaTitle: orNull(dto.metaTitle),
           metaDescription: orNull(dto.metaDescription),
           createdByAID: actorAID,
@@ -210,9 +220,19 @@ export class BlogService {
   async update(
     blogID: string,
     dto: SaveBlogDto,
-    actorAID: string,
+    actor: AuthUser,
   ): Promise<BlogResponse> {
+    const actorAID = actor.userAID;
     const current = await this.getRecord(blogID);
+    if (!actor.roles.includes(RoleName.MANAGER)) {
+      if (current.authorAID !== actorAID) {
+        throw new ForbiddenException('Insufficient role');
+      }
+      if (current.status !== BlogStatus.DRAFT) {
+        throw new ForbiddenException('Only draft blogs can be edited');
+      }
+      this.assertDraftOnly(dto);
+    }
     const category = dto.blogCategoryID
       ? await this.getCategory(dto.blogCategoryID)
       : undefined;
@@ -256,6 +276,17 @@ export class BlogService {
       return toResponse(record, { content: true, admin: true });
     } catch (error) {
       throw this.translate(error);
+    }
+  }
+
+  /** Staff may not publish, hide, schedule or feature a post. */
+  private assertDraftOnly(dto: SaveBlogDto): void {
+    if (
+      (dto.status !== undefined && dto.status !== BlogStatus.DRAFT) ||
+      dto.publishedAt !== undefined ||
+      dto.isFeatured !== undefined
+    ) {
+      throw new ForbiddenException('Insufficient role');
     }
   }
 

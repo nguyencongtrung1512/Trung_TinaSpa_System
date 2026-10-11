@@ -42,6 +42,14 @@ const apiMessages: Record<string, string> = {
   'Current password is incorrect': 'Mật khẩu hiện tại không đúng.',
   'New password must differ from the current password': 'Mật khẩu mới phải khác mật khẩu hiện tại.',
   'phone is not a valid phone number': 'Số điện thoại không hợp lệ.',
+  'Blog not found': 'Không tìm thấy bài viết.',
+  'Blog category not found': 'Không tìm thấy danh mục bài viết.',
+  'Blog slug already exists': 'Đường dẫn bài viết đã tồn tại, hãy đổi slug.',
+  'Blog category slug already exists': 'Đường dẫn danh mục đã tồn tại, hãy đổi slug.',
+  'Only draft blogs can be edited': 'Chỉ sửa được bài đang ở trạng thái bản nháp.',
+  'publishedAt is required for published blogs': 'Bài xuất bản phải có thời gian xuất bản.',
+  'slug must be lowercase letters, digits and hyphens': 'Đường dẫn chỉ gồm chữ thường, số và dấu gạch ngang.',
+  'thumbnailURL must be an https URL or a site-relative path': 'Ảnh đại diện chỉ nhận đường dẫn https:// hoặc đường dẫn nội bộ bắt đầu bằng /.',
   Unauthorized: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
 }
 

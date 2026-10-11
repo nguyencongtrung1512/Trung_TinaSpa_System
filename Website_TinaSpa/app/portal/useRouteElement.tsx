@@ -3,6 +3,7 @@ import { Navigate, Outlet, useParams, useRoutes, type RouteObject } from 'react-
 import { useSession } from '~/lib/auth'
 import { AppointmentsPage } from '~/portal/appointments/AppointmentsPage'
 import { CustomerServicePage } from '~/portal/customer-services/CustomerServicePage'
+import { BlogsPage } from '~/portal/blogs/BlogsPage'
 import { PortalShell } from '~/portal/layout/PortalShell'
 import { ManagerOverviewPage } from '~/portal/manager/ManagerOverviewPage'
 import { ServiceCatalogPage } from '~/portal/manager/services/ServiceCatalogPage'
@@ -31,11 +32,13 @@ const homePages: Record<PortalRole, ReactNode> = {
 const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
   staff: [
     { path: 'appointments', element: <AppointmentsPage role='staff' /> },
-    { path: 'customer-services', element: <CustomerServicePage role='staff' /> }
+    { path: 'customer-services', element: <CustomerServicePage role='staff' /> },
+    { path: 'articles', element: <BlogsPage role='staff' /> }
   ],
   manager: [
     { path: 'appointments', element: <AppointmentsPage role='manager' /> },
     { path: 'customer-services', element: <CustomerServicePage role='manager' /> },
+    { path: 'article-review', element: <BlogsPage role='manager' /> },
     { path: 'services', element: <ServiceCatalogPage role='manager' /> },
     {
       path: 'customers',
@@ -66,6 +69,7 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
   admin: [
     { path: 'appointments', element: <AppointmentsPage role='admin' /> },
     { path: 'customer-services', element: <CustomerServicePage role='admin' /> },
+    { path: 'blogs', element: <BlogsPage role='admin' /> },
     { path: 'services', element: <ServiceCatalogPage role='admin' /> },
     {
       path: 'users',
