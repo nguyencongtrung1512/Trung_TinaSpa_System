@@ -6,7 +6,7 @@ import { Icon } from '~/components/ui/Icon'
 import { LanguageSwitcher } from '~/components/ui/LanguageSwitcher'
 import { StableText } from '~/components/ui/StableText'
 import { fadeIn, fadeUp, pressable, stagger } from '~/components/ui/motion'
-import { destinationForSession } from '~/portal/access'
+import { landingForSession } from '~/portal/access'
 import { loadSession, login, register, saveSession } from '~/lib/auth'
 
 const legalLinks = [
@@ -33,7 +33,7 @@ export function LoginPage() {
   useEffect(() => {
     const session = loadSession()
     if (!session) return
-    const destination = destinationForSession(session)
+    const destination = landingForSession(session)
     if (destination !== '/') navigate(destination, { replace: true })
   }, [navigate])
 
@@ -72,7 +72,7 @@ export function LoginPage() {
         ? await login({ phone: normalizedPhone, password })
         : await register({ phone: normalizedPhone, password, fullName: fullName.trim() })
       saveSession(session)
-      navigate(destinationForSession(session), { replace: true })
+      navigate(landingForSession(session), { replace: true })
     } catch (submitError) {
       setError(submitError instanceof Error ? { text: submitError.message } : { key: 'login.errors.network' })
     } finally {

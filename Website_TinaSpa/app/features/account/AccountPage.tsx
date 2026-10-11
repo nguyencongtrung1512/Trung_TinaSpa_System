@@ -6,7 +6,9 @@ import { StableText } from '~/components/ui/StableText'
 import { clearSession, useSession } from '~/lib/auth'
 import { destinationForSession } from '~/portal/access'
 import { outlineButtonClass } from '~/portal/manager/services/form-ui'
+import { ChangePasswordCard } from './ChangePasswordCard'
 import { ProfileForm } from './ProfileForm'
+import { UsedServices } from './UsedServices'
 
 const subscribeNoop = () => () => {}
 
@@ -63,6 +65,9 @@ export function AccountPage() {
         <div className='mt-8 rounded-[28px] border border-rose-soft/60 bg-white p-5 shadow-[0_20px_50px_rgba(58,41,48,0.06)] sm:p-8'>
           <ProfileForm initialUser={session.user} />
         </div>
+
+        {session.user.role === 'CUSTOMER' ? <UsedServices /> : null}
+        <ChangePasswordCard highlight={session.user.mustChangePassword === true} />
       </div>
     </section>
   )

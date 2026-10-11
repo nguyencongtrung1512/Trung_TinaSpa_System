@@ -7,39 +7,24 @@ export const portalRoleLabel: Record<PortalRole, string> = {
 }
 
 export const portalActors: Record<PortalRole, PortalActor> = {
-  staff: {
-    name: 'Linh Đan',
-    title: 'NV chăm sóc KH',
-    initials: 'LD',
-    branch: 'Chi nhánh Quận 1 — TP. Hồ Chí Minh'
-  },
-  manager: {
-    name: 'Trần Bảo Ngọc',
-    title: 'Quản lý chi nhánh',
-    initials: 'BN',
-    branch: 'Chi nhánh Quận 1 (Bến Nghé)'
-  },
-  admin: {
-    name: 'Admin',
-    title: 'Quản trị hệ thống',
-    initials: 'AD',
-    branch: 'Toàn hệ thống'
-  }
+  staff: { name: 'Nhân viên', title: 'Nhân viên chăm sóc khách hàng', initials: 'NV', branch: 'Tất cả khu vực' },
+  manager: { name: 'Quản lý', title: 'Quản lý chi nhánh', initials: 'QL', branch: 'Tất cả khu vực' },
+  admin: { name: 'Quản trị viên', title: 'Quản trị hệ thống', initials: 'AD', branch: 'Toàn hệ thống' }
 }
 
 export const portalActions: Record<PortalRole, readonly PortalAction[]> = {
   staff: [
-    { label: 'Check-in nhanh', icon: 'bolt', tone: 'solid' }
+    { label: 'Ghi dịch vụ', icon: 'receipt_long', to: '/portal/staff/customer-services', tone: 'solid' }
   ],
   manager: [
-    { label: 'Duyệt bài viết', icon: 'rate_review', to: '/portal/manager/article-review', tone: 'outline' },
     { label: 'Nhân viên', icon: 'badge', to: '/portal/manager/staff', tone: 'outline' },
-    { label: 'Báo cáo doanh thu', icon: 'monitoring', to: '/portal/manager/revenue', tone: 'solid' }
+    { label: 'Khách hàng', icon: 'group', to: '/portal/manager/customers', tone: 'outline' },
+    { label: 'Ghi dịch vụ', icon: 'receipt_long', to: '/portal/manager/customer-services', tone: 'solid' }
   ],
   admin: [
     { label: 'Người dùng', icon: 'manage_accounts', to: '/portal/admin/users', tone: 'outline' },
-    { label: 'Chi nhánh', icon: 'store', to: '/portal/admin/branches', tone: 'outline' },
-    { label: 'Cấu hình', icon: 'settings', to: '/portal/admin/settings', tone: 'solid' }
+    { label: 'Dịch vụ', icon: 'spa', to: '/portal/admin/services', tone: 'outline' },
+    { label: 'Ghi dịch vụ', icon: 'receipt_long', to: '/portal/admin/customer-services', tone: 'solid' }
   ]
 }
 
@@ -63,6 +48,12 @@ const staffNavigation: readonly PortalNavGroup[] = [
         icon: 'calendar_month',
         to: '/portal/staff/appointments',
         summary: 'Lịch khách đặt qua website theo khu vực: xác nhận và chỉnh thời gian.'
+      },
+      {
+        label: 'Dịch vụ của khách',
+        icon: 'receipt_long',
+        to: '/portal/staff/customer-services',
+        summary: 'Tìm khách theo số điện thoại, tạo tài khoản và ghi dịch vụ đã sử dụng.'
       }
     ]
   },
@@ -113,6 +104,12 @@ const managerNavigation: readonly PortalNavGroup[] = [
         icon: 'calendar_month',
         to: '/portal/manager/appointments',
         summary: 'Lịch khách đặt qua website theo ngày và khu vực.'
+      },
+      {
+        label: 'Dịch vụ của khách',
+        icon: 'receipt_long',
+        to: '/portal/manager/customer-services',
+        summary: 'Tìm khách theo số điện thoại, tạo tài khoản và ghi dịch vụ đã sử dụng.'
       },
       {
         label: 'Khách hàng',
@@ -191,6 +188,12 @@ const adminNavigation: readonly PortalNavGroup[] = [
         icon: 'calendar_month',
         to: '/portal/admin/appointments',
         summary: 'Lịch khách đặt qua website theo ngày và khu vực.'
+      },
+      {
+        label: 'Dịch vụ của khách',
+        icon: 'receipt_long',
+        to: '/portal/admin/customer-services',
+        summary: 'Tìm khách theo số điện thoại, tạo tài khoản và ghi dịch vụ đã sử dụng.'
       }
     ]
   },

@@ -36,6 +36,12 @@ const apiMessages: Record<string, string> = {
   'Appointment time is outside opening hours': 'Giờ hẹn nằm ngoài giờ mở cửa của khu vực.',
   'Only pending appointments can be confirmed': 'Chỉ xác nhận được lịch đang chờ xác nhận.',
   'Customer has already checked in': 'Khách đã check-in, không thể đổi thời gian hoặc khu vực.',
+  'Customer not found': 'Không tìm thấy khách hàng.',
+  'Customer service not found': 'Không tìm thấy dịch vụ đã ghi nhận.',
+  'usedAt must not be in the future': 'Ngày sử dụng không được ở tương lai.',
+  'Current password is incorrect': 'Mật khẩu hiện tại không đúng.',
+  'New password must differ from the current password': 'Mật khẩu mới phải khác mật khẩu hiện tại.',
+  'phone is not a valid phone number': 'Số điện thoại không hợp lệ.',
   Unauthorized: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
 }
 

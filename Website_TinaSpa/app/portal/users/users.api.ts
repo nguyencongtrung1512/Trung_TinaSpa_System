@@ -13,6 +13,7 @@ export interface PortalUser {
   readonly gender: UserGender | null
   readonly role: UserRole
   readonly isActive: boolean
+  readonly mustChangePassword?: boolean
   readonly createdAt: string
   readonly updatedAt: string
 }

@@ -7,6 +7,7 @@ import {
 import { Prisma, type User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { RoleName } from '../common/constants/roles.js';
+import { normalizePhone, phoneVariants } from '../common/utils/phone.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateStaffDto } from './dto/create-staff.dto.js';
 import type { UpdateProfileDto } from './dto/update-profile.dto.js';
@@ -24,6 +25,7 @@ export type PublicUser = {
   gender: string | null;
   role: string;
   isActive: boolean;
+  mustChangePassword: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -47,8 +49,11 @@ export function visibleRolesFor(viewerRoles: readonly string[]): RoleName[] {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Matches either spelling (0901... or +84901...) so older accounts keep working. */
   findByPhone(phone: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { phone } });
+    return this.prisma.user.findFirst({
+      where: { phone: { in: phoneVariants(normalizePhone(phone)) } },
+    });
   }
 
   findByUserID(userID: string): Promise<User | null> {
@@ -146,7 +151,7 @@ export class UsersService {
     try {
       const user = await this.prisma.user.create({
         data: {
-          phone: dto.phone,
+          phone: normalizePhone(dto.phone),
           passwordHash,
           fullName: dto.fullName,
           avatar: dto.avatar || null,
@@ -169,6 +174,47 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  /** Staff-created customer account: the phone number is the initial password and must be changed. */
+  async createCustomerWithDefaultPassword(
+    phone: string,
+    fullName: string,
+    actorAID: string,
+  ): Promise<PublicUser> {
+    const passwordHash = await bcrypt.hash(phone, BCRYPT_SALT_ROUNDS);
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          phone,
+          passwordHash,
+          fullName,
+          role: RoleName.CUSTOMER,
+          mustChangePassword: true,
+          createdByAID: actorAID,
+          updatedByAID: actorAID,
+        },
+      });
+      return this.toPublicUser(user);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Phone number already registered');
+      }
+      throw error;
+    }
+  }
+
+  async changePassword(
+    userAID: string,
+    passwordHash: string,
+  ): Promise<User> {
+    return this.prisma.user.update({
+      where: { userAID },
+      data: { passwordHash, mustChangePassword: false, updatedByAID: userAID },
+    });
   }
 
   async updateProfile(userAID: string, dto: UpdateProfileDto): Promise<User> {
@@ -211,6 +257,7 @@ export class UsersService {
       gender: user.gender,
       role: user.role,
       isActive: user.isActive,
+      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

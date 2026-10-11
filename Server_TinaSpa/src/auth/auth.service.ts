@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -9,10 +10,12 @@ import { JwtService } from '@nestjs/jwt';
 import { Prisma, type User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { createTokenId, hashToken } from '../common/utils/crypto.util.js';
+import { normalizePhone } from '../common/utils/phone.util.js';
 import { asJwtExpiresIn, expiresAtFromNow } from '../common/utils/expires.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import { UsersService } from '../users/users.service.js';
+import type { ChangePasswordDto } from './dto/change-password.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { JwtAccessPayload, JwtRefreshPayload } from './types/jwt-payload.js';
@@ -35,7 +38,7 @@ export class AuthService {
     let user: User;
     try {
       user = await this.usersService.create({
-        phone: dto.phone,
+        phone: normalizePhone(dto.phone),
         passwordHash,
         fullName: dto.fullName,
       });
@@ -118,6 +121,34 @@ export class AuthService {
     return {
       user: this.usersService.toPublicUser(user),
       roles: this.usersService.getRoleNames(user),
+    };
+  }
+
+  async changePassword(userAID: string, dto: ChangePasswordDto) {
+    const user = await this.usersService.findByUserAID(userAID);
+    if (!user) {
+      throw new UnauthorizedException('Invalid access token');
+    }
+
+    const matches = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!matches) {
+      // 400, not 401: the client would otherwise treat it as an expired session.
+      throw new BadRequestException('Current password is incorrect');
+    }
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException(
+        'New password must differ from the current password',
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_SALT_ROUNDS);
+    const updated = await this.usersService.changePassword(
+      user.userAID,
+      passwordHash,
+    );
+    return {
+      user: this.usersService.toPublicUser(updated),
+      roles: this.usersService.getRoleNames(updated),
     };
   }
 

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { overviewRanges, type OverviewRange } from '~/portal/manager/manager-overview.data'
+import { overviewRanges, type OverviewRange } from '~/portal/overview.api'
 
 export interface RangeTabsProps {
   readonly value: OverviewRange

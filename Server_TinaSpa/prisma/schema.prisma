@@ -21,6 +21,8 @@ model User {
   gender       String?   @db.VarChar(10)
   role         String    @default("CUSTOMER") @db.VarChar(20)
   isActive     Boolean   @default(true)
+  /// true khi nhân viên tạo tài khoản với mật khẩu mặc định (= số điện thoại); khách phải đổi mật khẩu
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime  @default(now())
   createdByAID String?   @db.VarChar(20)
   updatedAt    DateTime  @default(now()) @updatedAt
@@ -31,6 +33,7 @@ model User {
   appointments          Appointment[]  @relation("AppointmentCustomer")
   confirmedAppointments Appointment[]  @relation("AppointmentConfirmedBy")
   servedAppointments    Appointment[]  @relation("AppointmentServedBy")
+  customerServices      CustomerService[] @relation("CustomerServiceCustomer")
 
   @@index([role], map: "IX_User_role")
 }
@@ -120,7 +123,8 @@ model Service {
 
   note String?
 
-  serviceCategory ServiceCategory @relation(fields: [serviceCategoryAID], references: [serviceCategoryAID], onDelete: Restrict, map: "FK_Service_serviceCategoryAID")
+  serviceCategory  ServiceCategory   @relation(fields: [serviceCategoryAID], references: [serviceCategoryAID], onDelete: Restrict, map: "FK_Service_serviceCategoryAID")
+  customerServices CustomerService[]
 
   @@index([serviceCategoryAID, sortOrder], map: "IX_Service_serviceCategoryAID_sortOrder")
   @@index([status], map: "IX_Service_status")
@@ -202,6 +206,39 @@ model Appointment {
   @@index([appointmentDate, branchAID], map: "IX_Appointment_appointmentDate_branchAID")
   @@index([phoneNumber], map: "IX_Appointment_phoneNumber")
   @@index([customerAID], map: "IX_Appointment_customerAID")
+}
+
+/// Dịch vụ khách đã sử dụng, do nhân viên ghi nhận (độc lập với Appointment).
+/// name* và priceSnapshot là bản chụp tại thời điểm ghi nhận để sửa catalog không đổi lịch sử.
+model CustomerService {
+  customerServiceAID String @id @default(dbgenerated("\"generateBusinessID\"('CustomerService'::text)")) @db.VarChar(20)
+  customerServiceID  String @unique(map: "UQ_CustomerService_customerServiceID") @default(dbgenerated("\"generateBusinessID\"('CustomerService'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  customerAID   String   @db.VarChar(20)
+  serviceAID    String   @db.VarChar(20)
+  priceSnapshot Decimal  @db.Decimal(12, 0)
+  quantity      Int      @default(1)
+  usedAt        DateTime @default(now())
+  /// Ghi chú / dặn dò của nhân viên, khách xem được
+  staffNote     String?
+
+  createdAt    DateTime  @default(now())
+  createdByAID String?   @db.VarChar(20)
+  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedByAID String?   @db.VarChar(20)
+  deletedAt    DateTime?
+
+  note String?
+
+  customer User    @relation("CustomerServiceCustomer", fields: [customerAID], references: [userAID], onDelete: Restrict, map: "FK_CustomerService_customerAID")
+  service  Service @relation(fields: [serviceAID], references: [serviceAID], onDelete: Restrict, map: "FK_CustomerService_serviceAID")
+
+  @@index([customerAID, usedAt], map: "IX_CustomerService_customerAID_usedAt")
+  @@index([serviceAID], map: "IX_CustomerService_serviceAID")
 }
 
 model BusinessIdCounter {

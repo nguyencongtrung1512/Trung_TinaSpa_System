@@ -6,11 +6,12 @@ import type { Appointment } from '~/portal/appointments/appointments.api'
 import { TodayBookings } from '~/portal/appointments/TodayBookings'
 import { useAppointmentActions } from '~/portal/appointments/useAppointmentActions'
 import { useAppointments, useBranches } from '~/portal/appointments/useAppointments'
-import { ProposalBoard } from '~/portal/staff/ProposalBoard'
+import { RecentServices } from '~/portal/staff/RecentServices'
 import { ServiceBoard, serviceStatuses } from '~/portal/staff/ServiceBoard'
 import { ServicePanel } from '~/portal/staff/ServicePanel'
 import { formatPortalDate } from '~/portal/format'
 import { portalRoleLabel } from '~/portal/navigation'
+import { useOverview } from '~/portal/overview.api'
 import { portalCardClass } from '~/portal/styles'
 
 export function StaffDeskPage() {
@@ -23,6 +24,8 @@ export function StaffDeskPage() {
   const pendingQuery = useAppointments({ status: 'PENDING' }, 30_000)
   // Fetch today's appointments for service board and today's schedule
   const todayQuery = useAppointments({ date: today }, 30_000)
+
+  const overview = useOverview('today', 60_000)
 
   const [selectedID, setSelectedID] = useState<string | null>(null)
 
@@ -117,7 +120,7 @@ export function StaffDeskPage() {
 
       {actions.elements}
 
-      <ProposalBoard />
+      <RecentServices items={overview.data?.recent ?? []} loading={overview.loading} error={overview.error} />
     </motion.div>
   )
 }

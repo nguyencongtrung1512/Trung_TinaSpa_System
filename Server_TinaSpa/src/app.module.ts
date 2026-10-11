@@ -5,6 +5,7 @@ import { AppService } from './app.service.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { BranchesModule } from './branches/branches.module.js';
+import { CustomerServicesModule } from './customer-services/customer-services.module.js';
 import { ObserveModule } from './observe.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ServiceCatalogModule } from './service-catalog/service-catalog.module.js';
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module.js';
     StorageModule,
     BranchesModule,
     AppointmentsModule,
+    CustomerServicesModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({

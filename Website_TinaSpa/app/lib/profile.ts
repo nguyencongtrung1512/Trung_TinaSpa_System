@@ -20,6 +20,32 @@ function syncSession(profile: ProfileResponse) {
   return profile
 }
 
+export interface UsedServiceRecord {
+  readonly customerServiceID: string
+  readonly nameVietnamese: string
+  readonly nameEnglish: string | null
+  readonly nameCambodia: string | null
+  readonly price: number
+  readonly quantity: number
+  readonly usedAt: string
+  readonly staffNote: string | null
+}
+
+export interface UsedServiceList {
+  readonly items: UsedServiceRecord[]
+  readonly total: number
+  readonly page: number
+  readonly pageSize: number
+}
+
+export function fetchMyServices(page: number, pageSize = 10) {
+  return apiRequest<UsedServiceList>(`/auth/me/services?page=${page}&pageSize=${pageSize}`, { auth: true })
+}
+
+export function changeMyPassword(body: { currentPassword: string; newPassword: string }) {
+  return apiRequest<ProfileResponse>('/auth/change-password', { method: 'POST', body, auth: true }).then(syncSession)
+}
+
 export function fetchMyProfile() {
   return apiRequest<ProfileResponse>('/auth/me', { auth: true }).then(syncSession)
 }

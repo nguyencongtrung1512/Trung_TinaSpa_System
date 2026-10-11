@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Icon } from '~/components/ui/Icon'
 import { useToast } from '~/components/ui/toast-view'
+import { useBranches } from '~/portal/appointments/useAppointments'
 import { portalActions, portalActors } from '~/portal/navigation'
 import type { PortalRole } from '~/portal/types'
 
@@ -12,6 +13,7 @@ export interface PortalTopbarProps {
 
 export function PortalTopbar({ role, menuOpen, onMenuToggle }: PortalTopbarProps) {
   const actor = portalActors[role]
+  const branches = useBranches()
   const toast = useToast()
 
   return (
@@ -39,7 +41,7 @@ export function PortalTopbar({ role, menuOpen, onMenuToggle }: PortalTopbarProps
 
         <p className='ml-2 hidden items-center gap-2 rounded-full border border-rose-soft/80 bg-canvas px-4 py-2 text-sm font-medium text-ink xl:inline-flex'>
           <Icon name='location_on' size={18} className='text-clinic' />
-          {actor.branch}
+          {branches.length > 0 ? `${branches.length} khu vực nhận lịch` : actor.branch}
         </p>
 
         <div className='ml-auto flex items-center gap-2'>

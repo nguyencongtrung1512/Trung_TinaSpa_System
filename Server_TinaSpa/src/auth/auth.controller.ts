@@ -11,6 +11,7 @@ import {
 import { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { AuthService } from './auth.service.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -47,6 +48,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser('userID') userID: string) {
     return this.authService.me(userID);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @CurrentUser('userAID') userAID: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(userAID, dto);
   }
 
   @Patch('me')

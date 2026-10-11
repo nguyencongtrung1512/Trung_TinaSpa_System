@@ -1,6 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { Link } from 'react-router'
 import { Icon } from '~/components/ui/Icon'
+import { useSession } from '~/lib/auth'
 import type { Branch } from '~/lib/booking'
+import { portalRoleFromSession } from '~/portal/access'
 import { portalCardClass } from '~/portal/styles'
 import {
   appointmentStatusMeta,
@@ -39,6 +42,7 @@ export function AppointmentList({
 }) {
   const reduceMotion = useReducedMotion()
   const actions = useAppointmentActions(branches, onChanged)
+  const serviceRole = portalRoleFromSession(useSession())
 
   return (
     <>
@@ -145,6 +149,15 @@ export function AppointmentList({
                           <Icon name='close' size={15} />
                           Hủy lịch
                         </button>
+                      ) : null}
+                      {!closed && serviceRole ? (
+                        <Link
+                          to={`/portal/${serviceRole}/customer-services?phone=${encodeURIComponent(appointment.phoneNumber)}`}
+                          className={smallOutline}
+                        >
+                          <Icon name='receipt_long' size={16} />
+                          Ghi dịch vụ
+                        </Link>
                       ) : null}
                       {appointment.status === 'CANCELLED' ? (
                         <button

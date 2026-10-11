@@ -10,6 +10,7 @@ export type AuthUser = {
   gender?: 'MALE' | 'FEMALE' | 'OTHER' | null
   role: string
   isActive: boolean
+  mustChangePassword?: boolean
   createdAt?: string
 }
 

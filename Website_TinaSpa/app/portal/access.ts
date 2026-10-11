@@ -23,3 +23,9 @@ export function destinationForSession(session: AuthSession) {
   const role = portalRoleFromSession(session)
   return role ? `/portal/${role}` : '/'
 }
+
+/** Where to go right after signing in; customers on the default password are sent to change it. */
+export function landingForSession(session: AuthSession) {
+  const destination = destinationForSession(session)
+  return destination === '/' && session.user.mustChangePassword ? '/account' : destination
+}
