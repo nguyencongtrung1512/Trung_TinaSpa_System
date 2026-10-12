@@ -138,7 +138,7 @@ const managerNavigation: readonly PortalNavGroup[] = [
         label: 'Sản phẩm',
         icon: 'inventory_2',
         to: '/portal/manager/products',
-        summary: 'Sản phẩm bán lẻ và tồn kho chi nhánh.'
+        summary: 'Danh mục và sản phẩm bán lẻ hiển thị trên website.'
       },
       {
         label: 'Lộ trình chăm sóc',
@@ -233,6 +233,12 @@ const adminNavigation: readonly PortalNavGroup[] = [
         icon: 'spa',
         to: '/portal/admin/services',
         summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
+      },
+      {
+        label: 'Sản phẩm',
+        icon: 'inventory_2',
+        to: '/portal/admin/products',
+        summary: 'Danh mục và sản phẩm hiển thị trên website.'
       }
     ]
   }

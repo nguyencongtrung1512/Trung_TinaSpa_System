@@ -4,6 +4,7 @@ import { useSession } from '~/lib/auth'
 import { AppointmentsPage } from '~/portal/appointments/AppointmentsPage'
 import { CustomerServicePage } from '~/portal/customer-services/CustomerServicePage'
 import { BlogsPage } from '~/portal/blogs/BlogsPage'
+import { ProductManagementPage } from '~/portal/manager/products/ProductManagementPage'
 import { PortalShell } from '~/portal/layout/PortalShell'
 import { ManagerOverviewPage } from '~/portal/manager/ManagerOverviewPage'
 import { ServiceCatalogPage } from '~/portal/manager/services/ServiceCatalogPage'
@@ -40,6 +41,7 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
     { path: 'customer-services', element: <CustomerServicePage role='manager' /> },
     { path: 'article-review', element: <BlogsPage role='manager' /> },
     { path: 'services', element: <ServiceCatalogPage role='manager' /> },
+    { path: 'products', element: <ProductManagementPage role='manager' /> },
     {
       path: 'customers',
       element: (
@@ -71,6 +73,7 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
     { path: 'customer-services', element: <CustomerServicePage role='admin' /> },
     { path: 'blogs', element: <BlogsPage role='admin' /> },
     { path: 'services', element: <ServiceCatalogPage role='admin' /> },
+    { path: 'products', element: <ProductManagementPage role='admin' /> },
     {
       path: 'users',
       element: (

@@ -1,32 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { categoryLabel, formatPrice, useRelatedProducts, type ProductItem } from '~/data/products'
+import { formatPrice, useRelatedProducts, type ProductItem } from '~/data/products'
 import { Icon } from '~/components/ui/Icon'
 import { StableText } from '~/components/ui/StableText'
-import i18n from '~/i18n'
 
 const tabs = ['story', 'ingredients', 'usage', 'notes'] as const
 
 type TabId = (typeof tabs)[number]
 
 const trustPoints = ['verified', 'spa', 'favorite'] as const
-
-function formatRating(value: number) {
-  return value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-}
-
-function Stars({ rating }: { readonly rating: number }) {
-  return (
-    <span className='inline-flex items-center text-clinic' aria-hidden>
-      {Array.from({ length: 5 }, (_, index) => {
-        const filled = rating >= index + 1
-        const half = !filled && rating > index
-        return <Icon key={index} name={half ? 'star_half' : 'star'} filled={filled || half} size={18} />
-      })}
-    </span>
-  )
-}
 
 export interface ProductDetailPageProps {
   readonly product: ProductItem
@@ -36,10 +19,14 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
   const { t } = useTranslation()
   const [shot, setShot] = useState(0)
   const [qty, setQty] = useState(1)
+  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '')
   const [tab, setTab] = useState<TabId>('story')
   const [notice, setNotice] = useState('')
-  const activeShot = product.gallery[shot] ?? product.gallery[0]
-  const companions = useRelatedProducts(product.id)
+  const companions = useRelatedProducts(product)
+  const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0]
+  const gallery = variant.gallery.length > 0 ? variant.gallery : product.gallery
+  const activeShot = gallery[shot] ?? gallery[0]
+  const cartName = product.variants.length > 1 ? `${product.name} (${variant.name})` : product.name
 
   function changeQty(next: number) {
     setQty(Math.min(10, Math.max(1, next)))
@@ -64,14 +51,18 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
         <div className='mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12'>
           <div>
             <div className='overflow-hidden rounded-[1.5rem] bg-surface p-3 shadow-[0_16px_40px_var(--color-whisper-shadow)]'>
-              <img
-                src={activeShot.src}
-                alt={activeShot.alt}
-                className='aspect-[4/5] w-full rounded-[1.15rem] object-cover sm:aspect-[5/4]'
-              />
+              {activeShot ? (
+                <img
+                  src={activeShot.src}
+                  alt={activeShot.alt}
+                  className='aspect-[4/5] w-full rounded-[1.15rem] object-cover sm:aspect-[5/4]'
+                />
+              ) : (
+                <div className='aspect-[4/5] w-full rounded-[1.15rem] bg-mist sm:aspect-[5/4]' />
+              )}
             </div>
             <div className='mt-4 grid grid-cols-4 gap-3' role='group' aria-label={t('products.detail.gallery')}>
-              {product.gallery.map((item, index) => {
+              {gallery.map((item, index) => {
                 const selected = index === shot
                 return (
                   <button
@@ -93,29 +84,51 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
 
           <div>
             <p className='text-xs font-bold tracking-[0.22em] text-clinic uppercase'>
-              {categoryLabel(product.category)}
+              {product.categoryName}
             </p>
             <h1 className='mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl'>{product.name}</h1>
             <p className='mt-2 text-sm font-semibold text-muted'>{product.subtitle}</p>
-            <p className='mt-3 flex items-center gap-2 text-sm text-muted'>
-              <Stars rating={product.rating} />
-              <span>
-                <span className='sr-only'>{t('products.list.rating')}</span>
-                {formatRating(product.rating)} ({t('products.detail.reviews', { count: product.reviews })})
-              </span>
-            </p>
             <p className='mt-4 text-sm leading-7 text-muted'>{product.description}</p>
 
             <div className='mt-6 flex flex-wrap items-end gap-3'>
-              <p className='text-3xl font-extrabold text-clinic'>{formatPrice(product.price)}</p>
-              {product.compareAt ? (
-                <p className='pb-1 text-sm text-muted line-through'>{formatPrice(product.compareAt)}</p>
+              <p className='text-3xl font-extrabold text-clinic'>{formatPrice(variant.price)}</p>
+              {variant.compareAt ? (
+                <p className='pb-1 text-sm text-muted line-through'>{formatPrice(variant.compareAt)}</p>
               ) : null}
               <p className='pb-1 text-sm font-semibold text-clinic'>
                 <StableText i18nKey='products.detail.inStock' align='start' />
               </p>
             </div>
-            <p className='mt-1 text-xs text-muted'>{t('products.detail.volume', { volume: product.volume })}</p>
+            {product.variants.length > 1 ? (
+              <div className='mt-5' role='radiogroup' aria-label={t('products.detail.variants')}>
+                <p className='text-xs font-bold tracking-[0.14em] text-muted uppercase'>{t('products.detail.variants')}</p>
+                <div className='mt-2 flex flex-wrap gap-2'>
+                  {product.variants.map((item) => {
+                    const selected = item.id === variant.id
+                    return (
+                      <button
+                        key={item.id}
+                        type='button'
+                        role='radio'
+                        aria-checked={selected}
+                        onClick={() => {
+                          setVariantId(item.id)
+                          setShot(0)
+                          setNotice('')
+                        }}
+                        className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          selected
+                            ? 'border-clinic bg-clinic text-white'
+                            : 'border-rose-soft bg-surface text-ink hover:border-clinic hover:text-clinic'
+                        }`}
+                      >
+                        {item.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className='mt-6 flex items-center gap-3'>
               <div className='inline-flex items-center rounded-full border border-rose-soft bg-surface'>
@@ -144,7 +157,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
 
             <button
               type='button'
-              onClick={() => setNotice(t('products.detail.added', { qty, name: product.name }))}
+              onClick={() => setNotice(t('products.detail.added', { qty, name: cartName }))}
               className='mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-clinic px-6 text-sm font-semibold text-white shadow-[0_12px_28px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
             >
               <Icon name='shopping_bag' size={18} />

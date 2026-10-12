@@ -1,20 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
-  categoryLabel,
   formatPrice,
-  matchesPrice,
   priceFilters,
-  productCategories,
   sortOptions,
-  useProducts,
+  useProductCategories,
+  useProductList,
   type PriceFilterId,
-  type ProductCategoryId,
   type ProductItem,
   type SortId
 } from '~/data/products'
 import { Icon } from '~/components/ui/Icon'
+import { Pagination } from '~/components/ui/Pagination'
 import { StableText } from '~/components/ui/StableText'
 interface ProductCardProps {
   readonly product: ProductItem
@@ -59,7 +57,7 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
 
       <div className='flex flex-1 flex-col p-4 sm:p-5'>
         <p className='text-[11px] font-semibold tracking-[0.14em] text-muted uppercase'>
-          {categoryLabel(product.category)}
+          {product.categoryName}
         </p>
         <h2 className='mt-1 text-base font-extrabold tracking-tight text-ink'>
           <Link to={`/products/${product.id}`} className='transition hover:text-clinic'>
@@ -72,6 +70,7 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
         <div className='mt-auto flex items-center justify-between gap-3 pt-4'>
           <p className='text-lg font-extrabold text-clinic'>
             <span className='sr-only'>{t('products.list.price')}</span>
+            {product.variants.length > 1 ? <span className='mr-1 text-xs font-semibold text-muted'>{t('products.list.from')}</span> : null}
             {formatPrice(product.price)}
           </p>
           <button
@@ -90,6 +89,8 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
   )
 }
 
+const PAGE_SIZE = 9
+
 function toggleId(current: ReadonlySet<string>, id: string) {
   const next = new Set(current)
   if (next.has(id)) next.delete(id)
@@ -99,9 +100,11 @@ function toggleId(current: ReadonlySet<string>, id: string) {
 
 export function ProductsPage() {
   const { t } = useTranslation()
-  const products = useProducts()
-  const [category, setCategory] = useState<ProductCategoryId>('all')
+  const categories = useProductCategories().data
+  const [categoryID, setCategoryID] = useState('all')
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortId>('newest')
   const [price, setPrice] = useState<PriceFilterId>('all')
   const [layout, setLayout] = useState<'grid' | 'list'>('grid')
@@ -109,32 +112,40 @@ export function ProductsPage() {
   const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set())
   const [notice, setNotice] = useState('')
 
-  const visible = useMemo(() => {
-    const keyword = query.trim().toLocaleLowerCase()
-    const filtered = products.filter((product) => {
-      const inCategory = category === 'all' || product.category === category
-      const inPrice = matchesPrice(product.price, price)
-      const haystack = `${product.name} ${product.subtitle} ${product.description} ${categoryLabel(product.category)}`
-      const inQuery = keyword.length === 0 || haystack.toLocaleLowerCase().includes(keyword)
-      return inCategory && inPrice && inQuery
-    })
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query.trim())
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query])
 
-    return [...filtered].sort((left, right) => {
-      if (sort === 'price-asc') return left.price - right.price
-      if (sort === 'price-desc') return right.price - left.price
-      return right.createdAt.localeCompare(left.createdAt)
-    })
-  }, [category, price, query, sort, products])
+  const { data, loading, error, reload } = useProductList({
+    categoryID: categoryID === 'all' ? undefined : categoryID,
+    search: debouncedQuery,
+    price,
+    sort,
+    page,
+    pageSize: PAGE_SIZE
+  })
+  const visible = data.items
 
   function resetFilters() {
-    setCategory('all')
+    setCategoryID('all')
     setQuery('')
+    setDebouncedQuery('')
     setSort('newest')
     setPrice('all')
+    setPage(1)
+  }
+
+  function changePage(next: number) {
+    setPage(next)
+    document.getElementById('product-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   function onToggleAdded(id: string) {
-    const product = products.find((item) => item.id === id)
+    const product = visible.find((item) => item.id === id)
     const willAdd = !addedIds.has(id)
     setAddedIds((current) => toggleId(current, id))
     setNotice(product ? t(willAdd ? 'products.list.added' : 'products.list.removed', { name: product.name }) : '')
@@ -158,20 +169,23 @@ export function ProductsPage() {
           role='group'
           aria-label={t('products.list.groups')}
         >
-          {productCategories.map((item) => {
-            const active = category === item
+          {[{ id: 'all', name: t('products.categories.all') }, ...categories].map((item) => {
+            const active = categoryID === item.id
             return (
               <button
-                key={item}
+                key={item.id}
                 type='button'
                 aria-pressed={active}
-                onClick={() => setCategory(item)}
+                onClick={() => {
+                  setCategoryID(item.id)
+                  setPage(1)
+                }}
                 className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition ${active
                   ? 'bg-clinic text-white shadow-[0_8px_20px_var(--color-whisper-shadow)]'
                   : 'border border-rose-soft bg-surface text-ink hover:border-clinic hover:text-clinic'
                   }`}
               >
-                <StableText i18nKey={`products.categories.${item}`} />
+                {item.name}
               </button>
             )
           })}
@@ -198,7 +212,10 @@ export function ProductsPage() {
             <select
               value={sort}
               aria-label={t('products.list.sortAria')}
-              onChange={(event) => setSort(event.target.value as SortId)}
+              onChange={(event) => {
+                setSort(event.target.value as SortId)
+                setPage(1)
+              }}
               className='w-40 bg-transparent font-semibold text-ink outline-none'
             >
               {sortOptions.map((item) => (
@@ -214,7 +231,10 @@ export function ProductsPage() {
             <select
               value={price}
               aria-label={t('products.list.priceAria')}
-              onChange={(event) => setPrice(event.target.value as PriceFilterId)}
+              onChange={(event) => {
+                setPrice(event.target.value as PriceFilterId)
+                setPage(1)
+              }}
               className='w-44 bg-transparent font-semibold text-ink outline-none'
             >
               {priceFilters.map((item) => (
@@ -250,12 +270,29 @@ export function ProductsPage() {
         </div>
 
         <p className='mt-4 text-sm text-muted' role='status'>
-          {t('products.list.count', { count: visible.length })}
+          {t('products.list.count', { count: data.total })}
           {addedIds.size > 0 ? t('products.list.inCart', { count: addedIds.size }) : ''}
           {savedIds.size > 0 ? t('products.list.saved', { count: savedIds.size }) : ''}
         </p>
 
-        {visible.length === 0 ? (
+        <div id='product-results' className='scroll-mt-24' />
+
+        {error ? (
+          <div className='mt-6 rounded-[1.5rem] bg-surface px-6 py-16 text-center shadow-[0_12px_32px_var(--color-whisper-shadow)]'>
+            <p className='text-sm text-muted'>{t('products.list.loadError')}</p>
+            <button
+              type='button'
+              onClick={reload}
+              className='mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-clinic px-6 py-2.5 text-sm font-semibold text-white'
+            >
+              {t('products.list.retry')}
+            </button>
+          </div>
+        ) : loading && visible.length === 0 ? (
+          <p className='mt-6 rounded-[1.5rem] bg-surface px-6 py-16 text-center text-sm text-muted' role='status'>
+            {t('products.list.loading')}
+          </p>
+        ) : visible.length === 0 ? (
           <div className='mt-6 rounded-[1.5rem] bg-surface px-6 py-16 text-center shadow-[0_12px_32px_var(--color-whisper-shadow)]'>
             <span className='mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-mist text-clinic'>
               <Icon name='search_off' size={32} />
@@ -284,6 +321,25 @@ export function ProductsPage() {
               />
             ))}
           </div>
+        )}
+
+        {error ? null : (
+          <Pagination
+            className='mt-8'
+            variant='site'
+            page={page}
+            pageSize={data.pageSize}
+            total={data.total}
+            disabled={loading}
+            onPageChange={changePage}
+            labels={{
+              navigation: t('products.list.pagination.navigation'),
+              previous: t('products.list.pagination.previous'),
+              next: t('products.list.pagination.next'),
+              page: (value) => t('products.list.pagination.page', { page: value }),
+              summary: (range) => t('products.list.pagination.summary', range)
+            }}
+          />
         )}
 
         <p className='sr-only' aria-live='polite'>

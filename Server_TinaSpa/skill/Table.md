@@ -396,12 +396,8 @@ model Product {
   compareAtPrice        Decimal?  @db.Decimal(12, 0)
   image                 String?
   imageAlt              String?   @db.VarChar(255)
-  badge                 String?   @db.VarChar(50)
-  volume                String?   @db.VarChar(30)
-  rating                Decimal   @default(0) @db.Decimal(2, 1)
-  reviewCount           Int       @default(0)
-  stockQuantity         Int       @default(0)
-  sortOrder             Int       @default(0)
+  badge                 String?   @db.VarChar(100)
+  volume                String?   @db.VarChar(50)
   status                String    @default("ACTIVE") @db.VarChar(20)
 
   createdAt             DateTime  @default(now())

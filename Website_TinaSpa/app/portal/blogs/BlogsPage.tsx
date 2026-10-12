@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Icon } from '~/components/ui/Icon'
+import { Pagination } from '~/components/ui/Pagination'
 import { useToast } from '~/components/ui/toast-view'
 import { useSession } from '~/lib/auth'
 import { formatPortalDate } from '~/portal/format'
@@ -200,8 +201,6 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
     }
   }
 
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1
-
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -397,28 +396,16 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
           </ul>
         )}
 
-        {result && result.total > result.pageSize ? (
-          <div className='mt-2 flex items-center justify-between gap-3 px-1 pt-3'>
-            <button
-              type='button'
-              className={outlineButtonClass}
-              disabled={page <= 1 || loading}
-              onClick={() => setPage((current) => current - 1)}
-            >
-              Trang trước
-            </button>
-            <span className='text-xs text-muted'>
-              Trang {page}/{totalPages} · {result.total} bài
-            </span>
-            <button
-              type='button'
-              className={outlineButtonClass}
-              disabled={page >= totalPages || loading}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              Trang sau
-            </button>
-          </div>
+        {result ? (
+          <Pagination
+            className='mt-2 px-1 pt-3'
+            page={page}
+            pageSize={result.pageSize}
+            total={result.total}
+            disabled={loading}
+            onPageChange={setPage}
+            labels={{ summary: ({ total }) => `${total} bài viết` }}
+          />
         ) : null}
       </section>
 

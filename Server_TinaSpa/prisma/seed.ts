@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { seedBranches } from './branch.seed.js';
 import { seedServiceCatalog } from './service-catalog.seed.js';
+import { seedProducts } from './product.seed.js';
 
 const prisma = new PrismaClient();
 
@@ -32,6 +33,7 @@ try {
   await seedAdmin();
   await seedServiceCatalog(prisma);
   await seedBranches(prisma);
+  await seedProducts(prisma);
 } finally {
   await prisma.$disconnect();
 }

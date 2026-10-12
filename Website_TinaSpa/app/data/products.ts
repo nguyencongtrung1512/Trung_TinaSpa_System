@@ -1,15 +1,11 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import i18n from '~/i18n'
+import { apiRequest } from '~/lib/api'
 
-export const productCategories = ['all', 'serum', 'cream', 'sunscreen', 'mask', 'eye'] as const
-
-export const sortOptions = ['newest', 'price-asc', 'price-desc', 'rating'] as const
+export const sortOptions = ['newest', 'price-asc', 'price-desc'] as const
 
 export const priceFilters = ['all', 'under-500', '500-700', 'over-700'] as const
 
-export type ProductCategoryId = (typeof productCategories)[number]
-export type ProductCategory = Exclude<ProductCategoryId, 'all'>
 export type SortId = (typeof sortOptions)[number]
 export type PriceFilterId = (typeof priceFilters)[number]
 
@@ -24,16 +20,29 @@ export interface ProductEffect {
   readonly text: string
 }
 
+export interface ProductVariantItem {
+  readonly id: string
+  readonly name: string
+  /** Variant gallery; empty means the product gallery is shown. */
+  readonly gallery: readonly ProductShot[]
+  readonly price: number
+  readonly compareAt: number | null
+}
+
 export interface ProductItem {
+  /** Public slug; used in the `/products/:slug` URL. */
   readonly id: string
   readonly name: string
   readonly subtitle: string
   readonly description: string
+  /** "From" price: the cheapest variant. */
   readonly price: number
   readonly compareAt: number | null
+  readonly variants: readonly ProductVariantItem[]
   readonly image: string
   readonly imageAlt: string
-  readonly category: ProductCategory
+  readonly categoryID: string
+  readonly categoryName: string
   readonly badge: string
   readonly createdAt: string
   readonly story: readonly string[]
@@ -45,157 +54,307 @@ export interface ProductItem {
   readonly gallery: readonly ProductShot[]
 }
 
-interface ProductBase {
+export interface ProductCategoryItem {
   readonly id: string
+  readonly slug: string
   readonly name: string
+  readonly productCount: number
+}
+
+interface ApiCategory {
+  readonly productCategoryID: string
+  readonly slug: string
+  readonly nameVietnamese: string
+  readonly nameEnglish: string | null
+  readonly nameCambodia: string | null
+  readonly productCount: number
+}
+
+interface ApiDetail {
+  readonly detailType: string
+  readonly nameVietnamese: string
+  readonly nameEnglish: string | null
+  readonly contentVietnamese: string | null
+  readonly contentEnglish: string | null
+  readonly icon: string | null
+  readonly image: string | null
+  readonly imageAlt: string | null
+  readonly sortOrder: number
+}
+
+interface ApiVariant {
+  readonly productVariantID: string
+  readonly images?: { readonly image: string; readonly altVietnamese: string; readonly altEnglish: string | null }[]
+  readonly nameVietnamese: string
+  readonly nameEnglish: string | null
   readonly price: number
-  readonly compareAt: number | null
-  readonly image: string
-  readonly category: ProductCategory
+  readonly compareAtPrice: number | null
+}
+
+interface ApiProduct {
+  readonly slug: string
+  readonly nameVietnamese: string
+  readonly nameEnglish: string | null
+  readonly subtitleVietnamese: string | null
+  readonly subtitleEnglish: string | null
+  readonly descriptionVietnamese: string | null
+  readonly descriptionEnglish: string | null
+  readonly price: number
+  readonly compareAtPrice: number | null
+  readonly image: string | null
+  readonly imageAlt: string | null
+  readonly badge: string | null
   readonly createdAt: string
-  readonly effectIcons: readonly string[]
-  readonly gallery: readonly string[]
+  readonly category: ApiCategory
+  readonly variants?: ApiVariant[]
+  readonly details?: ApiDetail[]
 }
 
-interface ProductText {
-  readonly subtitle: string
-  readonly description: string
-  readonly imageAlt: string
-  readonly badge: string
-  readonly story: readonly string[]
-  readonly highlights: readonly string[]
-  readonly effects: readonly { readonly title: string; readonly text: string }[]
-  readonly ingredients: readonly string[]
-  readonly usage: readonly string[]
-  readonly notes: readonly string[]
-  readonly gallery: readonly string[]
+interface ApiProductPage {
+  readonly items: ApiProduct[]
+  readonly total: number
+  readonly page: number
+  readonly pageSize: number
 }
 
-const productBases: readonly ProductBase[] = [
-  {
-    id: 'luminous-elixir',
-    name: 'Luminous Elixir',
-    price: 890000,
-    compareAt: 1050000,
-    image: '/images/p4.png',
-    category: 'serum',
-    createdAt: '2026-09-18',
-    effectIcons: ['auto_awesome', 'water_drop', 'spa'],
-    gallery: ['/images/p4.png', '/images/p5.png', '/images/p6.png', '/images/p1.png']
-  },
-  {
-    id: 'rose-renewal-cream',
-    name: 'Botanical Rose Renewal Cream',
-    price: 750000,
-    compareAt: 890000,
-    image: '/images/p6.png',
-    category: 'cream',
-    createdAt: '2026-09-12',
-    effectIcons: ['water_drop', 'spa', 'favorite'],
-    gallery: ['/images/p6.png', '/images/p4.png', '/images/p5.png', '/images/p2.png']
-  },
-  {
-    id: 'rose-petal-toner',
-    name: 'Rose Petal Infusion Toner',
-    price: 550000,
-    compareAt: null,
-    image: '/images/p5.png',
-    category: 'serum',
-    createdAt: '2026-08-28',
-    effectIcons: ['water_drop', 'spa', 'air'],
-    gallery: ['/images/p5.png', '/images/p4.png', '/images/p6.png', '/images/p1.png']
-  },
-  {
-    id: 'biocellulose-mask',
-    name: 'Deluxe Spa Facial Biocellulose Mask',
-    price: 480000,
-    compareAt: null,
-    image: '/images/p1.png',
-    category: 'mask',
-    createdAt: '2026-08-04',
-    effectIcons: ['healing', 'water_drop', 'spa'],
-    gallery: ['/images/p1.png', '/images/p5.png', '/images/p6.png', '/images/p4.png']
-  },
-  {
-    id: 'luxury-sunscreen',
-    name: 'Luxury Sunscreen SPF 50+',
-    price: 620000,
-    compareAt: 750000,
-    image: '/images/p2.png',
-    category: 'sunscreen',
-    createdAt: '2026-07-16',
-    effectIcons: ['wb_sunny', 'verified', 'face_retouching_natural'],
-    gallery: ['/images/p2.png', '/images/p6.png', '/images/p3.png', '/images/p4.png']
-  },
-  {
-    id: 'peptide-firming-eye',
-    name: 'Peptide Firming Eye',
-    price: 680000,
-    compareAt: null,
-    image: '/images/p3.png',
-    category: 'eye',  
-    createdAt: '2026-06-22',
-    effectIcons: ['visibility', 'spa', 'favorite'],
-    gallery: ['/images/p3.png', '/images/p4.png', '/images/p2.png', '/images/p6.png']
-  }
-]
+const isEnglish = (language: string | undefined) => language?.startsWith('en') === true
 
-function localizeProduct(base: ProductBase, language?: string): ProductItem {
-  const t = i18n.getFixedT(language ?? i18n.resolvedLanguage ?? i18n.language)
-  const text = t(`products.items.${base.id}`, { returnObjects: true }) as ProductText
+/** Picks the field for the current language, falling back to Vietnamese (always filled). */
+function pick(language: string | undefined, vietnamese: string | null, english: string | null) {
+  return (isEnglish(language) ? english || vietnamese : vietnamese || english) ?? ''
+}
+
+function toCategory(category: ApiCategory, language: string | undefined): ProductCategoryItem {
   return {
-    ...base,
-    subtitle: text.subtitle,
-    description: text.description,
-    imageAlt: text.imageAlt,
-    badge: text.badge,
-    story: text.story,
-    highlights: text.highlights,
-    effects: text.effects.map((effect, index) => ({ ...effect, icon: base.effectIcons[index] ?? 'spa' })),
-    ingredients: text.ingredients,
-    usage: text.usage,
-    notes: text.notes,
-    gallery: base.gallery.map((src, index) => ({ src, alt: text.gallery[index] ?? base.name }))
+    id: category.productCategoryID,
+    slug: category.slug,
+    name: pick(language, category.nameVietnamese, category.nameEnglish),
+    productCount: category.productCount
   }
 }
 
-export function findProduct(id: string) {
-  const base = productBases.find((item) => item.id === id)
-  return base ? localizeProduct(base) : undefined
+function toProduct(product: ApiProduct, language: string | undefined): ProductItem {
+  const details = [...(product.details ?? [])].sort((a, b) => a.sortOrder - b.sortOrder)
+  const texts = (type: string) =>
+    details
+      .filter((detail) => detail.detailType === type)
+      .map((detail) => pick(language, detail.contentVietnamese, detail.contentEnglish))
+      .filter(Boolean)
+  const gallery = details
+    .filter((detail) => detail.detailType === 'GALLERY' && detail.image)
+    .map((detail) => ({ src: detail.image ?? '', alt: detail.imageAlt || product.nameVietnamese }))
+  const name = pick(language, product.nameVietnamese, product.nameEnglish)
+  const image = product.image ?? gallery[0]?.src ?? ''
+
+  return {
+    id: product.slug,
+    name,
+    subtitle: pick(language, product.subtitleVietnamese, product.subtitleEnglish),
+    description: pick(language, product.descriptionVietnamese, product.descriptionEnglish),
+    price: product.price,
+    compareAt: product.compareAtPrice,
+    variants:
+      product.variants && product.variants.length > 0
+        ? product.variants.map((variant) => ({
+            id: variant.productVariantID,
+            name: pick(language, variant.nameVietnamese, variant.nameEnglish),
+            gallery: (variant.images ?? []).map((item) => ({
+              src: item.image,
+              alt: pick(language, item.altVietnamese, item.altEnglish) || name
+            })),
+            price: variant.price,
+            compareAt: variant.compareAtPrice
+          }))
+        : [{ id: product.slug, name, gallery: [], price: product.price, compareAt: product.compareAtPrice }],
+    image,
+    imageAlt: product.imageAlt || name,
+    categoryID: product.category.productCategoryID,
+    categoryName: pick(language, product.category.nameVietnamese, product.category.nameEnglish),
+    badge: product.badge ?? '',
+    createdAt: product.createdAt,
+    story: texts('STORY'),
+    highlights: texts('HIGHLIGHT'),
+    effects: details
+      .filter((detail) => detail.detailType === 'EFFECT')
+      .map((detail) => ({
+        icon: detail.icon || 'spa',
+        title: pick(language, detail.nameVietnamese, detail.nameEnglish),
+        text: pick(language, detail.contentVietnamese, detail.contentEnglish)
+      })),
+    ingredients: texts('INGREDIENT'),
+    usage: texts('USAGE'),
+    notes: texts('NOTE'),
+    gallery: gallery.length > 0 ? gallery : image ? [{ src: image, alt: product.imageAlt || name }] : []
+  }
 }
 
-export function useProducts(): readonly ProductItem[] {
-  const { i18n: instance } = useTranslation()
-  const language = instance.resolvedLanguage
-  return useMemo(() => productBases.map((base) => localizeProduct(base, language)), [language])
+export interface ProductQuery {
+  readonly categoryID?: string
+  readonly search?: string
+  readonly price?: PriceFilterId
+  readonly sort?: SortId
+  readonly page?: number
+  readonly pageSize?: number
 }
 
-export function useProduct(id: string) {
-  const products = useProducts()
-  return products.find((item) => item.id === id)
+function queryString(query: ProductQuery) {
+  const params = new URLSearchParams()
+  if (query.categoryID) params.set('categoryID', query.categoryID)
+  if (query.search) params.set('search', query.search)
+  if (query.sort) params.set('sort', query.sort)
+  if (query.price === 'under-500') params.set('maxPrice', '499999')
+  if (query.price === '500-700') {
+    params.set('minPrice', '500000')
+    params.set('maxPrice', '700000')
+  }
+  if (query.price === 'over-700') params.set('minPrice', '700001')
+  if (query.page) params.set('page', String(query.page))
+  if (query.pageSize) params.set('pageSize', String(query.pageSize))
+  const text = params.toString()
+  return text ? `?${text}` : ''
 }
 
-export function useRelatedProducts(id: string, limit = 3) {
-  const products = useProducts()
-  const current = products.find((item) => item.id === id)
-  if (!current) return []
-  const others = products.filter((item) => item.id !== id)
-  const sameCategory = others.filter((item) => item.category === current.category)
-  const rest = others.filter((item) => item.category !== current.category)
-  return [...sameCategory, ...rest].slice(0, limit)
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Request failed'
 }
 
-export function categoryLabel(category: ProductCategoryId) {
-  return i18n.t(`products.categories.${category}`)
+export interface AsyncState<T> {
+  readonly data: T
+  readonly loading: boolean
+  readonly error?: string
+}
+
+export interface ProductListState extends AsyncState<ProductListData> {
+  readonly reload: () => void
+}
+
+export interface ProductListData {
+  readonly items: readonly ProductItem[]
+  readonly total: number
+  readonly page: number
+  readonly pageSize: number
+}
+
+const emptyList: ProductListData = { items: [], total: 0, page: 1, pageSize: 12 }
+
+export function useProductCategories(): AsyncState<readonly ProductCategoryItem[]> {
+  const { i18n } = useTranslation()
+  const language = i18n.resolvedLanguage
+  const [raw, setRaw] = useState<ApiCategory[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    let cancelled = false
+    apiRequest<ApiCategory[]>('/product-categories')
+      .then((next) => !cancelled && setRaw(next))
+      .catch((failure: unknown) => !cancelled && setError(errorMessage(failure)))
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const data = useMemo(() => raw.map((category) => toCategory(category, language)), [raw, language])
+  return { data, loading, error }
+}
+
+/** One page of products from the API; refetches when the query changes. */
+export function useProductList(query: ProductQuery): ProductListState {
+  const { i18n } = useTranslation()
+  const language = i18n.resolvedLanguage
+  const [raw, setRaw] = useState<ApiProductPage>()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>()
+  const [reloadKey, setReloadKey] = useState(0)
+  const key = queryString(query)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    apiRequest<ApiProductPage>(`/products${key}`)
+      .then((next) => {
+        if (cancelled) return
+        setRaw(next)
+        setError(undefined)
+      })
+      .catch((failure: unknown) => !cancelled && setError(errorMessage(failure)))
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+  }, [key, reloadKey])
+
+  const data = useMemo<ProductListData>(
+    () =>
+      raw
+        ? {
+            items: raw.items.map((product) => toProduct(product, language)),
+            total: raw.total,
+            page: raw.page,
+            pageSize: raw.pageSize
+          }
+        : emptyList,
+    [raw, language]
+  )
+  const reload = useCallback(() => setReloadKey((value) => value + 1), [])
+  return { data, loading, error, reload }
+}
+
+export interface ProductState {
+  readonly product?: ProductItem
+  readonly loading: boolean
+  readonly notFound: boolean
+  readonly error?: string
+}
+
+export function useProduct(slug: string): ProductState {
+  const { i18n } = useTranslation()
+  const language = i18n.resolvedLanguage
+  const [raw, setRaw] = useState<ApiProduct>()
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setNotFound(false)
+    setError(undefined)
+    apiRequest<ApiProduct>(`/products/${encodeURIComponent(slug)}`)
+      .then((next) => !cancelled && setRaw(next))
+      .catch((failure: unknown) => {
+        if (cancelled) return
+        setRaw(undefined)
+        if ((failure as { status?: number }).status === 404) setNotFound(true)
+        else setError(errorMessage(failure))
+      })
+      .finally(() => !cancelled && setLoading(false))
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  const product = useMemo(() => (raw ? toProduct(raw, language) : undefined), [raw, language])
+  return { product, loading, notFound, error }
+}
+
+/** Other products of the same category first, topped up with the newest ones. */
+export function useRelatedProducts(current: ProductItem, limit = 3): readonly ProductItem[] {
+  const sameCategory = useProductList({ categoryID: current.categoryID, pageSize: limit + 1 })
+  const newest = useProductList({ pageSize: limit + 1 })
+  return useMemo(() => {
+    const seen = new Set([current.id])
+    const related: ProductItem[] = []
+    for (const item of [...sameCategory.data.items, ...newest.data.items]) {
+      if (seen.has(item.id)) continue
+      seen.add(item.id)
+      related.push(item)
+    }
+    return related.slice(0, limit)
+  }, [current.id, sameCategory.data.items, newest.data.items, limit])
 }
 
 export function formatPrice(value: number) {
   return `${value.toLocaleString('vi-VN')}đ`
-}
-
-export function matchesPrice(price: number, filter: PriceFilterId) {
-  if (filter === 'under-500') return price < 500000
-  if (filter === '500-700') return price >= 500000 && price <= 700000
-  if (filter === 'over-700') return price > 700000
-  return true
 }

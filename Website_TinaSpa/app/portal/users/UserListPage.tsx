@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Icon } from '~/components/ui/Icon'
+import { Pagination } from '~/components/ui/Pagination'
 import { formatPortalDate } from '~/portal/format'
 import { inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
 import { portalRoleLabel } from '~/portal/navigation'
@@ -129,9 +130,6 @@ export function UserListPage({ role, title, description, roles, entityLabel, can
         ? roles.reduce((sum, item) => sum + (roleCounts[item] ?? 0), 0)
         : (roleCounts[value] ?? 0)
       : undefined
-  const totalPages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1
-  const firstRow = result && result.total > 0 ? (result.page - 1) * result.pageSize + 1 : 0
-  const lastRow = result ? Math.min(result.page * result.pageSize, result.total) : 0
   const tabs: RoleTab[] = ['all', ...roles]
 
   return (
@@ -358,35 +356,16 @@ export function UserListPage({ role, title, description, roles, entityLabel, can
           </div>
         )}
 
-        {result && result.total > 0 && !error ? (
-          <div className='flex flex-col gap-3 border-t border-rose-soft/40 px-2 pt-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between'>
-            <p className='tabular-nums'>
-              Hiển thị {firstRow}–{lastRow} / {result.total} {entityLabel}
-            </p>
-            <div className='flex items-center gap-2'>
-              <button
-                type='button'
-                className={`${outlineButtonClass} px-3 py-1.5`}
-                onClick={() => setPage((current) => current - 1)}
-                disabled={page <= 1 || loading}
-                aria-label='Trang trước'
-              >
-                <Icon name='chevron_left' size={18} />
-              </button>
-              <span className='min-w-16 text-center font-bold text-ink tabular-nums'>
-                {page} / {totalPages}
-              </span>
-              <button
-                type='button'
-                className={`${outlineButtonClass} px-3 py-1.5`}
-                onClick={() => setPage((current) => current + 1)}
-                disabled={page >= totalPages || loading}
-                aria-label='Trang sau'
-              >
-                <Icon name='chevron_right' size={18} />
-              </button>
-            </div>
-          </div>
+        {result && !error ? (
+          <Pagination
+            className='border-t border-rose-soft/40 px-2 pt-3'
+            page={page}
+            pageSize={result.pageSize}
+            total={result.total}
+            disabled={loading}
+            onPageChange={setPage}
+            labels={{ summary: ({ from, to, total }) => `Hiển thị ${from}–${to} / ${total} ${entityLabel}` }}
+          />
         ) : null}
       </section>
 

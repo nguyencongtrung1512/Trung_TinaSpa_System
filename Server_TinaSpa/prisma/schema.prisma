@@ -304,6 +304,153 @@ model Blog {
   @@index([status, publishedAt(sort: Desc)], map: "IX_Blog_status_publishedAt")
 }
 
+model ProductCategory {
+  productCategoryAID String @id @default(dbgenerated("\"generateBusinessID\"('ProductCategory'::text)")) @db.VarChar(20)
+  productCategoryID  String @unique(map: "UQ_ProductCategory_productCategoryID") @default(dbgenerated("\"generateBusinessID\"('ProductCategory'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  slug         String  @unique(map: "UQ_ProductCategory_slug") @db.VarChar(150)
+  description  String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  products Product[]
+
+  @@index([isActive, displayOrder], map: "IX_ProductCategory_isActive_displayOrder")
+}
+
+model Product {
+  productAID String @id @default(dbgenerated("\"generateBusinessID\"('Product'::text)")) @db.VarChar(20)
+  productID  String @unique(map: "UQ_Product_productID") @default(dbgenerated("\"generateBusinessID\"('Product'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  slug                  String   @unique(map: "UQ_Product_slug") @db.VarChar(150)
+  subtitleVietnamese    String?  @db.VarChar(255)
+  subtitleEnglish       String?  @db.VarChar(255)
+  subtitleCambodia      String?  @db.VarChar(255)
+  descriptionVietnamese String?
+  descriptionEnglish    String?
+  descriptionCambodia   String?
+  productCategoryAID    String   @db.VarChar(20)
+  price                 Decimal  @db.Decimal(12, 0)
+  compareAtPrice        Decimal? @db.Decimal(12, 0)
+  image                 String?
+  imageAlt              String?  @db.VarChar(255)
+  badge                 String?  @db.VarChar(100)
+  status                String   @default("ACTIVE") @db.VarChar(30)
+
+  createdAt    DateTime  @default(now())
+  createdByAID String?   @db.VarChar(20)
+  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedByAID String?   @db.VarChar(20)
+  deletedAt    DateTime?
+
+  note String?
+
+  productCategory ProductCategory @relation(fields: [productCategoryAID], references: [productCategoryAID], onDelete: Restrict, map: "FK_Product_productCategoryAID")
+  details         ProductDetail[]
+  variants        ProductVariant[]
+
+  @@index([productCategoryAID, status], map: "IX_Product_productCategoryAID_status")
+}
+
+/// price / compareAtPrice on Product are the "from" price: kept in sync with the cheapest active variant by the API.
+model ProductVariant {
+  productVariantAID String @id @default(dbgenerated("\"generateBusinessID\"('ProductVariant'::text)")) @db.VarChar(20)
+  productVariantID  String @unique(map: "UQ_ProductVariant_productVariantID") @default(dbgenerated("\"generateBusinessID\"('ProductVariant'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  productAID     String   @db.VarChar(20)
+  sku            String?  @unique(map: "UQ_ProductVariant_sku") @db.VarChar(50)
+  price          Decimal  @db.Decimal(12, 0)
+  compareAtPrice Decimal? @db.Decimal(12, 0)
+  status         String   @default("ACTIVE") @db.VarChar(30)
+  sortOrder      Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  images  ProductVariantImage[]
+  product Product @relation(fields: [productAID], references: [productAID], onDelete: Cascade, map: "FK_ProductVariant_productAID")
+
+  @@index([productAID, sortOrder], map: "IX_ProductVariant_productAID_sortOrder")
+}
+
+/// Gallery of one variant. nameVietnamese/nameEnglish/nameCambodia hold the alt text.
+model ProductVariantImage {
+  productVariantImageAID String @id @default(dbgenerated("\"generateBusinessID\"('ProductVariantImage'::text)")) @db.VarChar(20)
+  productVariantImageID  String @unique(map: "UQ_ProductVariantImage_productVariantImageID") @default(dbgenerated("\"generateBusinessID\"('ProductVariantImage'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  productVariantAID String @db.VarChar(20)
+  image             String
+  sortOrder         Int    @default(0)
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  productVariant ProductVariant @relation(fields: [productVariantAID], references: [productVariantAID], onDelete: Cascade, map: "FK_ProductVariantImage_productVariantAID")
+
+  @@index([productVariantAID, sortOrder], map: "IX_ProductVariantImage_productVariantAID_sortOrder")
+}
+
+model ProductDetail {
+  productDetailAID String @id @default(dbgenerated("\"generateBusinessID\"('ProductDetail'::text)")) @db.VarChar(20)
+  productDetailID  String @unique(map: "UQ_ProductDetail_productDetailID") @default(dbgenerated("\"generateBusinessID\"('ProductDetail'::text)")) @db.VarChar(14)
+
+  nameVietnamese String  @db.VarChar(255)
+  nameEnglish    String? @db.VarChar(255)
+  nameCambodia   String? @db.VarChar(255)
+
+  productAID        String  @db.VarChar(20)
+  detailType        String  @db.VarChar(30)
+  contentVietnamese String?
+  contentEnglish    String?
+  contentCambodia   String?
+  icon              String? @db.VarChar(100)
+  image             String?
+  imageAlt          String? @db.VarChar(255)
+  sortOrder         Int     @default(0)
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  product Product @relation(fields: [productAID], references: [productAID], onDelete: Cascade, map: "FK_ProductDetail_productAID")
+
+  @@index([productAID, detailType, sortOrder], map: "IX_ProductDetail_productAID_detailType")
+}
+
 model BusinessIdCounter {
   tableName   String   @db.VarChar(100)
   counterDate DateTime @db.Date
