@@ -16,24 +16,6 @@ import {
 } from '~/data/products'
 import { Icon } from '~/components/ui/Icon'
 import { StableText } from '~/components/ui/StableText'
-import i18n from '~/i18n'
-
-function formatRating(value: number) {
-  return value.toLocaleString(i18n.resolvedLanguage, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-}
-
-function Stars({ rating }: { readonly rating: number }) {
-  return (
-    <span className='inline-flex items-center text-clinic' aria-hidden>
-      {Array.from({ length: 5 }, (_, index) => {
-        const filled = rating >= index + 1
-        const half = !filled && rating > index
-        return <Icon key={index} name={half ? 'star_half' : 'star'} filled={filled || half} size={16} />
-      })}
-    </span>
-  )
-}
-
 interface ProductCardProps {
   readonly product: ProductItem
   readonly layout: 'grid' | 'list'
@@ -49,18 +31,16 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
 
   return (
     <article
-      className={`group overflow-hidden rounded-[1.35rem] bg-surface shadow-[0_12px_32px_var(--color-whisper-shadow)] transition hover:-translate-y-1 ${
-        isList ? 'flex flex-col sm:flex-row' : 'flex flex-col'
-      }`}
+      className={`group overflow-hidden rounded-[1.35rem] bg-surface shadow-[0_12px_32px_var(--color-whisper-shadow)] transition hover:-translate-y-1 ${isList ? 'flex flex-col sm:flex-row' : 'flex flex-col'
+        }`}
     >
       <div className={`relative overflow-hidden bg-mist ${isList ? 'sm:w-64 sm:shrink-0' : ''}`}>
         <Link to={`/products/${product.id}`} className='block'>
           <img
             src={product.image}
             alt={product.imageAlt}
-            className={`w-full object-cover transition duration-500 group-hover:scale-[1.03] ${
-              isList ? 'aspect-[4/3] sm:aspect-auto sm:h-full' : 'aspect-[4/3]'
-            }`}
+            className={`w-full object-cover transition duration-500 group-hover:scale-[1.03] ${isList ? 'aspect-[4/3] sm:aspect-auto sm:h-full' : 'aspect-[4/3]'
+              }`}
           />
         </Link>
         <span className='absolute top-3 left-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold tracking-[0.12em] text-clinic uppercase'>
@@ -88,15 +68,7 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
         </h2>
         <p className='mt-0.5 text-xs font-medium text-muted'>{product.subtitle}</p>
         <p className={`mt-2 text-sm leading-6 text-muted ${isList ? '' : 'line-clamp-2'}`}>{product.description}</p>
-        <p className='mt-2 flex items-center gap-2 text-xs text-muted'>
-          <Stars rating={product.rating} />
-          <span>
-            <span className='sr-only'>{t('products.list.rating')}</span>
-            {formatRating(product.rating)} ({product.reviews})
-          </span>
-          <span aria-hidden>·</span>
-          <span>{product.volume}</span>
-        </p>
+
         <div className='mt-auto flex items-center justify-between gap-3 pt-4'>
           <p className='text-lg font-extrabold text-clinic'>
             <span className='sr-only'>{t('products.list.price')}</span>
@@ -107,9 +79,8 @@ function ProductCard({ product, layout, saved, added, onToggleSaved, onToggleAdd
             aria-pressed={added}
             aria-label={t(added ? 'products.list.removeFromCart' : 'products.list.addToCart', { name: product.name })}
             onClick={() => onToggleAdded(product.id)}
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition ${
-              added ? 'bg-clinic text-white' : 'bg-mist text-clinic hover:bg-rose-soft'
-            }`}
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition ${added ? 'bg-clinic text-white' : 'bg-mist text-clinic hover:bg-rose-soft'
+              }`}
           >
             <Icon name={added ? 'check' : 'shopping_bag'} size={20} />
           </button>
@@ -151,7 +122,6 @@ export function ProductsPage() {
     return [...filtered].sort((left, right) => {
       if (sort === 'price-asc') return left.price - right.price
       if (sort === 'price-desc') return right.price - left.price
-      if (sort === 'rating') return right.rating - left.rating || right.reviews - left.reviews
       return right.createdAt.localeCompare(left.createdAt)
     })
   }, [category, price, query, sort, products])
@@ -196,11 +166,10 @@ export function ProductsPage() {
                 type='button'
                 aria-pressed={active}
                 onClick={() => setCategory(item)}
-                className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-                  active
-                    ? 'bg-clinic text-white shadow-[0_8px_20px_var(--color-whisper-shadow)]'
-                    : 'border border-rose-soft bg-surface text-ink hover:border-clinic hover:text-clinic'
-                }`}
+                className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition ${active
+                  ? 'bg-clinic text-white shadow-[0_8px_20px_var(--color-whisper-shadow)]'
+                  : 'border border-rose-soft bg-surface text-ink hover:border-clinic hover:text-clinic'
+                  }`}
               >
                 <StableText i18nKey={`products.categories.${item}`} />
               </button>
@@ -262,9 +231,8 @@ export function ProductsPage() {
               aria-pressed={layout === 'grid'}
               aria-label={t('products.list.grid')}
               onClick={() => setLayout('grid')}
-              className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${
-                layout === 'grid' ? 'bg-clinic text-white' : 'text-muted hover:text-clinic'
-              }`}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${layout === 'grid' ? 'bg-clinic text-white' : 'text-muted hover:text-clinic'
+                }`}
             >
               <Icon name='grid_view' size={20} />
             </button>
@@ -273,9 +241,8 @@ export function ProductsPage() {
               aria-pressed={layout === 'list'}
               aria-label={t('products.list.listView')}
               onClick={() => setLayout('list')}
-              className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${
-                layout === 'list' ? 'bg-clinic text-white' : 'text-muted hover:text-clinic'
-              }`}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${layout === 'list' ? 'bg-clinic text-white' : 'text-muted hover:text-clinic'
+                }`}
             >
               <Icon name='view_list' size={20} />
             </button>

@@ -35,9 +35,6 @@ export interface ProductItem {
   readonly imageAlt: string
   readonly category: ProductCategory
   readonly badge: string
-  readonly rating: number
-  readonly reviews: number
-  readonly volume: string
   readonly createdAt: string
   readonly story: readonly string[]
   readonly highlights: readonly string[]
@@ -55,9 +52,6 @@ interface ProductBase {
   readonly compareAt: number | null
   readonly image: string
   readonly category: ProductCategory
-  readonly rating: number
-  readonly reviews: number
-  readonly volume: string
   readonly createdAt: string
   readonly effectIcons: readonly string[]
   readonly gallery: readonly string[]
@@ -85,9 +79,6 @@ const productBases: readonly ProductBase[] = [
     compareAt: 1050000,
     image: '/images/p4.png',
     category: 'serum',
-    rating: 4.9,
-    reviews: 128,
-    volume: '30ml',
     createdAt: '2026-09-18',
     effectIcons: ['auto_awesome', 'water_drop', 'spa'],
     gallery: ['/images/p4.png', '/images/p5.png', '/images/p6.png', '/images/p1.png']
@@ -99,9 +90,6 @@ const productBases: readonly ProductBase[] = [
     compareAt: 890000,
     image: '/images/p6.png',
     category: 'cream',
-    rating: 4.8,
-    reviews: 86,
-    volume: '50ml',
     createdAt: '2026-09-12',
     effectIcons: ['water_drop', 'spa', 'favorite'],
     gallery: ['/images/p6.png', '/images/p4.png', '/images/p5.png', '/images/p2.png']
@@ -113,9 +101,6 @@ const productBases: readonly ProductBase[] = [
     compareAt: null,
     image: '/images/p5.png',
     category: 'serum',
-    rating: 4.7,
-    reviews: 64,
-    volume: '100ml',
     createdAt: '2026-08-28',
     effectIcons: ['water_drop', 'spa', 'air'],
     gallery: ['/images/p5.png', '/images/p4.png', '/images/p6.png', '/images/p1.png']
@@ -127,9 +112,6 @@ const productBases: readonly ProductBase[] = [
     compareAt: null,
     image: '/images/p1.png',
     category: 'mask',
-    rating: 4.9,
-    reviews: 102,
-    volume: '5 x 25ml',
     createdAt: '2026-08-04',
     effectIcons: ['healing', 'water_drop', 'spa'],
     gallery: ['/images/p1.png', '/images/p5.png', '/images/p6.png', '/images/p4.png']
@@ -138,12 +120,9 @@ const productBases: readonly ProductBase[] = [
     id: 'luxury-sunscreen',
     name: 'Luxury Sunscreen SPF 50+',
     price: 620000,
-    compareAt: null,
+    compareAt: 750000,
     image: '/images/p2.png',
     category: 'sunscreen',
-    rating: 4.8,
-    reviews: 91,
-    volume: '50ml',
     createdAt: '2026-07-16',
     effectIcons: ['wb_sunny', 'verified', 'face_retouching_natural'],
     gallery: ['/images/p2.png', '/images/p6.png', '/images/p3.png', '/images/p4.png']
@@ -154,10 +133,7 @@ const productBases: readonly ProductBase[] = [
     price: 680000,
     compareAt: null,
     image: '/images/p3.png',
-    category: 'eye',
-    rating: 4.6,
-    reviews: 47,
-    volume: '15ml',
+    category: 'eye',  
     createdAt: '2026-06-22',
     effectIcons: ['visibility', 'spa', 'favorite'],
     gallery: ['/images/p3.png', '/images/p4.png', '/images/p2.png', '/images/p6.png']
