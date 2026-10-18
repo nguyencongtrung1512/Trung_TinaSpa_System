@@ -11,6 +11,8 @@ const user = (userAID: string, role: string): AuthUser => ({
   fullName: 'Test',
   isActive: true,
   roles: [role],
+  branchAID: 'branch-aid',
+  branchID: 'BR001',
 });
 
 const staff = user('staff-aid', 'STAFF');

@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import type { AuthUser } from '../auth/types/auth-user.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ManageCustomerServices } from './customer-services.constants.js';
 import { CustomerServicesService } from './customer-services.service.js';
@@ -37,8 +38,11 @@ export class CustomerServicesController {
   /** Revenue, activity counters and latest recorded services for the staff / manager desks. */
   @Get('customer-services/overview')
   @ManageCustomerServices()
-  overview(@Query() query: OverviewQueryDto) {
-    return this.customerServices.overview(query.range);
+  overview(
+    @Query() query: OverviewQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.customerServices.overview(query.range, actor);
   }
 
   @Patch('customer-services/:customerServiceID')
@@ -46,9 +50,9 @@ export class CustomerServicesController {
   update(
     @Param('customerServiceID') customerServiceID: string,
     @Body() dto: UpdateCustomerServiceDto,
-    @CurrentUser('userAID') actorAID: string,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.customerServices.update(customerServiceID, dto, actorAID);
+    return this.customerServices.update(customerServiceID, dto, actor);
   }
 
   @Delete('customer-services/:customerServiceID')
@@ -56,8 +60,8 @@ export class CustomerServicesController {
   @ManageCustomerServices()
   remove(
     @Param('customerServiceID') customerServiceID: string,
-    @CurrentUser('userAID') actorAID: string,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.customerServices.remove(customerServiceID, actorAID);
+    return this.customerServices.remove(customerServiceID, actor);
   }
 }

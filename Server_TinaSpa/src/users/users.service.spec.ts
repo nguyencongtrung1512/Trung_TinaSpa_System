@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
+import type { AuthUser } from '../auth/types/auth-user.js';
+import { BranchesService } from '../branches/branches.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UsersService } from './users.service.js';
 
@@ -16,6 +18,10 @@ describe('UsersService', () => {
       'findMany' | 'count' | 'groupBy' | 'create' | 'update',
       ReturnType<typeof vi.fn>
     >;
+  };
+  let branches: {
+    getActiveRecord: ReturnType<typeof vi.fn>;
+    getByBranchID: ReturnType<typeof vi.fn>;
   };
 
   const now = new Date();
@@ -31,11 +37,36 @@ describe('UsersService', () => {
     gender: 'FEMALE',
     role: 'CUSTOMER',
     isActive: true,
+    mustChangePassword: false,
+    branchAID: null,
+    branch: null,
     createdAt: now,
     createdByAID: null,
     updatedAt: now,
     updatedByAID: null,
     note: null,
+  };
+
+  const admin: AuthUser = {
+    userAID: 'admin-aid',
+    userID: 'admin-id',
+    phone: '0900000000',
+    fullName: 'Admin',
+    isActive: true,
+    roles: ['ADMIN'],
+    branchAID: null,
+    branchID: null,
+  };
+
+  const manager: AuthUser = {
+    userAID: 'mgr-aid',
+    userID: 'mgr-id',
+    phone: '0900000001',
+    fullName: 'Manager',
+    isActive: true,
+    roles: ['MANAGER'],
+    branchAID: 'branch-aid',
+    branchID: 'BR001',
   };
 
   beforeEach(async () => {
@@ -54,8 +85,22 @@ describe('UsersService', () => {
         update: vi.fn().mockResolvedValue(customer),
       },
     };
+    branches = {
+      getActiveRecord: vi.fn().mockResolvedValue({
+        branchAID: 'branch-aid',
+        branchID: 'BR001',
+      }),
+      getByBranchID: vi.fn().mockResolvedValue({
+        branchAID: 'branch-aid',
+        branchID: 'BR001',
+      }),
+    };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        UsersService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: BranchesService, useValue: branches },
+      ],
     }).compile();
     service = module.get(UsersService);
   });
@@ -69,17 +114,19 @@ describe('UsersService', () => {
         page: 2,
         pageSize: 10,
       },
-      ['ADMIN'],
+      admin,
     );
 
     const args = prisma.user.findMany.mock.calls[0][0];
     expect(args.skip).toBe(10);
     expect(args.take).toBe(10);
-    expect(args.where.role).toBe('CUSTOMER');
-    expect(args.where.isActive).toBe(true);
-    expect(args.where.OR).toHaveLength(4);
-    expect(prisma.user.groupBy.mock.calls[0][0].where.role).toEqual({
-      in: ['ADMIN', 'MANAGER', 'STAFF', 'CUSTOMER'],
+    expect(args.where.AND[0]).toEqual({ role: { in: ['CUSTOMER'] } });
+    expect(args.where.AND).toEqual(
+      expect.arrayContaining([{ isActive: true }]),
+    );
+    expect(args.include).toEqual({ branch: { select: { branchID: true } } });
+    expect(prisma.user.groupBy.mock.calls[0][0].where.AND[0]).toEqual({
+      role: { in: ['ADMIN', 'MANAGER', 'STAFF', 'CUSTOMER'] },
     });
 
     expect(result.roleCounts).toEqual({
@@ -91,17 +138,57 @@ describe('UsersService', () => {
     expect(result.items[0]).not.toHaveProperty('passwordHash');
     expect(result.items[0]).not.toHaveProperty('userAID');
     expect(result.items[0].dateOfBirth).toBe('1995-03-08');
+    expect(result.items[0].branchID).toBeNull();
   });
 
-  it('limits managers to customer and staff accounts', async () => {
-    const result = await service.list({ page: 1, pageSize: 20 }, ['MANAGER']);
+  it('limits managers to customer and staff accounts in their branch', async () => {
+    const result = await service.list({ page: 1, pageSize: 20 }, manager);
 
-    expect(prisma.user.findMany.mock.calls[0][0].where.role).toEqual({
-      in: ['CUSTOMER', 'STAFF'],
+    expect(prisma.user.findMany.mock.calls[0][0].where.AND[0]).toEqual({
+      OR: [
+        { role: { in: ['STAFF'] }, branchAID: 'branch-aid' },
+        {
+          role: 'CUSTOMER',
+          OR: [
+            { branchAID: 'branch-aid' },
+            { appointments: { some: { branchAID: 'branch-aid' } } },
+          ],
+        },
+      ],
     });
     expect(result.roleCounts).toEqual({ CUSTOMER: 12, STAFF: 3 });
     await expect(
-      service.list({ role: 'ADMIN', page: 1, pageSize: 20 }, ['MANAGER']),
+      service.list({ role: 'ADMIN', page: 1, pageSize: 20 }, manager),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('limits staff to only customer accounts in their branch', async () => {
+    const staff: AuthUser = {
+      userAID: 'staff-aid',
+      userID: 'staff-id',
+      phone: '0900000002',
+      fullName: 'Staff',
+      isActive: true,
+      roles: ['STAFF'],
+      branchAID: 'branch-aid',
+      branchID: 'BR001',
+    };
+
+    const result = await service.list({ page: 1, pageSize: 20 }, staff);
+
+    expect(prisma.user.findMany.mock.calls[0][0].where.AND[0]).toEqual({
+      role: 'CUSTOMER',
+      OR: [
+        { branchAID: 'branch-aid' },
+        { appointments: { some: { branchAID: 'branch-aid' } } },
+      ],
+    });
+    expect(result.roleCounts).toEqual({ CUSTOMER: 12 });
+    await expect(
+      service.list({ role: 'STAFF', page: 1, pageSize: 20 }, staff),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.list({ role: 'ADMIN', page: 1, pageSize: 20 }, staff),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
@@ -131,7 +218,12 @@ describe('UsersService', () => {
   });
 
   it('creates staff accounts with audit fields and rejects duplicate phones', async () => {
-    prisma.user.create.mockResolvedValueOnce({ ...customer, role: 'STAFF' });
+    prisma.user.create.mockResolvedValueOnce({
+      ...customer,
+      role: 'STAFF',
+      branchAID: 'branch-aid',
+      branch: { branchID: 'BR001' },
+    });
     const created = await service.createStaff(
       {
         fullName: 'Linh Đan',
@@ -139,15 +231,18 @@ describe('UsersService', () => {
         password: 'Secret@123',
         gender: 'FEMALE',
         dateOfBirth: '1995-03-08',
+        branchID: 'BR001',
       },
-      'actor-aid',
+      admin,
     );
 
     const data = prisma.user.create.mock.calls[0][0].data;
     expect(data.role).toBe('STAFF');
-    expect(data.createdByAID).toBe('actor-aid');
+    expect(data.branchAID).toBe('branch-aid');
+    expect(data.createdByAID).toBe('admin-aid');
     expect(data.passwordHash).not.toBe('Secret@123');
     expect(created.role).toBe('STAFF');
+    expect(created.branchID).toBe('BR001');
 
     prisma.user.create.mockRejectedValueOnce(
       new Prisma.PrismaClientKnownRequestError('dup', {
@@ -157,9 +252,47 @@ describe('UsersService', () => {
     );
     await expect(
       service.createStaff(
-        { fullName: 'Linh Đan', phone: '0901234567', password: 'Secret@123' },
-        'actor-aid',
+        {
+          fullName: 'Linh Đan',
+          phone: '0901234567',
+          password: 'Secret@123',
+          branchID: 'BR001',
+        },
+        admin,
       ),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('forces manager-created staff into the manager branch', async () => {
+    prisma.user.create.mockResolvedValueOnce({
+      ...customer,
+      role: 'STAFF',
+      branchAID: 'branch-aid',
+      branch: { branchID: 'BR001' },
+    });
+    await service.createStaff(
+      {
+        fullName: 'Linh Đan',
+        phone: '0901234567',
+        password: 'Secret@123',
+        branchID: 'OTHER',
+      },
+      manager,
+    );
+    expect(branches.getActiveRecord).not.toHaveBeenCalled();
+    expect(prisma.user.create.mock.calls[0][0].data.branchAID).toBe(
+      'branch-aid',
+    );
+    await expect(
+      service.createStaff(
+        {
+          fullName: 'Linh Đan',
+          phone: '0901234567',
+          password: 'Secret@123',
+          role: 'MANAGER',
+        },
+        manager,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

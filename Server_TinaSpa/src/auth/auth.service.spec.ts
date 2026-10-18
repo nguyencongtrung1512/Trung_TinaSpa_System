@@ -33,6 +33,13 @@ describe('AuthService', () => {
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
     };
+    appointment: {
+      updateMany: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
+    };
+    user: {
+      update: ReturnType<typeof vi.fn>;
+    };
   };
   let jwtService: {
     signAsync: ReturnType<typeof vi.fn>;
@@ -87,6 +94,13 @@ describe('AuthService', () => {
         create: vi.fn(),
         findUnique: vi.fn(),
         update: vi.fn(),
+      },
+      appointment: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      user: {
+        update: vi.fn().mockResolvedValue(user),
       },
     };
     jwtService = {

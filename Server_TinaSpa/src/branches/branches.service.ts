@@ -49,12 +49,21 @@ export class BranchesService {
     return branches.map(toBranchResponse);
   }
 
-  /** Resolves an active, non-deleted branch by its Business ID. */
-  async getActiveRecord(branchID: string): Promise<Branch> {
+  /** Resolves a non-deleted branch by its Business ID (includes inactive). */
+  async getByBranchID(branchID: string): Promise<Branch> {
     const branch = await this.prisma.branch.findFirst({
-      where: { branchID, status: BranchStatus.ACTIVE, deletedAt: null },
+      where: { branchID, deletedAt: null },
     });
     if (!branch) {
+      throw new NotFoundException('Branch not found');
+    }
+    return branch;
+  }
+
+  /** Resolves an active, non-deleted branch by its Business ID. */
+  async getActiveRecord(branchID: string): Promise<Branch> {
+    const branch = await this.getByBranchID(branchID);
+    if (branch.status !== BranchStatus.ACTIVE) {
       throw new NotFoundException('Branch not found');
     }
     return branch;

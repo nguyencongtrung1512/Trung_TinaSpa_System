@@ -7,6 +7,7 @@ import { inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/man
 import { portalRoleLabel } from '~/portal/navigation'
 import { portalCardClass } from '~/portal/styles'
 import type { PortalRole } from '~/portal/types'
+import { useBranches } from '~/portal/appointments/useAppointments'
 import { StaffFormDialog } from './StaffFormDialog'
 import {
   ageFromDateOfBirth,
@@ -58,9 +59,18 @@ export interface UserListPageProps {
   readonly roles: readonly UserRole[]
   readonly entityLabel: string
   readonly canCreateStaff?: boolean
+  readonly canPickBranch?: boolean
 }
 
-export function UserListPage({ role, title, description, roles, entityLabel, canCreateStaff }: UserListPageProps) {
+export function UserListPage({
+  role,
+  title,
+  description,
+  roles,
+  entityLabel,
+  canCreateStaff,
+  canPickBranch
+}: UserListPageProps) {
   const reduceMotion = useReducedMotion()
   const multiRole = roles.length > 1
   const [roleTab, setRoleTab] = useState<RoleTab>(multiRole ? 'all' : roles[0])

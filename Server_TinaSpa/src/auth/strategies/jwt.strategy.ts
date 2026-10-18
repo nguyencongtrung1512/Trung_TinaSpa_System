@@ -40,6 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       fullName: user.fullName,
       isActive: user.isActive,
       roles: this.usersService.getRoleNames(user),
+      branchAID: user.branchAID,
+      branchID: user.branch?.branchID ?? null,
     };
   }
 }

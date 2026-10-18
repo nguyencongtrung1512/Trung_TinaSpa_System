@@ -14,6 +14,8 @@ export interface PortalUser {
   readonly role: UserRole
   readonly isActive: boolean
   readonly mustChangePassword?: boolean
+  readonly branchAID?: string | null
+  readonly branchID: string | null
   readonly createdAt: string
   readonly updatedAt: string
 }
@@ -30,6 +32,7 @@ export interface UserListQuery {
   readonly search?: string
   readonly role?: UserRole
   readonly isActive?: boolean
+  readonly branchID?: string
   readonly page?: number
   readonly pageSize?: number
 }
@@ -43,6 +46,8 @@ export interface StaffPayload {
   readonly address: string | null
   readonly avatar: string | null
   readonly note: string | null
+  readonly branchID?: string
+  readonly role?: 'STAFF' | 'MANAGER'
 }
 
 export const userRoleLabels: Record<UserRole, string> = {

@@ -4,7 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, type User } from '@prisma/client';
+import type { AuthUser } from '../auth/types/auth-user.js';
 import { RoleName } from '../common/constants/roles.js';
+import {
+  customersInBranchWhere,
+  scopedBranchAID,
+} from '../common/scope/branch-scope.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UsersService, type PublicUser } from '../users/users.service.js';
 import { normalizePhone, phoneVariants } from './customer-services.constants.js';
@@ -126,16 +131,29 @@ export class CustomerServicesService {
     private readonly users: UsersService,
   ) {}
 
-  async lookup(phone: string): Promise<CustomerLookupResponse> {
+  async lookup(
+    phone: string,
+    actor: AuthUser,
+  ): Promise<CustomerLookupResponse> {
     const normalized = normalizePhone(phone);
     const variants = phoneVariants(normalized);
+    const scope = scopedBranchAID(actor);
 
     const [user, appointments] = await Promise.all([
       this.prisma.user.findFirst({
-        where: { phone: { in: variants }, role: RoleName.CUSTOMER },
+        where: {
+          phone: { in: variants },
+          ...(scope
+            ? customersInBranchWhere(scope)
+            : { role: RoleName.CUSTOMER }),
+        },
+        include: { branch: { select: { branchID: true } } },
       }),
       this.prisma.appointment.findMany({
-        where: { phoneNumber: { in: variants } },
+        where: {
+          phoneNumber: { in: variants },
+          ...(scope ? { branchAID: scope } : {}),
+        },
         orderBy: [{ appointmentDate: 'desc' }, { appointmentTime: 'desc' }],
         take: RECENT_APPOINTMENTS,
       }),
@@ -158,20 +176,23 @@ export class CustomerServicesService {
   createCustomer(
     phone: string,
     fullName: string,
-    actorAID: string,
+    actor: AuthUser,
   ): Promise<PublicUser> {
+    const branchAID = scopedBranchAID(actor);
     return this.users.createCustomerWithDefaultPassword(
       normalizePhone(phone),
       fullName,
-      actorAID,
+      actor.userAID,
+      branchAID,
     );
   }
 
   async listForCustomer(
     userID: string,
     query: ListCustomerServicesQueryDto,
+    actor: AuthUser,
   ): Promise<CustomerServiceListResponse> {
-    const customer = await this.getCustomer(userID);
+    const customer = await this.getCustomer(userID, actor);
     return this.listByCustomerAID(customer.userAID, query);
   }
 
@@ -185,9 +206,9 @@ export class CustomerServicesService {
   async add(
     userID: string,
     dto: AddCustomerServicesDto,
-    actorAID: string,
+    actor: AuthUser,
   ): Promise<CustomerServiceResponse[]> {
-    const customer = await this.getCustomer(userID);
+    const customer = await this.getCustomer(userID, actor);
     const usedAt = parseUsedAt(dto.usedAt);
 
     const serviceIDs = [...new Set(dto.items.map((item) => item.serviceID))];
@@ -214,8 +235,8 @@ export class CustomerServicesService {
             quantity: item.quantity ?? 1,
             usedAt,
             staffNote: item.staffNote || null,
-            createdByAID: actorAID,
-            updatedByAID: actorAID,
+            createdByAID: actor.userAID,
+            updatedByAID: actor.userAID,
           },
           include: serviceInclude,
         });
@@ -227,9 +248,9 @@ export class CustomerServicesService {
   async update(
     customerServiceID: string,
     dto: UpdateCustomerServiceDto,
-    actorAID: string,
+    actor: AuthUser,
   ): Promise<CustomerServiceResponse> {
-    await this.getRecord(customerServiceID);
+    await this.getRecord(customerServiceID, actor);
     const record = await this.prisma.customerService.update({
       where: { customerServiceID },
       data: {
@@ -237,47 +258,65 @@ export class CustomerServicesService {
         usedAt: parseUsedAt(dto.usedAt),
         staffNote:
           dto.staffNote === undefined ? undefined : dto.staffNote || null,
-        updatedByAID: actorAID,
+        updatedByAID: actor.userAID,
       },
       include: serviceInclude,
     });
     return toResponse(record);
   }
 
-  async remove(customerServiceID: string, actorAID: string): Promise<void> {
-    await this.getRecord(customerServiceID);
+  async remove(customerServiceID: string, actor: AuthUser): Promise<void> {
+    await this.getRecord(customerServiceID, actor);
     await this.prisma.customerService.update({
       where: { customerServiceID },
-      data: { deletedAt: new Date(), updatedByAID: actorAID },
+      data: { deletedAt: new Date(), updatedByAID: actor.userAID },
     });
   }
 
-  async overview(range: OverviewRange): Promise<OverviewResponse> {
+  async overview(
+    range: OverviewRange,
+    actor: AuthUser,
+  ): Promise<OverviewResponse> {
     const days = RANGE_DAYS[range];
     const end = new Date(businessDayStart().getTime() + DAY_MS);
     const start = new Date(end.getTime() - days * DAY_MS);
     const previousStart = new Date(start.getTime() - days * DAY_MS);
     const dateOnly = (instant: Date) =>
       new Date(`${new Date(instant.getTime() + VN_OFFSET_MS).toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const scope = scopedBranchAID(actor);
+    const customerScope = scope
+      ? { customer: customersInBranchWhere(scope) }
+      : {};
+    const customerUserScope = scope
+      ? customersInBranchWhere(scope)
+      : { role: RoleName.CUSTOMER };
+    const appointmentScope = scope ? { branchAID: scope } : {};
 
     const [rows, newCustomers, appointmentCount, pendingAppointments, recent] =
       await Promise.all([
         this.prisma.customerService.findMany({
-          where: { deletedAt: null, usedAt: { gte: previousStart, lt: end } },
+          where: {
+            deletedAt: null,
+            usedAt: { gte: previousStart, lt: end },
+            ...customerScope,
+          },
           select: { customerAID: true, priceSnapshot: true, quantity: true, usedAt: true },
         }),
         this.prisma.user.count({
-          where: { role: RoleName.CUSTOMER, createdAt: { gte: start, lt: end } },
+          where: { createdAt: { gte: start, lt: end }, ...customerUserScope },
         }),
         this.prisma.appointment.count({
           where: {
             status: { not: 'CANCELLED' },
             appointmentDate: { gte: dateOnly(start), lt: dateOnly(end) },
+            ...appointmentScope,
           },
         }),
-        this.prisma.appointment.count({ where: { status: 'PENDING' } }),
+        this.prisma.appointment.count({
+          where: { status: 'PENDING', ...appointmentScope },
+        }),
         this.prisma.customerService.findMany({
-          where: { deletedAt: null },
+          where: { deletedAt: null, ...customerScope },
           include: { customer: { select: { fullName: true, phone: true } } },
           orderBy: [{ usedAt: 'desc' }, { customerServiceID: 'desc' }],
           take: 6,
@@ -352,17 +391,31 @@ export class CustomerServicesService {
     return { items: records.map(toResponse), total, page, pageSize };
   }
 
-  private async getCustomer(userID: string): Promise<User> {
+  private async getCustomer(userID: string, actor: AuthUser): Promise<User> {
     const user = await this.users.findByUserID(userID);
     if (!user || user.role !== RoleName.CUSTOMER) {
+      throw new NotFoundException('Customer not found');
+    }
+    const scope = scopedBranchAID(actor);
+    if (!scope) return user;
+    const visible = await this.prisma.user.findFirst({
+      where: { userAID: user.userAID, ...customersInBranchWhere(scope) },
+      select: { userAID: true },
+    });
+    if (!visible) {
       throw new NotFoundException('Customer not found');
     }
     return user;
   }
 
-  private async getRecord(customerServiceID: string) {
+  private async getRecord(customerServiceID: string, actor: AuthUser) {
+    const scope = scopedBranchAID(actor);
     const record = await this.prisma.customerService.findFirst({
-      where: { customerServiceID, deletedAt: null },
+      where: {
+        customerServiceID,
+        deletedAt: null,
+        ...(scope ? { customer: customersInBranchWhere(scope) } : {}),
+      },
     });
     if (!record) {
       throw new NotFoundException('Customer service not found');

@@ -23,12 +23,15 @@ model User {
   isActive     Boolean   @default(true)
   /// true khi nhân viên tạo tài khoản với mật khẩu mặc định (= số điện thoại); khách phải đổi mật khẩu
   mustChangePassword Boolean @default(false)
+  /// Khu vực làm việc (MANAGER/STAFF) hoặc khu vực ghi nhận khách (CUSTOMER). ADMIN để trống.
+  branchAID    String?   @db.VarChar(20)
   createdAt    DateTime  @default(now())
   createdByAID String?   @db.VarChar(20)
   updatedAt    DateTime  @default(now()) @updatedAt
   updatedByAID String?   @db.VarChar(20)
   note         String?
 
+  branch                Branch?           @relation(fields: [branchAID], references: [branchAID], onDelete: Restrict, map: "FK_User_branchAID")
   refreshTokens         RefreshToken[]
   appointments          Appointment[]  @relation("AppointmentCustomer")
   confirmedAppointments Appointment[]  @relation("AppointmentConfirmedBy")
@@ -37,6 +40,7 @@ model User {
   authoredBlogs         Blog[]            @relation("BlogAuthor")
 
   @@index([role], map: "IX_User_role")
+  @@index([branchAID], map: "IX_User_branchAID")
 }
 
 model RefreshToken {
@@ -161,6 +165,7 @@ model Branch {
   note String?
 
   appointments Appointment[]
+  users        User[]
 
   @@index([status, sortOrder], map: "IX_Branch_status_sortOrder")
 }

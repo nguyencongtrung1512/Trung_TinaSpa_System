@@ -30,6 +30,13 @@ export class ListUsersQueryDto {
   @IsBoolean()
   isActive?: boolean;
 
+  /** ADMIN lọc theo khu vực; MANAGER luôn bị giới hạn khu vực của mình. */
+  @Trim()
+  @IsOptional()
+  @IsString()
+  @MaxLength(14)
+  branchID?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

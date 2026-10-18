@@ -11,6 +11,7 @@ export type AuthUser = {
   role: string
   isActive: boolean
   mustChangePassword?: boolean
+  branchID?: string | null
   createdAt?: string
 }
 

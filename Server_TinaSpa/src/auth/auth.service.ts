@@ -10,11 +10,11 @@ import { JwtService } from '@nestjs/jwt';
 import { Prisma, type User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { createTokenId, hashToken } from '../common/utils/crypto.util.js';
-import { normalizePhone } from '../common/utils/phone.util.js';
+import { normalizePhone, phoneVariants } from '../common/utils/phone.util.js';
 import { asJwtExpiresIn, expiresAtFromNow } from '../common/utils/expires.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
-import { UsersService } from '../users/users.service.js';
+import { USER_BRANCH_INCLUDE, UsersService } from '../users/users.service.js';
 import type { ChangePasswordDto } from './dto/change-password.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -34,14 +34,36 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+    const normalized = normalizePhone(dto.phone);
+    const variants = phoneVariants(normalized);
 
     let user: User;
     try {
       user = await this.usersService.create({
-        phone: normalizePhone(dto.phone),
+        phone: normalized,
         passwordHash,
         fullName: dto.fullName,
       });
+
+      // Gắn các lịch hẹn khách từng đặt trước đó qua số điện thoại
+      await this.prisma.appointment.updateMany({
+        where: { phoneNumber: { in: variants }, customerAID: null },
+        data: { customerAID: user.userAID },
+      });
+
+      // Nếu khách chưa có khu vực, gán theo khu vực của lịch hẹn gần nhất
+      const latestAppointment = await this.prisma.appointment.findFirst({
+        where: { phoneNumber: { in: variants } },
+        orderBy: { appointmentDate: 'desc' },
+        select: { branchAID: true },
+      });
+      if (latestAppointment?.branchAID) {
+        user = await this.prisma.user.update({
+          where: { userAID: user.userAID },
+          data: { branchAID: latestAppointment.branchAID },
+          include: USER_BRANCH_INCLUDE,
+        });
+      }
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

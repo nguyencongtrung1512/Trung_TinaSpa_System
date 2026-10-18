@@ -7,6 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import type { AuthUser } from '../auth/types/auth-user.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ManageAppointments } from './appointments.constants.js';
 import { AppointmentsService } from './appointments.service.js';
@@ -25,14 +26,20 @@ export class AppointmentsController {
 
   @Get()
   @ManageAppointments()
-  list(@Query() query: ListAppointmentsQueryDto) {
-    return this.appointments.list(query);
+  list(
+    @Query() query: ListAppointmentsQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.appointments.list(query, actor);
   }
 
   @Get(':appointmentID')
   @ManageAppointments()
-  findOne(@Param('appointmentID') appointmentID: string) {
-    return this.appointments.findOne(appointmentID);
+  findOne(
+    @Param('appointmentID') appointmentID: string,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.appointments.findOne(appointmentID, actor);
   }
 
   @Patch(':appointmentID')
@@ -40,17 +47,17 @@ export class AppointmentsController {
   update(
     @Param('appointmentID') appointmentID: string,
     @Body() dto: UpdateAppointmentDto,
-    @CurrentUser('userAID') userAID: string,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.appointments.update(appointmentID, dto, userAID);
+    return this.appointments.update(appointmentID, dto, actor);
   }
 
   @Post(':appointmentID/confirm')
   @ManageAppointments()
   confirm(
     @Param('appointmentID') appointmentID: string,
-    @CurrentUser('userAID') userAID: string,
+    @CurrentUser() actor: AuthUser,
   ) {
-    return this.appointments.confirm(appointmentID, userAID);
+    return this.appointments.confirm(appointmentID, actor);
   }
 }

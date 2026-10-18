@@ -56,6 +56,18 @@ export class CreateStaffDto {
   @MaxLength(1000)
   avatar?: string | null;
 
+  /** Mã khu vực (branchID). ADMIN bắt buộc; MANAGER bị bỏ qua và dùng khu vực của mình. */
+  @Trim()
+  @IsOptional()
+  @IsString()
+  @MaxLength(14)
+  branchID?: string;
+
+  /** ADMIN có thể tạo MANAGER; MANAGER chỉ được tạo STAFF. */
+  @IsOptional()
+  @IsIn(['STAFF', 'MANAGER'])
+  role?: 'STAFF' | 'MANAGER';
+
   @IsOptional()
   @IsString()
   note?: string | null;

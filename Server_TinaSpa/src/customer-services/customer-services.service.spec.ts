@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
+import type { AuthUser } from '../auth/types/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UsersService } from '../users/users.service.js';
 import { normalizePhone, phoneVariants } from './customer-services.constants.js';
@@ -34,6 +35,16 @@ describe('CustomerServicesService', () => {
   };
 
   const customer = { userAID: 'cust-aid', userID: 'cust-id', role: 'CUSTOMER' };
+  const admin: AuthUser = {
+    userAID: 'actor-aid',
+    userID: 'actor-id',
+    phone: '0900000000',
+    fullName: 'Admin',
+    isActive: true,
+    roles: ['ADMIN'],
+    branchAID: null,
+    branchID: null,
+  };
   const catalogService = {
     serviceAID: 'svc-aid',
     serviceID: 'svc-id',
@@ -97,7 +108,7 @@ describe('CustomerServicesService', () => {
       },
     ]);
 
-    const result = await service.lookup('+84901234567');
+    const result = await service.lookup('+84901234567', admin);
 
     expect(prisma.user.findFirst.mock.calls[0][0].where.phone).toEqual({
       in: ['0901234567', '+84901234567'],
@@ -108,11 +119,12 @@ describe('CustomerServicesService', () => {
   });
 
   it('creates the account with the normalized phone', async () => {
-    await service.createCustomer('+84901234567', 'Lan', 'actor-aid');
+    await service.createCustomer('+84901234567', 'Lan', admin);
     expect(users.createCustomerWithDefaultPassword).toHaveBeenCalledWith(
       '0901234567',
       'Lan',
       'actor-aid',
+      null,
     );
   });
 
@@ -120,7 +132,7 @@ describe('CustomerServicesService', () => {
     const result = await service.add(
       'cust-id',
       { items: [{ serviceID: 'svc-id', quantity: 2, staffNote: 'ok' }] },
-      'actor-aid',
+      admin,
     );
 
     const data = prisma.customerService.create.mock.calls[0][0].data;
@@ -140,19 +152,19 @@ describe('CustomerServicesService', () => {
   it('rejects unknown services, non-customers and future dates', async () => {
     prisma.service.findMany.mockResolvedValueOnce([]);
     await expect(
-      service.add('cust-id', { items: [{ serviceID: 'nope' }] }, 'a'),
+      service.add('cust-id', { items: [{ serviceID: 'nope' }] }, admin),
     ).rejects.toBeInstanceOf(NotFoundException);
 
     users.findByUserID.mockResolvedValueOnce({ ...customer, role: 'STAFF' });
     await expect(
-      service.add('cust-id', { items: [{ serviceID: 'svc-id' }] }, 'a'),
+      service.add('cust-id', { items: [{ serviceID: 'svc-id' }] }, admin),
     ).rejects.toBeInstanceOf(NotFoundException);
 
     await expect(
       service.add(
         'cust-id',
         { items: [{ serviceID: 'svc-id' }], usedAt: '2999-01-01' },
-        'a',
+        admin,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
@@ -167,13 +179,13 @@ describe('CustomerServicesService', () => {
   });
 
   it('soft deletes a record', async () => {
-    await service.remove('cs-id', 'actor-aid');
+    await service.remove('cs-id', admin);
     const { data } = prisma.customerService.update.mock.calls[0][0];
     expect(data.deletedAt).toBeInstanceOf(Date);
     expect(data.updatedByAID).toBe('actor-aid');
 
     prisma.customerService.findFirst.mockResolvedValueOnce(null);
-    await expect(service.remove('gone', 'actor-aid')).rejects.toBeInstanceOf(
+    await expect(service.remove('gone', admin)).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });

@@ -1,16 +1,23 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Appointment, Branch, Prisma, User } from '@prisma/client';
+import type { AuthUser } from '../auth/types/auth-user.js';
 import {
   BranchesService,
   toBranchResponse,
   type BranchResponse,
 } from '../branches/branches.service.js';
 import { RoleName } from '../common/constants/roles.js';
+import {
+  assertBranchAccess,
+  scopedBranchAID,
+} from '../common/scope/branch-scope.js';
+import { normalizePhone, phoneVariants } from '../common/utils/phone.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   AppointmentStatus,
@@ -128,9 +135,12 @@ export class AppointmentsService {
     const appointmentDate = this.parseDate(dto.appointmentDate);
     this.assertBookable(branch, dto.appointmentDate, dto.appointmentTime);
 
+    const normalizedPhone = normalizePhone(dto.phoneNumber);
+    const variants = phoneVariants(normalizedPhone);
+
     const duplicate = await this.prisma.appointment.findFirst({
       where: {
-        phoneNumber: dto.phoneNumber,
+        phoneNumber: { in: variants },
         appointmentDate,
         status: { in: OPEN_STATUSES },
       },
@@ -140,16 +150,22 @@ export class AppointmentsService {
     }
 
     const customer = await this.prisma.user.findFirst({
-      where: { phone: dto.phoneNumber, role: RoleName.CUSTOMER },
-      select: { userAID: true },
+      where: { phone: { in: variants }, role: RoleName.CUSTOMER },
+      select: { userAID: true, branchAID: true },
     });
+    if (customer && !customer.branchAID) {
+      await this.prisma.user.update({
+        where: { userAID: customer.userAID },
+        data: { branchAID: branch.branchAID },
+      });
+    }
 
     const record = await this.prisma.appointment.create({
       data: {
         nameVietnamese: `Lịch hẹn ${dto.customerName}`,
         nameEnglish: `Appointment ${dto.customerName}`,
         customerName: dto.customerName,
-        phoneNumber: dto.phoneNumber,
+        phoneNumber: normalizedPhone,
         customerAID: customer?.userAID ?? null,
         branchAID: branch.branchAID,
         appointmentDate,
@@ -170,9 +186,12 @@ export class AppointmentsService {
     };
   }
 
-  async list(query: ListAppointmentsQueryDto): Promise<AppointmentResponse[]> {
+  async list(
+    query: ListAppointmentsQueryDto,
+    actor: AuthUser,
+  ): Promise<AppointmentResponse[]> {
     const where: Prisma.AppointmentWhereInput = {
-      ...(query.branchID ? { branch: { branchID: query.branchID } } : {}),
+      ...(await this.branchFilter(actor, query.branchID)),
       ...(query.status ? { status: query.status } : {}),
     };
 
@@ -202,16 +221,28 @@ export class AppointmentsService {
     );
   }
 
-  async findOne(appointmentID: string): Promise<AppointmentResponse> {
-    return this.respond(await this.getRecord(appointmentID));
+  async findOne(
+    appointmentID: string,
+    actor: AuthUser,
+  ): Promise<AppointmentResponse> {
+    return this.respond(await this.getRecord(appointmentID, actor));
   }
 
   async update(
     appointmentID: string,
     dto: UpdateAppointmentDto,
-    userAID: string,
+    actor: AuthUser,
   ): Promise<AppointmentResponse> {
-    const current = await this.getRecord(appointmentID);
+    const current = await this.getRecord(appointmentID, actor);
+    if (
+      dto.branchID &&
+      dto.branchID !== current.branch.branchID &&
+      scopedBranchAID(actor)
+    ) {
+      throw new ForbiddenException(
+        'Cannot move appointments to another branch',
+      );
+    }
     const branch =
       dto.branchID && dto.branchID !== current.branch.branchID
         ? await this.branches.getActiveRecord(dto.branchID)
@@ -241,12 +272,12 @@ export class AppointmentsService {
         status,
         ...(status === current.status
           ? {}
-          : this.stageStamps(current, status, userAID)),
+          : this.stageStamps(current, status, actor.userAID)),
         ...(dto.note === undefined ? {} : { note: dto.note || null }),
         ...(dto.serviceNote === undefined
           ? {}
           : { serviceNote: dto.serviceNote || null }),
-        updatedByAID: userAID,
+        updatedByAID: actor.userAID,
       },
       include: APPOINTMENT_INCLUDE,
     });
@@ -255,9 +286,9 @@ export class AppointmentsService {
 
   async confirm(
     appointmentID: string,
-    userAID: string,
+    actor: AuthUser,
   ): Promise<AppointmentResponse> {
-    const current = await this.getRecord(appointmentID);
+    const current = await this.getRecord(appointmentID, actor);
     if (current.status !== AppointmentStatus.PENDING) {
       throw new ConflictException('Only pending appointments can be confirmed');
     }
@@ -266,8 +297,8 @@ export class AppointmentsService {
       data: {
         status: AppointmentStatus.CONFIRMED,
         confirmedAt: new Date(),
-        confirmedByAID: userAID,
-        updatedByAID: userAID,
+        confirmedByAID: actor.userAID,
+        updatedByAID: actor.userAID,
       },
       include: APPOINTMENT_INCLUDE,
     });
@@ -322,7 +353,10 @@ export class AppointmentsService {
     return toAppointmentResponse(record, visits.get(record.phoneNumber));
   }
 
-  private async getRecord(appointmentID: string): Promise<AppointmentRecord> {
+  private async getRecord(
+    appointmentID: string,
+    actor?: AuthUser,
+  ): Promise<AppointmentRecord> {
     const record = await this.prisma.appointment.findUnique({
       where: { appointmentID },
       include: APPOINTMENT_INCLUDE,
@@ -330,7 +364,35 @@ export class AppointmentsService {
     if (!record) {
       throw new NotFoundException('Appointment not found');
     }
+    if (actor) {
+      try {
+        assertBranchAccess(actor, record.branchAID);
+      } catch {
+        throw new NotFoundException('Appointment not found');
+      }
+    }
     return record;
+  }
+
+  private async branchFilter(
+    actor: AuthUser,
+    requestedBranchID?: string,
+  ): Promise<Prisma.AppointmentWhereInput> {
+    const scope = scopedBranchAID(actor);
+    if (scope) {
+      if (requestedBranchID) {
+        const branch = await this.branches.getByBranchID(requestedBranchID);
+        if (branch.branchAID !== scope) {
+          throw new ForbiddenException(
+            'Cannot access appointments outside your branch',
+          );
+        }
+      }
+      return { branchAID: scope };
+    }
+    return requestedBranchID
+      ? { branch: { branchID: requestedBranchID } }
+      : {};
   }
 
   private parseDate(value: string): Date {
