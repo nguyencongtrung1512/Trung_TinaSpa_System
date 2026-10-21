@@ -471,6 +471,37 @@ model SystemSetting {
   note String?
 }
 
+/// Kết quả điều trị thực tế (ảnh before/after) ở mục "Kết quả thực tế" trên trang chủ; quản trị và quản lý chỉnh sửa.
+model TreatmentResult {
+  treatmentResultAID String @id @default(dbgenerated("\"generateBusinessID\"('TreatmentResult'::text)")) @db.VarChar(20)
+  treatmentResultID  String @unique(map: "UQ_TreatmentResult_treatmentResultID") @default(dbgenerated("\"generateBusinessID\"('TreatmentResult'::text)")) @db.VarChar(14)
+
+  titleVietnamese   String  @db.VarChar(255)
+  titleEnglish      String? @db.VarChar(255)
+  resultVietnamese  String  @db.VarChar(255)
+  resultEnglish     String? @db.VarChar(255)
+  summaryVietnamese String? @db.VarChar(500)
+  summaryEnglish    String? @db.VarChar(500)
+
+  beforeImage String @db.VarChar(2048)
+  afterImage  String @db.VarChar(2048)
+
+  sessionCount  Int
+  durationWeeks Int
+
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt    DateTime @default(now())
+  createdByAID String?  @db.VarChar(20)
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
+
+  @@index([isActive, displayOrder], map: "IX_TreatmentResult_isActive_displayOrder")
+}
+
 model BusinessIdCounter {
   tableName   String   @db.VarChar(100)
   counterDate DateTime @db.Date

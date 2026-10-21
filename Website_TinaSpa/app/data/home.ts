@@ -56,20 +56,6 @@ export interface TestimonialItem {
   readonly detail: string
 }
 
-export interface ResultCase {
-  readonly id: string
-  readonly label: string
-  readonly title: string
-  readonly result: string
-  readonly note: string
-  readonly sessions: string
-  readonly duration: string
-  readonly beforeSrc: string
-  readonly afterSrc: string
-  readonly beforeAlt: string
-  readonly afterAlt: string
-}
-
 type TextMap<T> = Record<string, T>
 
 export const brand = {
@@ -97,7 +83,9 @@ export function useNavLinks(): readonly NavLinkItem[] {
 export const heroLinks = {
   primary: '/booking',
   secondary: '/about',
-  portrait: '/images/imageLoan.jpg'
+  portrait: '/images/imageLoan.jpg',
+  /** Intro clip; `portrait` is its poster while loading and the fallback for reduced motion. */
+  video: '/videos/intro.mp4'
 } as const
 
 const statItems = [
@@ -213,19 +201,6 @@ const testimonialItems = [
 export function useTestimonials(): readonly TestimonialItem[] {
   const texts = useContent<TextMap<{ quote: string; detail: string }>>('testimonials.items')
   return testimonialItems.map((item) => ({ name: item.name, ...texts[item.id] }))
-}
-
-const resultItems = [
-  { id: '01', beforeSrc: '/images/screen.png', afterSrc: '/images/screen1.png' },
-  { id: '02', beforeSrc: '/images/screen1.png', afterSrc: '/images/screen.png' },
-  { id: '03', beforeSrc: '/images/image 1.png', afterSrc: '/images/screen1.png' }
-] as const
-
-type ResultText = Omit<ResultCase, 'id' | 'beforeSrc' | 'afterSrc'>
-
-export function useResultCases(): readonly ResultCase[] {
-  const texts = useContent<TextMap<ResultText>>('results.cases')
-  return resultItems.map((item) => ({ ...item, ...texts[item.id] }))
 }
 
 const footerExplore = [

@@ -65,13 +65,6 @@ const staffNavigation: readonly PortalNavGroup[] = [
     label: 'Nội dung & danh mục',
     items: [
       {
-        label: 'Ghi nhận kết quả',
-        icon: 'photo_camera',
-        to: '/portal/staff/results',
-        summary: 'Ảnh và ghi chú sau buổi chăm sóc.',
-        badge: 'dot'
-      },
-      {
         label: 'Bài viết của tôi',
         icon: 'article',
         to: '/portal/staff/articles',
@@ -160,6 +153,12 @@ const managerNavigation: readonly PortalNavGroup[] = [
         icon: 'inventory_2',
         to: '/portal/manager/products',
         summary: 'Sản phẩm bán lẻ hiển thị trên website.'
+      },
+      {
+        label: 'Kết quả thực tế',
+        icon: 'compare',
+        to: '/portal/manager/results',
+        summary: 'Ảnh trước/sau của khách hiển thị ở mục "Kết quả thực tế" trên trang chủ.'
       },
       {
         label: 'Duyệt bài viết',
@@ -261,6 +260,18 @@ const adminNavigation: readonly PortalNavGroup[] = [
         icon: 'inventory_2',
         to: '/portal/admin/products',
         summary: 'Sản phẩm hiển thị trên website.'
+      },
+      {
+        label: 'Nội dung trang chủ',
+        icon: 'home',
+        to: '/portal/admin/home-content',
+        summary: 'Đội ngũ chuyên môn và quy trình làm việc hiển thị trên trang chủ.'
+      },
+      {
+        label: 'Kết quả thực tế',
+        icon: 'compare',
+        to: '/portal/admin/results',
+        summary: 'Ảnh trước/sau của khách hiển thị ở mục "Kết quả thực tế" trên trang chủ.'
       },
       {
         label: 'Bài viết',

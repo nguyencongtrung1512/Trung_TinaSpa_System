@@ -15,6 +15,23 @@
   --color-clinic-deep: #be1860;
   --color-rose-soft: #f8c3d6;
   --color-whisper-shadow: rgb(225 29 116 / 0.08);
+
+  --animate-popover-in: popover-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-popover-out: popover-out 120ms ease-in forwards;
+
+  @keyframes popover-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
+
+  @keyframes popover-out {
+    to {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
 }
 
 html,

@@ -7,7 +7,6 @@ import { inputClass, outlineButtonClass } from '~/portal/manager/services/form-u
 const defaultLabels = {
   choose: 'Chọn ảnh',
   replace: 'Đổi ảnh',
-  remove: 'Gỡ ảnh',
   uploading: 'Đang tải lên',
   hint: `JPG, PNG, WEBP, GIF · tối đa ${MAX_IMAGE_SIZE_MB} MB`,
   urlPlaceholder: 'Hoặc dán đường dẫn ảnh',
@@ -18,7 +17,7 @@ const defaultLabels = {
 export type ImageUploadLabels = typeof defaultLabels
 
 /** Full-size view; portalled to body so it escapes dialogs that clip or transform their content. */
-function ImagePreview({
+export function ImagePreview({
   src,
   closeLabel,
   onClose
@@ -154,20 +153,6 @@ export function ImageUpload({
               <Icon name='upload' size={18} />
               {uploading ? `${text.uploading} ${progress}%` : preview ? text.replace : text.choose}
             </button>
-            {preview && !uploading ? (
-              <button
-                type='button'
-                className={outlineButtonClass}
-                onClick={() => {
-                  setError(undefined)
-                  setBroken(false)
-                  onChange('', '')
-                }}
-              >
-                <Icon name='delete' size={18} />
-                {text.remove}
-              </button>
-            ) : null}
           </div>
           {uploading ? (
             <div

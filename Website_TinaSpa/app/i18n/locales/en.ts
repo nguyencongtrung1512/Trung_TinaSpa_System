@@ -55,7 +55,8 @@ const en: typeof vi = {
   account: {
     eyebrow: 'My account',
     title: 'Personal profile',
-    intro: 'Keep your details up to date so Dr Tina can care for you better.',
+    intro:
+      'Keep your details up to date so Dr Tina can care for you better and follow every medical-grade beauty treatment in detail.',
     portalLink: 'Open work portal',
     logout: 'Sign out',
     phone: 'Phone number',
@@ -66,22 +67,24 @@ const en: typeof vi = {
     genders: { FEMALE: 'Female', MALE: 'Male', OTHER: 'Other' },
     dateOfBirth: 'Date of birth',
     age: '{{count}} years old',
-    address: 'Address',
+    address: 'Address for care materials',
     addressPlaceholder: 'Street, ward, district, city',
     avatar: 'Profile photo',
     avatarUpload: {
       choose: 'Choose photo',
       replace: 'Change photo',
-      remove: 'Remove photo',
       uploading: 'Uploading',
-      hint: 'JPG, PNG, WEBP, GIF · up to {{size}} MB. Press "Save changes" to apply.'
+      hint: 'JPG, PNG, WEBP, GIF · up to {{size}} MB. Press "Save profile" to apply.',
+      preview: 'View profile photo',
+      pending: 'New photo uploaded. Press "Save profile" to update your profile photo.',
+      failed: 'Upload failed. Please try again.'
     },
-    save: 'Save changes',
+    save: 'Save profile',
     saving: 'Saving...',
     saved: 'Profile updated.',
     retry: 'Try again',
     memberSince: 'Member since {{date}}',
-    roles: { CUSTOMER: 'Client', STAFF: 'Staff', MANAGER: 'Manager', ADMIN: 'Administrator' },
+    roles: { CUSTOMER: 'Loyal client', STAFF: 'Staff', MANAGER: 'Manager', ADMIN: 'Administrator' },
     usedServices: {
       title: 'Services used',
       intro: 'Services our team has recorded for you after each visit.',
@@ -97,6 +100,12 @@ const en: typeof vi = {
     },
     password: {
       title: 'Change password',
+      open: 'Change password',
+      description: 'Enter your current password and a new one to keep your account secure.',
+      lengthHint: 'At least 8 characters.',
+      cancel: 'Cancel',
+      show: 'Show password',
+      hide: 'Hide password',
       notice:
         'Your account still uses the default password (your phone number). Please change it to keep your account secure.',
       current: 'Current password',
@@ -141,6 +150,7 @@ const en: typeof vi = {
     addTitle: 'Add services used',
     serviceN: 'Service {{n}}',
     chooseService: 'Choose a service',
+    searchService: 'Search services...',
     otherCategory: 'Other',
     quantity: 'Quantity',
     removeLine: 'Remove row {{n}}',
@@ -203,7 +213,12 @@ const en: typeof vi = {
       'A clinic that blends medical aesthetics with a calm spa atmosphere. Dr. Nguyen Lann guides you from skin consultation to a personalized treatment plan.',
     primaryCta: 'Book now',
     secondaryCta: 'Learn more',
-    portraitAlt: 'Dr. Nguyen Loan - aesthetic doctor at Dr Tina Beauty'
+    portraitAlt: 'Dr. Nguyen Loan - aesthetic doctor at Dr Tina Beauty',
+    videoLabel: 'Dr Tina Beauty introduction video',
+    playVideo: 'Play video',
+    pauseVideo: 'Pause video',
+    unmuteVideo: 'Turn sound on',
+    muteVideo: 'Turn sound off'
   },
   stats: {
     experience: 'Years of experience',
@@ -327,7 +342,7 @@ const en: typeof vi = {
   },
   process: {
     eyebrow: 'How we work',
-    title: '4 steps together',
+    title: '{{count}} steps together',
     description: 'Every step is clear, with someone by your side from the first visit to the very end.',
     steps: {
       book: {
@@ -397,38 +412,11 @@ const en: typeof vi = {
     sliderLabel: 'Before and after comparison. Drag right to see before, drag left to see after.',
     before: 'BEFORE',
     after: 'AFTER',
-    cases: {
-      '01': {
-        label: 'Case 01',
-        title: 'Intensive skin recovery',
-        result: 'Lesions & irritation reduced by 96%',
-        note: 'Irritated, dehydrated skin fully restored',
-        sessions: '06 sessions',
-        duration: '8 weeks',
-        beforeAlt: 'Before the skin recovery treatment',
-        afterAlt: 'After the skin recovery treatment'
-      },
-      '02': {
-        label: 'Case 02',
-        title: 'Dark spot & melasma treatment',
-        result: 'Melasma & freckles reduced by 88%',
-        note: 'Dense melanin build-up, skin tone now more radiant',
-        sessions: '08 sessions',
-        duration: '10 weeks',
-        beforeAlt: 'Before the melasma treatment',
-        afterAlt: 'After the melasma treatment'
-      },
-      '03': {
-        label: 'Case 03',
-        title: 'Acne & anti-inflammation',
-        result: 'Inflammatory acne fully under control',
-        note: 'Excess sebum reduced, tighter pores and faded marks',
-        sessions: '05 sessions',
-        duration: '6 weeks',
-        beforeAlt: 'Before the acne treatment',
-        afterAlt: 'After the acne treatment'
-      }
-    }
+    caseLabel: 'Case {{n}}',
+    sessionsValue: '{{value}} sessions',
+    durationValue: '{{count}} weeks',
+    beforeAlt: 'Before the treatment: {{title}}',
+    afterAlt: 'After the treatment: {{title}}'
   },
   cta: {
     title: 'Book a healing appointment',
@@ -498,7 +486,11 @@ const en: typeof vi = {
     groups: 'Service groups',
     all: 'ALL',
     searchPlaceholder: 'Search services...',
-    empty: 'No services match "{{query}}"'
+    empty: 'No services match "{{query}}"',
+    loading: 'Loading services',
+    loadError: 'Could not load the services. Please try again.',
+    retry: 'Try again',
+    noServices: 'No services are available yet. Please check back later.'
   },
   contact: {
     titleLead: 'Connect With',

@@ -1,6 +1,8 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { heroLinks } from '~/data/home'
+import { Icon } from '~/components/ui/Icon'
 import { MotionLink, fadeUp, pressable, scaleIn, stagger } from '~/components/ui/motion'
 import { StableText } from '~/components/ui/StableText'
 
@@ -10,6 +12,37 @@ export interface HeroProps {
 
 export function Hero({ className = '' }: HeroProps) {
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [muted, setMuted] = useState(true)
+  const [playing, setPlaying] = useState(false)
+
+  // Browsers only autoplay muted video; visitors who prefer reduced motion get the still poster.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    if (reduceMotion) {
+      video.pause()
+      return
+    }
+    video.muted = true
+    void video.play().catch(() => setPlaying(false))
+  }, [reduceMotion])
+
+  function toggleSound() {
+    const video = videoRef.current
+    if (!video) return
+    video.muted = !video.muted
+    setMuted(video.muted)
+    if (video.paused) void video.play()
+  }
+
+  function togglePlay() {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) void video.play()
+    else video.pause()
+  }
 
   return (
     <section className={className}>
@@ -61,11 +94,39 @@ export function Hero({ className = '' }: HeroProps) {
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <img
-              src={heroLinks.portrait}
-              alt={t('hero.portraitAlt')}
-              className='aspect-[4/5] h-full w-full object-cover object-top'
+            <video
+              ref={videoRef}
+              src={heroLinks.video}
+              poster={heroLinks.portrait}
+              aria-label={t('hero.videoLabel')}
+              className='aspect-[4/5] h-full w-full object-cover'
+              muted
+              loop
+              playsInline
+              preload='metadata'
+              autoPlay={!reduceMotion}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
             />
+            <div className='absolute right-4 bottom-4 flex gap-2'>
+              <button
+                type='button'
+                className='grid size-10 place-items-center rounded-full bg-white/85 text-clinic shadow-md backdrop-blur transition hover:scale-105 hover:bg-white'
+                aria-label={playing ? t('hero.pauseVideo') : t('hero.playVideo')}
+                onClick={togglePlay}
+              >
+                <Icon name={playing ? 'pause' : 'play_arrow'} size={20} />
+              </button>
+              <button
+                type='button'
+                className='grid size-10 place-items-center rounded-full bg-white/85 text-clinic shadow-md backdrop-blur transition hover:scale-105 hover:bg-white'
+                aria-label={muted ? t('hero.unmuteVideo') : t('hero.muteVideo')}
+                aria-pressed={!muted}
+                onClick={toggleSound}
+              >
+                <Icon name={muted ? 'volume_off' : 'volume_up'} size={20} />
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       </div>

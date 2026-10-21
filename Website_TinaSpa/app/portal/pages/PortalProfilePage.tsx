@@ -1,4 +1,6 @@
+import { useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { ChangePasswordDialog } from '~/features/account/ChangePasswordDialog'
 import { ProfileForm } from '~/features/account/ProfileForm'
 import { useSession } from '~/lib/auth'
 import { formatPortalDate } from '~/portal/format'
@@ -9,6 +11,8 @@ import type { PortalRole } from '~/portal/types'
 export function PortalProfilePage({ role }: { readonly role: PortalRole }) {
   const reduceMotion = useReducedMotion()
   const session = useSession()
+  const [passwordOpen, setPasswordOpen] = useState(false)
+  const closePassword = useCallback(() => setPasswordOpen(false), [])
   if (!session) return null
 
   return (
@@ -27,8 +31,13 @@ export function PortalProfilePage({ role }: { readonly role: PortalRole }) {
         <p className='mt-1 text-sm text-muted'>Thông tin cá nhân hiển thị với đồng nghiệp và khách hàng.</p>
       </header>
       <section className={`${portalCardClass} mt-6 p-5 sm:p-8`}>
-        <ProfileForm initialUser={session.user} />
+        <ProfileForm initialUser={session.user} onChangePassword={() => setPasswordOpen(true)} />
       </section>
+      <ChangePasswordDialog
+        open={passwordOpen}
+        highlight={session.user.mustChangePassword === true}
+        onClose={closePassword}
+      />
     </motion.div>
   )
 }

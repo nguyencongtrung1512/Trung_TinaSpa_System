@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '~/components/ui/Icon'
 import { usePopover } from './usePopover'
@@ -29,6 +29,9 @@ export interface SelectProps<T extends string> {
    * that sit inside a styled wrapper (pill, underline field).
    */
   readonly variant?: 'field' | 'bare'
+  /** Adds a search box that filters options by label or group (accent-insensitive). */
+  readonly searchable?: boolean
+  readonly searchPlaceholder?: string
 }
 
 const triggerVariants = {
@@ -39,6 +42,31 @@ const triggerVariants = {
 
 const MAX_LIST_HEIGHT = 288
 const MIN_LIST_WIDTH = 192
+/** Keep in sync with `--animate-popover-out` in app.css. */
+const CLOSE_DURATION = 120
+
+/** Lowercase and strip Vietnamese diacritics, so "dich vu" matches "Dịch vụ". */
+function fold(text: string) {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase()
+}
+
+function highlight(label: string, query: string): ReactNode {
+  if (!query) return label
+  const chars = Array.from(label)
+  const folded = chars.map(fold)
+  // Highlighting needs a 1:1 char mapping between the label and its folded form.
+  if (folded.some((char) => char.length !== 1)) return label
+  const start = folded.join('').indexOf(query)
+  if (start < 0) return label
+  const end = start + query.length
+  return (
+    <>
+      {chars.slice(0, start).join('')}
+      <mark className='rounded bg-mist text-clinic'>{chars.slice(start, end).join('')}</mark>
+      {chars.slice(end).join('')}
+    </>
+  )
+}
 
 /** Custom dropdown with the same look as `ActionMenu`; keyboard support follows the WAI-ARIA listbox pattern. */
 export function Select<T extends string>({
@@ -52,14 +80,21 @@ export function Select<T extends string>({
   'aria-label': ariaLabel,
   'aria-invalid': ariaInvalid,
   className = '',
-  variant = 'field'
+  variant = 'field',
+  searchable = false,
+  searchPlaceholder = 'Tìm kiếm...'
 }: SelectProps<T>) {
   const listId = useId()
   const [open, setOpen] = useState(false)
+  // Stays true briefly after closing so the exit animation can play.
+  const [rendered, setRendered] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [query, setQuery] = useState('')
   const typeahead = useRef({ text: '', at: 0 })
+  const listRef = useRef<HTMLUListElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
   const [triggerWidth, setTriggerWidth] = useState(MIN_LIST_WIDTH)
-  const { triggerRef, popoverRef, style } = usePopover<HTMLButtonElement, HTMLUListElement>({
+  const { triggerRef, popoverRef, style } = usePopover<HTMLButtonElement, HTMLDivElement>({
     open,
     onClose: () => setOpen(false),
     width: Math.max(triggerWidth, MIN_LIST_WIDTH)
@@ -67,23 +102,40 @@ export function Select<T extends string>({
 
   const selectedIndex = options.findIndex((option) => option.value === value)
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined
-  const enabledIndexes = options.flatMap((option, index) => (option.disabled ? [] : [index]))
+  const foldedQuery = fold(query.trim())
+  const terms = foldedQuery.split(/\s+/).filter(Boolean)
+  const visibleIndexes = options.flatMap((option, index) => {
+    if (terms.length === 0) return [index]
+    const haystack = fold(`${option.label} ${option.group ?? ''}`)
+    return terms.every((term) => haystack.includes(term)) ? [index] : []
+  })
+  const enabledIndexes = visibleIndexes.filter((index) => !options[index].disabled)
+
+  useEffect(() => {
+    if (open) {
+      setRendered(true)
+      return
+    }
+    const timer = setTimeout(() => setRendered(false), CLOSE_DURATION)
+    return () => clearTimeout(timer)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
-    popoverRef.current?.focus()
-  }, [open, popoverRef])
+    ;(searchable ? searchRef.current : listRef.current)?.focus()
+  }, [open, searchable])
 
   useEffect(() => {
     if (open && activeIndex >= 0) {
-      popoverRef.current?.querySelector(`[data-index='${activeIndex}']`)?.scrollIntoView({ block: 'nearest' })
+      listRef.current?.querySelector(`[data-index='${activeIndex}']`)?.scrollIntoView({ block: 'nearest' })
     }
-  }, [open, activeIndex, popoverRef])
+  }, [open, activeIndex])
 
-  function openList() {
+  function openList(initialQuery = '') {
     if (disabled) return
     setTriggerWidth(triggerRef.current?.offsetWidth ?? MIN_LIST_WIDTH)
-    setActiveIndex(selectedIndex >= 0 ? selectedIndex : (enabledIndexes[0] ?? -1))
+    setQuery(initialQuery)
+    setActiveIndex(selectedIndex >= 0 && !initialQuery ? selectedIndex : -1)
     setOpen(true)
   }
 
@@ -109,19 +161,35 @@ export function Select<T extends string>({
       text: now - typeahead.current.at < 600 ? typeahead.current.text + key.toLowerCase() : key.toLowerCase(),
       at: now
     }
-    const query = typeahead.current.text
-    const match = enabledIndexes.find((index) => options[index].label.toLowerCase().startsWith(query))
+    const text = typeahead.current.text
+    const match = enabledIndexes.find((index) => options[index].label.toLowerCase().startsWith(text))
     if (match !== undefined) setActiveIndex(match)
+  }
+
+  function onSearchChange(next: string) {
+    setQuery(next)
+    // Keep the highlight on the first match so Enter picks it.
+    const nextTerms = fold(next.trim()).split(/\s+/).filter(Boolean)
+    const first = options.findIndex(
+      (option) =>
+        !option.disabled && nextTerms.every((term) => fold(`${option.label} ${option.group ?? ''}`).includes(term))
+    )
+    setActiveIndex(first)
+    listRef.current?.scrollTo({ top: 0 })
   }
 
   function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
       event.preventDefault()
       openList()
+    } else if (searchable && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      // Typing on the closed trigger starts a search.
+      event.preventDefault()
+      openList(event.key)
     }
   }
 
-  function onListKeyDown(event: KeyboardEvent<HTMLUListElement>) {
+  function onPopoverKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault()
@@ -132,15 +200,17 @@ export function Select<T extends string>({
         step(-1)
         break
       case 'Home':
-        event.preventDefault()
-        setActiveIndex(enabledIndexes[0] ?? -1)
-        break
       case 'End':
+        if (searchable) break // move the caret in the search box
         event.preventDefault()
-        setActiveIndex(enabledIndexes[enabledIndexes.length - 1] ?? -1)
+        setActiveIndex((event.key === 'Home' ? enabledIndexes[0] : enabledIndexes[enabledIndexes.length - 1]) ?? -1)
         break
       case 'Enter':
+        event.preventDefault()
+        choose(activeIndex)
+        break
       case ' ':
+        if (searchable) break
         event.preventDefault()
         choose(activeIndex)
         break
@@ -148,9 +218,13 @@ export function Select<T extends string>({
         setOpen(false)
         break
       default:
-        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) typeTo(event.key)
+        if (!searchable && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          typeTo(event.key)
+        }
     }
   }
+
+  const activeDescendant = open && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
 
   return (
     <>
@@ -175,59 +249,109 @@ export function Select<T extends string>({
         <Icon
           name='expand_more'
           size={20}
-          className={`shrink-0 transition-transform ${open ? 'rotate-180 text-clinic' : 'text-muted'}`}
+          className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-clinic' : 'text-muted'}`}
         />
       </button>
-      {open
+      {open || rendered
         ? createPortal(
-            <ul
+            <div
               ref={popoverRef}
-              id={listId}
-              role='listbox'
-              tabIndex={-1}
-              aria-label={ariaLabel}
-              aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
-              style={{ ...style, maxHeight: MAX_LIST_HEIGHT }}
-              onKeyDown={onListKeyDown}
-              className='fixed z-[60] overflow-y-auto overscroll-contain rounded-2xl border border-rose-soft/70 bg-white p-1.5 shadow-lg outline-none'
+              style={style}
+              onKeyDown={onPopoverKeyDown}
+              className={`fixed z-[60] flex flex-col overflow-hidden rounded-2xl border border-rose-soft/70 bg-white shadow-lg ${
+                open ? 'motion-safe:animate-popover-in' : 'pointer-events-none motion-safe:animate-popover-out'
+              }`}
             >
-              {options.length === 0 ? (
-                <li className='px-3 py-2 text-sm text-muted'>Không có lựa chọn</li>
-              ) : (
-                options.map((option, index) => {
-                  const isSelected = index === selectedIndex
-                  const isActive = index === activeIndex
-                  const groupStart = option.group && option.group !== options[index - 1]?.group
-                  return [
-                    groupStart ? (
-                      <li
-                        key={`group-${option.group}`}
-                        role='presentation'
-                        className='px-3 pt-2.5 pb-1 text-[11px] font-bold tracking-wide text-muted uppercase'
+              {searchable ? (
+                <div className='border-b border-rose-soft/50 p-1.5'>
+                  <div className='flex items-center gap-2 rounded-xl bg-canvas px-3 transition-shadow focus-within:ring-2 focus-within:ring-clinic/15'>
+                    <Icon name='search' size={18} className='shrink-0 text-muted' />
+                    <input
+                      ref={searchRef}
+                      type='text'
+                      role='combobox'
+                      autoComplete='off'
+                      spellCheck={false}
+                      aria-label={searchPlaceholder}
+                      aria-expanded={open}
+                      aria-controls={listId}
+                      aria-autocomplete='list'
+                      aria-activedescendant={activeDescendant}
+                      placeholder={searchPlaceholder}
+                      value={query}
+                      onChange={(event) => onSearchChange(event.target.value)}
+                      className='min-w-0 flex-1 bg-transparent py-2 text-sm text-ink outline-none placeholder:text-muted'
+                    />
+                    {query ? (
+                      <button
+                        type='button'
+                        tabIndex={-1}
+                        aria-label='Xóa tìm kiếm'
+                        className='grid shrink-0 place-items-center rounded-full text-muted transition-colors hover:text-clinic'
+                        onClick={() => {
+                          onSearchChange('')
+                          searchRef.current?.focus()
+                        }}
                       >
-                        {option.group}
+                        <Icon name='close' size={16} />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              <ul
+                ref={listRef}
+                id={listId}
+                role='listbox'
+                tabIndex={-1}
+                aria-label={ariaLabel}
+                aria-activedescendant={searchable ? undefined : activeDescendant}
+                style={{ maxHeight: MAX_LIST_HEIGHT }}
+                className='overflow-y-auto overscroll-contain p-1.5 outline-none'
+              >
+                {visibleIndexes.length === 0 ? (
+                  <li className='flex items-center gap-2 px-3 py-2 text-sm text-muted motion-safe:animate-popover-in'>
+                    {query ? <Icon name='search_off' size={18} className='shrink-0' /> : null}
+                    {query ? 'Không tìm thấy kết quả' : 'Không có lựa chọn'}
+                  </li>
+                ) : (
+                  visibleIndexes.map((index, position) => {
+                    const option = options[index]
+                    const isSelected = index === selectedIndex
+                    const isActive = index === activeIndex
+                    const previous = position > 0 ? options[visibleIndexes[position - 1]] : undefined
+                    const groupStart = option.group && option.group !== previous?.group
+                    return [
+                      groupStart ? (
+                        <li
+                          key={`group-${option.group}`}
+                          role='presentation'
+                          className='px-3 pt-2.5 pb-1 text-[11px] font-bold tracking-wide text-muted uppercase'
+                        >
+                          {option.group}
+                        </li>
+                      ) : null,
+                      <li
+                        key={option.value}
+                        id={`${listId}-${index}`}
+                        data-index={index}
+                        role='option'
+                        aria-selected={isSelected}
+                        aria-disabled={option.disabled || undefined}
+                        className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors duration-150 ${
+                          option.disabled ? 'cursor-not-allowed text-muted/60' : isSelected ? 'text-clinic' : 'text-ink'
+                        } ${isActive && !option.disabled ? (isSelected ? 'bg-mist' : 'bg-canvas') : isSelected ? 'bg-mist/60' : ''}`}
+                        onPointerMove={() => !option.disabled && setActiveIndex(index)}
+                        onClick={() => choose(index)}
+                      >
+                        <span className='min-w-0'>{highlight(option.label, foldedQuery)}</span>
+                        {isSelected ? <Icon name='check' size={18} className='shrink-0' /> : null}
                       </li>
-                    ) : null,
-                    <li
-                      key={option.value}
-                      id={`${listId}-${index}`}
-                      data-index={index}
-                      role='option'
-                      aria-selected={isSelected}
-                      aria-disabled={option.disabled || undefined}
-                      className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm font-semibold ${
-                        option.disabled ? 'cursor-not-allowed text-muted/60' : isSelected ? 'text-clinic' : 'text-ink'
-                      } ${isActive && !option.disabled ? (isSelected ? 'bg-mist' : 'bg-canvas') : isSelected ? 'bg-mist/60' : ''}`}
-                      onPointerMove={() => !option.disabled && setActiveIndex(index)}
-                      onClick={() => choose(index)}
-                    >
-                      <span className='min-w-0'>{option.label}</span>
-                      {isSelected ? <Icon name='check' size={18} className='shrink-0' /> : null}
-                    </li>
-                  ]
-                })
-              )}
-            </ul>,
+                    ]
+                  })
+                )}
+              </ul>
+            </div>,
             document.body
           )
         : null}

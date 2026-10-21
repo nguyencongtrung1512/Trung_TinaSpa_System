@@ -9,6 +9,7 @@ import { BlogsPage } from '~/portal/blogs/BlogsPage'
 import { ProductCategoriesPage } from '~/portal/manager/products/ProductCategoriesPage'
 import { ProductDetailPage } from '~/portal/manager/products/ProductDetailPage'
 import { ProductManagementPage } from '~/portal/manager/products/ProductManagementPage'
+import { HomeContentPage } from '~/portal/home-content/HomeContentPage'
 import { PortalShell } from '~/portal/layout/PortalShell'
 import { ManagerOverviewPage } from '~/portal/manager/ManagerOverviewPage'
 import { ServiceCatalogPage } from '~/portal/manager/services/ServiceCatalogPage'
@@ -17,6 +18,7 @@ import { findNavItem } from '~/portal/navigation'
 import { PortalProfilePage } from '~/portal/pages/PortalProfilePage'
 import { PortalSectionPage } from '~/portal/pages/PortalSectionPage'
 import { RoleHomePage } from '~/portal/pages/RoleHomePage'
+import { TreatmentResultsPage } from '~/portal/results/TreatmentResultsPage'
 import { SettingsPage } from '~/portal/settings/SettingsPage'
 import { portalRoleFromSession } from '~/portal/access'
 import { StaffDeskPage } from '~/portal/staff/StaffDeskPage'
@@ -77,6 +79,7 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
       element: <UserDetailPage role='manager' backTo='/portal/manager/staff' backLabel='Nhân viên' />
     },
     { path: 'article-review', element: <BlogsPage role='manager' /> },
+    { path: 'results', element: <TreatmentResultsPage role='manager' /> },
     { path: 'blog-categories', element: <BlogCategoriesPage role='manager' /> },
     { path: 'services', element: <ServiceCatalogPage role='manager' /> },
     { path: 'service-categories', element: <ServiceCategoriesPage role='manager' /> },
@@ -121,6 +124,8 @@ const sectionPages: Partial<Record<PortalRole, RouteObject[]>> = {
     { path: 'branches', element: <BranchesPage /> },
     { path: 'settings', element: <SettingsPage /> },
     { path: 'blogs', element: <BlogsPage role='admin' /> },
+    { path: 'results', element: <TreatmentResultsPage role='admin' /> },
+    { path: 'home-content', element: <HomeContentPage /> },
     { path: 'blog-categories', element: <BlogCategoriesPage role='admin' /> },
     { path: 'services', element: <ServiceCatalogPage role='admin' /> },
     { path: 'service-categories', element: <ServiceCategoriesPage role='admin' /> },

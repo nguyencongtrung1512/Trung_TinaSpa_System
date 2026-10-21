@@ -25,6 +25,10 @@ export interface UsedServiceRecord {
   readonly nameVietnamese: string
   readonly nameEnglish: string | null
   readonly nameCambodia: string | null
+  /** Full service description, or its short description when none is set. */
+  readonly descriptionVietnamese: string | null
+  readonly descriptionEnglish: string | null
+  readonly descriptionCambodia: string | null
   readonly price: number
   readonly quantity: number
   readonly usedAt: string

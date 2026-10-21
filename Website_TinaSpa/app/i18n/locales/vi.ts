@@ -15,7 +15,7 @@ const vi = {
     home: {
       title: 'Dr Tina Beauty — Chăm sóc sắc đẹp chuyên nghiệp',
       description:
-        'Phòng khám thẩm mỹ Dr Tina Beauty. BS. Nguyễn Lânn tư vấn liệu trình da, trẻ hóa và chăm sóc spa y khoa.'
+        'Phòng khám thẩm mỹ Dr Tina Beauty. BS. Nguyễn Lan tư vấn liệu trình da, trẻ hóa và chăm sóc spa y khoa.'
     },
     about: {
       title: 'Giới thiệu — Dr Tina Beauty',
@@ -51,7 +51,7 @@ const vi = {
   account: {
     eyebrow: 'Tài khoản của tôi',
     title: 'Hồ sơ cá nhân',
-    intro: 'Cập nhật thông tin để Dr Tina chăm sóc bạn chu đáo hơn.',
+    intro: 'Kiểm tra lộ trình cải thiện qua các buổi trị liệu chăm sóc sắc đẹp của bạn.',
     portalLink: 'Vào cổng làm việc',
     logout: 'Đăng xuất',
     phone: 'Số điện thoại',
@@ -62,22 +62,24 @@ const vi = {
     genders: { FEMALE: 'Nữ', MALE: 'Nam', OTHER: 'Khác' },
     dateOfBirth: 'Ngày sinh',
     age: '{{count}} tuổi',
-    address: 'Địa chỉ',
+    address: 'Địa chỉ nhận tài liệu chăm sóc',
     addressPlaceholder: 'Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành',
     avatar: 'Ảnh đại diện',
     avatarUpload: {
       choose: 'Chọn ảnh',
       replace: 'Đổi ảnh',
-      remove: 'Gỡ ảnh',
       uploading: 'Đang tải lên',
-      hint: 'JPG, PNG, WEBP, GIF · tối đa {{size}} MB. Nhấn "Lưu thay đổi" để cập nhật.'
+      hint: 'JPG, PNG, WEBP, GIF · tối đa {{size}} MB. Nhấn "Lưu thông tin" để cập nhật.',
+      preview: 'Xem ảnh đại diện',
+      pending: 'Ảnh mới đã tải lên. Nhấn "Lưu thông tin" để cập nhật ảnh đại diện.',
+      failed: 'Tải ảnh lên thất bại. Vui lòng thử lại.'
     },
-    save: 'Lưu thay đổi',
+    save: 'Lưu thông tin',
     saving: 'Đang lưu...',
     saved: 'Đã cập nhật hồ sơ.',
     retry: 'Thử lại',
     memberSince: 'Thành viên từ {{date}}',
-    roles: { CUSTOMER: 'Khách hàng', STAFF: 'Nhân viên', MANAGER: 'Quản lý', ADMIN: 'Quản trị' },
+    roles: { CUSTOMER: 'Khách hàng thân thiết', STAFF: 'Nhân viên', MANAGER: 'Quản lý', ADMIN: 'Quản trị' },
     usedServices: {
       title: 'Dịch vụ đã sử dụng',
       intro: 'Các dịch vụ nhân viên đã ghi nhận cho bạn sau mỗi buổi chăm sóc.',
@@ -93,6 +95,12 @@ const vi = {
     },
     password: {
       title: 'Đổi mật khẩu',
+      open: 'Đổi mật khẩu',
+      description: 'Nhập mật khẩu hiện tại và mật khẩu mới để bảo vệ tài khoản của bạn.',
+      lengthHint: 'Tối thiểu 8 ký tự.',
+      cancel: 'Hủy',
+      show: 'Hiện mật khẩu',
+      hide: 'Ẩn mật khẩu',
       notice: 'Tài khoản của bạn đang dùng mật khẩu mặc định (số điện thoại). Hãy đổi mật khẩu để bảo mật hơn.',
       current: 'Mật khẩu hiện tại',
       next: 'Mật khẩu mới',
@@ -135,6 +143,7 @@ const vi = {
     addTitle: 'Thêm dịch vụ đã sử dụng',
     serviceN: 'Dịch vụ {{n}}',
     chooseService: 'Chọn dịch vụ',
+    searchService: 'Tìm dịch vụ...',
     otherCategory: 'Khác',
     quantity: 'Số lượng',
     removeLine: 'Xóa dòng {{n}}',
@@ -194,10 +203,15 @@ const vi = {
     eyebrow: 'Chào mừng đến với Dr Tina Beauty',
     title: 'Chăm sóc sắc đẹp chuyên nghiệp, tận tâm',
     description:
-      'Phòng khám kết hợp thẩm mỹ y khoa và không gian spa yên tĩnh. BS. Nguyễn Lânn đồng hành cùng bạn từ tư vấn da đến liệu trình cá nhân hóa.',
+      'Phòng khám kết hợp thẩm mỹ y khoa và không gian spa yên tĩnh. BS. Nguyễn Lan đồng hành cùng bạn từ tư vấn da đến liệu trình cá nhân hóa.',
     primaryCta: 'Đặt lịch ngay',
     secondaryCta: 'Tìm hiểu thêm',
-    portraitAlt: 'BS. Nguyễn Loan - bác sĩ thẩm mỹ Dr Tina Beauty'
+    portraitAlt: 'BS. Nguyễn Loan - bác sĩ thẩm mỹ Dr Tina Beauty',
+    videoLabel: 'Video giới thiệu Dr Tina Beauty',
+    playVideo: 'Phát video',
+    pauseVideo: 'Tạm dừng video',
+    unmuteVideo: 'Bật âm thanh',
+    muteVideo: 'Tắt âm thanh'
   },
   stats: {
     experience: 'Năm kinh nghiệm',
@@ -320,7 +334,7 @@ const vi = {
   },
   process: {
     eyebrow: 'Quy trình làm việc',
-    title: '4 bước đồng hành',
+    title: '{{count}} bước đồng hành',
     description: 'Mỗi bước được thực hiện rõ ràng, có người theo sát từ lần đầu tiên đến khi hoàn tất.',
     steps: {
       book: {
@@ -346,9 +360,9 @@ const vi = {
     title: 'Người đồng hành cùng bạn',
     members: {
       doctor: {
-        name: 'BS. Nguyễn Lânn',
+        name: 'BS. Nguyễn Lan',
         role: 'Bác sĩ thẩm mỹ',
-        imageAlt: 'Chân dung BS. Nguyễn Lânn'
+        imageAlt: 'Chân dung BS. Nguyễn Lan'
       },
       skinExpert: {
         name: 'Chuyên gia chăm sóc da',
@@ -390,38 +404,11 @@ const vi = {
     sliderLabel: 'So sánh trước và sau. Kéo sang phải để xem before, kéo sang trái để xem after.',
     before: 'BEFORE',
     after: 'AFTER',
-    cases: {
-      '01': {
-        label: 'Ca điều trị 01',
-        title: 'Phục hồi da chuyên sâu',
-        result: 'Tổn thương & kích ứng giảm mạnh 96%',
-        note: 'Da kích ứng, mất nước được phục hồi trọn vẹn',
-        sessions: '06 buổi',
-        duration: '8 tuần',
-        beforeAlt: 'Ảnh trước liệu trình phục hồi da',
-        afterAlt: 'Ảnh sau liệu trình phục hồi da'
-      },
-      '02': {
-        label: 'Ca điều trị 02',
-        title: 'Liệu trình mờ thâm nám',
-        result: 'Nám mảng & tàn nhang giảm 88%',
-        note: 'Melanin tích tụ dày, viền màu trở nên rạng rỡ hơn',
-        sessions: '08 buổi',
-        duration: '10 tuần',
-        beforeAlt: 'Ảnh trước liệu trình mờ thâm nám',
-        afterAlt: 'Ảnh sau liệu trình mờ thâm nám'
-      },
-      '03': {
-        label: 'Ca điều trị 03',
-        title: 'Trị mụn & kháng viêm',
-        result: 'Mụn viêm được kiểm soát hoàn toàn',
-        note: 'Tăng tiết bã nhờn, da khít và mờ thâm',
-        sessions: '05 buổi',
-        duration: '6 tuần',
-        beforeAlt: 'Ảnh trước liệu trình trị mụn',
-        afterAlt: 'Ảnh sau liệu trình trị mụn'
-      }
-    }
+    caseLabel: 'Ca điều trị {{n}}',
+    sessionsValue: '{{value}} buổi',
+    durationValue: '{{count}} tuần',
+    beforeAlt: 'Ảnh trước liệu trình: {{title}}',
+    afterAlt: 'Ảnh sau liệu trình: {{title}}'
   },
   cta: {
     title: 'Đặt lịch hẹn chữa lành',
@@ -491,7 +478,11 @@ const vi = {
     groups: 'Nhóm dịch vụ',
     all: 'TẤT CẢ',
     searchPlaceholder: 'Tìm dịch vụ...',
-    empty: 'Không tìm thấy dịch vụ phù hợp với từ khóa "{{query}}"'
+    empty: 'Không tìm thấy dịch vụ phù hợp với từ khóa "{{query}}"',
+    loading: 'Đang tải danh sách dịch vụ',
+    loadError: 'Không tải được danh sách dịch vụ. Vui lòng thử lại.',
+    retry: 'Thử lại',
+    noServices: 'Hiện chưa có dịch vụ nào. Vui lòng quay lại sau.'
   },
   contact: {
     titleLead: 'Kết Nối Cùng',

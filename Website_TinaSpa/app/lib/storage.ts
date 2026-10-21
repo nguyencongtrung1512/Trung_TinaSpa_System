@@ -1,6 +1,6 @@
 import { ApiError, apiRequest } from '~/lib/api'
 
-export type StorageFolder = 'services' | 'products' | 'blogs' | 'staff' | 'avatars' | 'settings'
+export type StorageFolder = 'services' | 'products' | 'blogs' | 'staff' | 'avatars' | 'settings' | 'results'
 
 export const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'
 export const MAX_IMAGE_SIZE_MB = 10

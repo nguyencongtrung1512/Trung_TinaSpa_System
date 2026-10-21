@@ -13,6 +13,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { ServiceCatalogModule } from './service-catalog/service-catalog.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { TreatmentResultsModule } from './treatment-results/treatment-results.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module.js';
     BlogModule,
     ProductsModule,
     SettingsModule,
+    TreatmentResultsModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({

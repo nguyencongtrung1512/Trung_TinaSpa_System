@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Icon } from '~/components/ui/Icon'
 import { popupBannerApi, type PopupBanner as PopupBannerData } from '~/lib/popup-banner'
 
 /** Remembers the dismissed image for this browser tab session, so a new banner still shows. */
@@ -99,7 +98,7 @@ export function PopupBanner() {
           <button
             type='button'
             aria-label={t('common.close')}
-            className='absolute inset-0 cursor-default bg-ink/60 backdrop-blur-[2px]'
+            className='absolute inset-0 cursor-default'
             onClick={close}
           />
           <motion.div
@@ -110,14 +109,6 @@ export function PopupBanner() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             {content}
-            <button
-              type='button'
-              aria-label={t('common.close')}
-              onClick={close}
-              className='absolute -top-3 -right-3 grid size-10 place-items-center rounded-full bg-white text-ink shadow-lg transition hover:text-clinic'
-            >
-              <Icon name='close' size={20} />
-            </button>
           </motion.div>
         </motion.div>
       ) : null}

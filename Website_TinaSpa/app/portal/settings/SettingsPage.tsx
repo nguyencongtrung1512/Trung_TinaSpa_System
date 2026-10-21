@@ -164,21 +164,15 @@ function PopupBannerCard() {
           </div>
 
           <div>
-            <p className='text-[11px] font-bold tracking-wide text-muted uppercase'>Xem trước</p>
-            <div className='relative mt-2 grid min-h-[360px] place-items-center overflow-hidden rounded-3xl bg-ink/60 p-6 sm:min-h-[480px] sm:p-10'>
+            <div className='relative mt-2 grid min-h-[360px] place-items-center overflow-hidden p-6 sm:min-h-[480px] sm:p-10'>
               {values.image ? (
-                <div className='relative'>
-                  <img
-                    src={values.image}
-                    alt=''
-                    className='max-h-[60dvh] max-w-full rounded-3xl object-contain shadow-2xl sm:max-h-[520px]'
-                  />
-                  <span className='absolute -top-3 -right-3 grid size-10 place-items-center rounded-full bg-white text-ink shadow-lg'>
-                    <Icon name='close' size={20} />
-                  </span>
-                </div>
+                <img
+                  src={values.image}
+                  alt=''
+                  className='max-h-[60dvh] max-w-full rounded-3xl object-contain shadow-2xl sm:max-h-[520px]'
+                />
               ) : (
-                <p className='text-sm text-white/80'>Chưa chọn ảnh</p>
+                <p className='text-sm text-muted'>Chưa chọn ảnh</p>
               )}
             </div>
           </div>

@@ -2,13 +2,17 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { useServiceMenus, type ServiceMenu } from '~/data/home'
+import type { ServiceMenu } from '~/data/home'
+import { useCatalogMenus } from '~/lib/service-catalog'
 import { Icon } from '~/components/ui/Icon'
 import { StableText } from '~/components/ui/StableText'
 
+const NO_MENUS: readonly ServiceMenu[] = []
+
 export function ServicesPage() {
   const { t } = useTranslation()
-  const serviceMenus = useServiceMenus()
+  const { state, reload } = useCatalogMenus()
+  const serviceMenus = state.status === 'ready' ? state.menus : NO_MENUS
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -43,12 +47,7 @@ export function ServicesPage() {
     <section className='relative isolate min-h-screen overflow-hidden'>
       {/* KHUNG ẢNH NỀN CỐ ĐỊNH (FIXED): Không bị nhảy vị trí khi chiều cao trang thay đổi */}
       <div className='fixed inset-0 -z-20 pointer-events-none'>
-        <img
-          src='/images/ServiceBackground.png'
-          alt=''
-          aria-hidden
-          className='h-full w-full object-cover'
-        />
+        <img src='/images/ServiceBackground.png' alt='' aria-hidden className='h-full w-full object-cover' />
         <div className='absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/30' />
       </div>
 
@@ -76,10 +75,11 @@ export function ServicesPage() {
             <button
               type='button'
               onClick={() => setActiveCategory('all')}
-              className={`transition-colors uppercase ${activeCategory === 'all'
-                ? 'text-clinic underline underline-offset-8 decoration-2'
-                : 'text-ink/70 hover:text-clinic'
-                }`}
+              className={`transition-colors uppercase ${
+                activeCategory === 'all'
+                  ? 'text-clinic underline underline-offset-8 decoration-2'
+                  : 'text-ink/70 hover:text-clinic'
+              }`}
             >
               <StableText i18nKey='servicesPage.all' />
             </button>
@@ -90,12 +90,13 @@ export function ServicesPage() {
                 <button
                   type='button'
                   onClick={() => setActiveCategory(menu.id)}
-                  className={`transition-colors uppercase ${activeCategory === menu.id
-                    ? 'text-clinic underline underline-offset-8 decoration-2'
-                    : 'text-ink/70 hover:text-clinic'
-                    }`}
+                  className={`transition-colors uppercase ${
+                    activeCategory === menu.id
+                      ? 'text-clinic underline underline-offset-8 decoration-2'
+                      : 'text-ink/70 hover:text-clinic'
+                  }`}
                 >
-                  <StableText i18nKey={`serviceMenus.${menu.id}.title`} />
+                  {menu.title}
                 </button>
               </div>
             ))}
@@ -117,16 +118,43 @@ export function ServicesPage() {
         </div>
 
         {/* Danh sách dịch vụ */}
-        {filteredMenus.length > 0 ? (
+        {state.status === 'loading' ? (
+          <div className='space-y-16 lg:space-y-24' aria-busy='true' aria-label={t('servicesPage.loading')}>
+            {[0, 1].map((row) => (
+              <div key={row} className='grid animate-pulse items-center gap-8 md:grid-cols-2 lg:gap-16'>
+                <div className='aspect-[4/5] rounded-md bg-white/70 md:aspect-square' />
+                <div className='space-y-4'>
+                  <div className='h-9 w-2/3 rounded-full bg-white/70' />
+                  {[0, 1, 2, 3].map((line) => (
+                    <div key={line} className='h-14 rounded-xl bg-white/60' />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : state.status === 'error' ? (
+          <div className='flex flex-col items-center gap-3 py-16 text-center'>
+            <Icon name='cloud_off' size={32} className='text-clinic' />
+            <p className='text-sm text-ink'>{t('servicesPage.loadError')}</p>
+            <button
+              type='button'
+              onClick={reload}
+              className='inline-flex min-h-11 items-center gap-1.5 rounded-full border border-clinic px-5 py-2.5 text-sm font-semibold text-clinic transition hover:bg-white'
+            >
+              <Icon name='refresh' size={18} />
+              {t('servicesPage.retry')}
+            </button>
+          </div>
+        ) : serviceMenus.length === 0 ? (
+          <div className='py-16 text-center text-muted'>{t('servicesPage.noServices')}</div>
+        ) : filteredMenus.length > 0 ? (
           <div className='space-y-16 lg:space-y-24'>
             {filteredMenus.map((menu, index) => (
               <ServiceMenuBlock key={menu.id} menu={menu} reversed={index % 2 === 1} />
             ))}
           </div>
         ) : (
-          <div className='py-16 text-center text-muted'>
-            {t('servicesPage.empty', { query: searchQuery })}
-          </div>
+          <div className='py-16 text-center text-muted'>{t('servicesPage.empty', { query: searchQuery })}</div>
         )}
 
         {/* Nút Đặt lịch */}
@@ -190,14 +218,13 @@ function ServiceMenuBlock({ menu, reversed }: { readonly menu: ServiceMenu; read
                 >
                   <span className='min-w-0 flex-1'>
                     <span
-                      className={`block text-sm font-bold transition-colors ${open ? 'text-clinic' : 'text-ink group-hover:text-clinic'
-                        }`}
+                      className={`block text-sm font-bold transition-colors ${
+                        open ? 'text-clinic' : 'text-ink group-hover:text-clinic'
+                      }`}
                     >
                       {item.name}
                     </span>
-                    <span className={`mt-1 block text-xs text-muted ${open ? '' : 'truncate'}`}>
-                      {item.summary}
-                    </span>
+                    <span className={`mt-1 block text-xs text-muted ${open ? '' : 'truncate'}`}>{item.summary}</span>
                     <span className='mt-1 block text-sm font-bold text-ink'>{item.price}</span>
                   </span>
                   <motion.span

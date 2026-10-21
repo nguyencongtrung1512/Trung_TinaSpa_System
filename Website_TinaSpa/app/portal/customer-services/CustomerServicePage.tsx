@@ -374,6 +374,8 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
                         value={line.serviceID}
                         onChange={(value) => updateLine(line.key, { serviceID: value })}
                         placeholder={t('staffServices.chooseService')}
+                        searchable
+                        searchPlaceholder={t('staffServices.searchService')}
                         options={grouped.flatMap(([label, services]) =>
                           services.map((service) => ({
                             value: service.serviceID,

@@ -31,7 +31,18 @@ import type {
 const RECENT_APPOINTMENTS = 5;
 
 const serviceInclude = {
-  service: { select: { serviceID: true, slug: true } },
+  service: {
+    select: {
+      serviceID: true,
+      slug: true,
+      shortDescriptionVietnamese: true,
+      shortDescriptionEnglish: true,
+      shortDescriptionCambodia: true,
+      descriptionVietnamese: true,
+      descriptionEnglish: true,
+      descriptionCambodia: true,
+    },
+  },
 } satisfies Prisma.CustomerServiceInclude;
 
 type CustomerServiceRecord = Prisma.CustomerServiceGetPayload<{
@@ -45,6 +56,10 @@ export type CustomerServiceResponse = {
   nameVietnamese: string;
   nameEnglish: string | null;
   nameCambodia: string | null;
+  /** The service's current full description, falling back to its short description. */
+  descriptionVietnamese: string | null;
+  descriptionEnglish: string | null;
+  descriptionCambodia: string | null;
   price: number;
   quantity: number;
   usedAt: Date;
@@ -118,6 +133,15 @@ function toResponse(record: CustomerServiceRecord): CustomerServiceResponse {
     nameVietnamese: record.nameVietnamese,
     nameEnglish: record.nameEnglish,
     nameCambodia: record.nameCambodia,
+    descriptionVietnamese:
+      record.service.descriptionVietnamese ??
+      record.service.shortDescriptionVietnamese,
+    descriptionEnglish:
+      record.service.descriptionEnglish ??
+      record.service.shortDescriptionEnglish,
+    descriptionCambodia:
+      record.service.descriptionCambodia ??
+      record.service.shortDescriptionCambodia,
     price: record.priceSnapshot.toNumber(),
     quantity: record.quantity,
     usedAt: record.usedAt,

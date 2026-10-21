@@ -8,11 +8,9 @@ export interface BeforeAfterSliderProps {
   readonly afterSrc: string
   readonly beforeAlt: string
   readonly afterAlt: string
-  readonly result: string
-  readonly note: string
 }
 
-export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt, result, note }: BeforeAfterSliderProps) {
+export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt }: BeforeAfterSliderProps) {
   const [position, setPosition] = useState(50)
   const trackRef = useRef<HTMLDivElement>(null)
   const touched = useRef(false)
@@ -100,11 +98,6 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt, re
         >
           <Icon name='swap_horiz' className='text-[20px]' />
         </motion.span>
-      </div>
-
-      <div className='pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-white/95 via-white/70 to-transparent px-4 pt-10 pb-3 text-center'>
-        <p className='text-sm font-extrabold text-ink'>{result}</p>
-        <p className='mt-1 text-xs text-muted'>{note}</p>
       </div>
     </div>
   )
