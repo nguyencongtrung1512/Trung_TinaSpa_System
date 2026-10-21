@@ -4,6 +4,11 @@ import { appointmentsApi, type Appointment, type AppointmentQuery } from './appo
 
 let branchesRequest: Promise<Branch[]> | null = null
 
+/** Call after creating/editing branches so the next `useBranches()` mount refetches. */
+export function invalidateBranches() {
+  branchesRequest = null
+}
+
 export function useBranches() {
   const [branches, setBranches] = useState<Branch[]>([])
 

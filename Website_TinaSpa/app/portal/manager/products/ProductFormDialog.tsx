@@ -13,6 +13,7 @@ import {
   type VariantRowErrors
 } from './ProductVariantsEditor'
 import { productApi, type Product, type ProductCategory, type ProductPayload, type ProductStatus } from './product.api'
+import { Select } from '~/components/ui/Select'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -33,9 +34,7 @@ interface FormValues {
   note: string
 }
 
-type FormErrors = Partial<
-  Record<'nameVietnamese' | 'nameEnglish' | 'productCategoryID' | 'slug', string>
->
+type FormErrors = Partial<Record<'nameVietnamese' | 'nameEnglish' | 'productCategoryID' | 'slug', string>>
 
 function initialValues(product: Product | null, defaultCategoryID: string): FormValues {
   return {
@@ -100,7 +99,14 @@ export interface ProductFormDialogProps {
   readonly onSaved: (message: string) => void
 }
 
-export function ProductFormDialog({ open, product, categories, defaultCategoryID, onClose, onSaved }: ProductFormDialogProps) {
+export function ProductFormDialog({
+  open,
+  product,
+  categories,
+  defaultCategoryID,
+  onClose,
+  onSaved
+}: ProductFormDialogProps) {
   const [values, setValues] = useState(() => initialValues(product, defaultCategoryID))
   const [variants, setVariants] = useState<VariantRow[]>(() => rowsFromVariants(product?.variants))
   const [variantErrors, setVariantErrors] = useState<Record<string, VariantRowErrors>>({})
@@ -219,33 +225,29 @@ export function ProductFormDialog({ open, product, categories, defaultCategoryID
         </Field>
         <Field label='Danh mục' required error={errors.productCategoryID}>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.productCategoryID}
-              onChange={(event) => update('productCategoryID', event.target.value)}
-            >
-              <option value=''>Chọn danh mục</option>
-              {categories.map((category) => (
-                <option key={category.productCategoryID} value={category.productCategoryID}>
-                  {category.nameVietnamese}
-                  {category.isActive ? '' : ' (tạm ẩn)'}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => update('productCategoryID', value)}
+              placeholder='Chọn danh mục'
+              options={categories.map((category) => ({
+                value: category.productCategoryID,
+                label: `${category.nameVietnamese}${category.isActive ? '' : ' (tạm ẩn)'}`
+              }))}
+            />
           )}
         </Field>
         <Field label='Trạng thái'>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.status}
-              onChange={(event) => update('status', event.target.value as ProductStatus)}
-            >
-              <option value='ACTIVE'>Đang bán</option>
-              <option value='INACTIVE'>Tạm ẩn</option>
-            </select>
+              onChange={(value) => update('status', value)}
+              options={[
+                { value: 'ACTIVE', label: 'Đang bán' },
+                { value: 'INACTIVE', label: 'Tạm ẩn' }
+              ]}
+            />
           )}
         </Field>
         <Field label='Tiêu đề phụ (Việt)'>
@@ -329,19 +331,11 @@ export function ProductFormDialog({ open, product, categories, defaultCategoryID
               id={id}
               folder='products'
               value={values.image}
-              onChange={(url) => update('image', url)}
+              onChange={(url, alt) => {
+                update('image', url)
+                if (alt !== undefined) update('imageAlt', alt)
+              }}
               onUploadingChange={setUploading}
-            />
-          )}
-        </Field>
-        <Field label='Mô tả ảnh (alt)'>
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              value={values.imageAlt}
-              onChange={(event) => update('imageAlt', event.target.value)}
-              maxLength={255}
             />
           )}
         </Field>

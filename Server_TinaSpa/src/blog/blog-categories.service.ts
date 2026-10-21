@@ -75,6 +75,44 @@ export class BlogCategoriesService {
     return records.map((record) => toResponse(record, true));
   }
 
+  /** Public: an active category by slug, counting only live posts. */
+  async findBySlug(slug: string): Promise<BlogCategoryResponse> {
+    const record = await this.prisma.blogCategory.findFirst({
+      where: { slug, isActive: true },
+      include: {
+        _count: {
+          select: {
+            blogs: { where: { status: 'PUBLISHED', publishedAt: { lte: new Date() } } },
+          },
+        },
+      },
+    });
+    if (!record) throw new NotFoundException('Blog category not found');
+    return toResponse(record);
+  }
+
+  async findForManage(blogCategoryID: string): Promise<BlogCategoryResponse> {
+    const record = await this.prisma.blogCategory.findUnique({
+      where: { blogCategoryID },
+      include: { _count: { select: { blogs: true } } },
+    });
+    if (!record) throw new NotFoundException('Blog category not found');
+    return toResponse(record, true);
+  }
+
+  /** Hard delete (the table has no deletedAt); refused while any post still uses the category. */
+  async remove(blogCategoryID: string): Promise<void> {
+    const record = await this.prisma.blogCategory.findUnique({
+      where: { blogCategoryID },
+      include: { _count: { select: { blogs: true } } },
+    });
+    if (!record) throw new NotFoundException('Blog category not found');
+    if (record._count.blogs > 0) {
+      throw new ConflictException('Blog category still has blogs');
+    }
+    await this.prisma.blogCategory.delete({ where: { blogCategoryID } });
+  }
+
   async create(dto: SaveBlogCategoryDto, actorAID: string): Promise<BlogCategoryResponse> {
     if (!dto.nameVietnamese) {
       throw new BadRequestException('nameVietnamese should not be empty');

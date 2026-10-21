@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '~/components/ui/Icon'
+import { useToast } from '~/components/ui/toast-view'
 import { changeMyPassword } from '~/lib/profile'
 import { Field, FormError, inputClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
 
@@ -10,12 +11,11 @@ export function ChangePasswordCard({ highlight }: { readonly highlight: boolean 
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string>()
-  const [done, setDone] = useState(false)
+  const toast = useToast()
   const [busy, setBusy] = useState(false)
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    setDone(false)
     if (!current) return setError(t('account.password.errors.current'))
     if (next.length < 8) return setError(t('account.password.errors.length'))
     if (next !== confirm) return setError(t('account.password.errors.match'))
@@ -27,7 +27,7 @@ export function ChangePasswordCard({ highlight }: { readonly highlight: boolean 
       setCurrent('')
       setNext('')
       setConfirm('')
-      setDone(true)
+      toast.success(t('account.password.success'))
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('account.password.errors.failed'))
     } finally {
@@ -42,7 +42,10 @@ export function ChangePasswordCard({ highlight }: { readonly highlight: boolean 
       }`}
       aria-labelledby='change-password-title'
     >
-      <h2 id='change-password-title' className='font-["Cormorant_Garamond",serif] text-3xl font-semibold text-[#3A2930]'>
+      <h2
+        id='change-password-title'
+        className='font-["Cormorant_Garamond",serif] text-3xl font-semibold text-[#3A2930]'
+      >
         {t('account.password.title')}
       </h2>
       {highlight ? (
@@ -97,12 +100,6 @@ export function ChangePasswordCard({ highlight }: { readonly highlight: boolean 
             <Icon name='lock_reset' size={18} />
             {busy ? t('account.password.submitting') : t('account.password.submit')}
           </button>
-          {done ? (
-            <span role='status' className='flex items-center gap-1.5 text-sm font-semibold text-emerald-700'>
-              <Icon name='check_circle' size={18} />
-              {t('account.password.success')}
-            </span>
-          ) : null}
         </div>
       </form>
     </section>

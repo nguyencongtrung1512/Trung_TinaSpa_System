@@ -11,8 +11,15 @@ import {
   scopedBranchAID,
 } from '../common/scope/branch-scope.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { UsersService, type PublicUser } from '../users/users.service.js';
-import { normalizePhone, phoneVariants } from './customer-services.constants.js';
+import {
+  USER_BRANCH_INCLUDE,
+  UsersService,
+  type PublicUser,
+} from '../users/users.service.js';
+import {
+  normalizePhone,
+  phoneVariants,
+} from './customer-services.constants.js';
 import { businessNow } from '../appointments/appointments.constants.js';
 import type {
   AddCustomerServicesDto,
@@ -92,7 +99,11 @@ export type OverviewResponse = {
 
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const RANGE_DAYS: Record<OverviewRange, number> = { today: 1, week: 7, month: 30 };
+const RANGE_DAYS: Record<OverviewRange, number> = {
+  today: 1,
+  week: 7,
+  month: 30,
+};
 
 /** Midnight (Asia/Ho_Chi_Minh) of the current business day as a UTC instant. */
 function businessDayStart(): Date {
@@ -147,7 +158,7 @@ export class CustomerServicesService {
             ? customersInBranchWhere(scope)
             : { role: RoleName.CUSTOMER }),
         },
-        include: { branch: { select: { branchID: true } } },
+        include: USER_BRANCH_INCLUDE,
       }),
       this.prisma.appointment.findMany({
         where: {
@@ -193,7 +204,11 @@ export class CustomerServicesService {
     actor: AuthUser,
   ): Promise<CustomerServiceListResponse> {
     const customer = await this.getCustomer(userID, actor);
-    return this.listByCustomerAID(customer.userAID, query);
+    return this.listByCustomerAID(
+      customer.userAID,
+      query,
+      scopedBranchAID(actor),
+    );
   }
 
   async listMine(
@@ -210,12 +225,20 @@ export class CustomerServicesService {
   ): Promise<CustomerServiceResponse[]> {
     const customer = await this.getCustomer(userID, actor);
     const usedAt = parseUsedAt(dto.usedAt);
+    // ADMIN không thuộc khu vực nào: ghi nhận theo khu vực của khách.
+    const branchAID = scopedBranchAID(actor) ?? customer.branchAID;
 
     const serviceIDs = [...new Set(dto.items.map((item) => item.serviceID))];
     const services = await this.prisma.service.findMany({
-      where: { serviceID: { in: serviceIDs }, status: 'ACTIVE', deletedAt: null },
+      where: {
+        serviceID: { in: serviceIDs },
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
     });
-    const byID = new Map(services.map((service) => [service.serviceID, service]));
+    const byID = new Map(
+      services.map((service) => [service.serviceID, service]),
+    );
     const missing = serviceIDs.filter((serviceID) => !byID.has(serviceID));
     if (missing.length > 0) {
       throw new NotFoundException(`Service not found: ${missing.join(', ')}`);
@@ -235,6 +258,7 @@ export class CustomerServicesService {
             quantity: item.quantity ?? 1,
             usedAt,
             staffNote: item.staffNote || null,
+            branchAID,
             createdByAID: actor.userAID,
             updatedByAID: actor.userAID,
           },
@@ -282,11 +306,11 @@ export class CustomerServicesService {
     const start = new Date(end.getTime() - days * DAY_MS);
     const previousStart = new Date(start.getTime() - days * DAY_MS);
     const dateOnly = (instant: Date) =>
-      new Date(`${new Date(instant.getTime() + VN_OFFSET_MS).toISOString().slice(0, 10)}T00:00:00.000Z`);
+      new Date(
+        `${new Date(instant.getTime() + VN_OFFSET_MS).toISOString().slice(0, 10)}T00:00:00.000Z`,
+      );
     const scope = scopedBranchAID(actor);
-    const customerScope = scope
-      ? { customer: customersInBranchWhere(scope) }
-      : {};
+    const serviceScope = scope ? { branchAID: scope } : {};
     const customerUserScope = scope
       ? customersInBranchWhere(scope)
       : { role: RoleName.CUSTOMER };
@@ -298,9 +322,14 @@ export class CustomerServicesService {
           where: {
             deletedAt: null,
             usedAt: { gte: previousStart, lt: end },
-            ...customerScope,
+            ...serviceScope,
           },
-          select: { customerAID: true, priceSnapshot: true, quantity: true, usedAt: true },
+          select: {
+            customerAID: true,
+            priceSnapshot: true,
+            quantity: true,
+            usedAt: true,
+          },
         }),
         this.prisma.user.count({
           where: { createdAt: { gte: start, lt: end }, ...customerUserScope },
@@ -316,7 +345,7 @@ export class CustomerServicesService {
           where: { status: 'PENDING', ...appointmentScope },
         }),
         this.prisma.customerService.findMany({
-          where: { deletedAt: null, ...customerScope },
+          where: { deletedAt: null, ...serviceScope },
           include: { customer: { select: { fullName: true, phone: true } } },
           orderBy: [{ usedAt: 'desc' }, { customerServiceID: 'desc' }],
           take: 6,
@@ -341,7 +370,10 @@ export class CustomerServicesService {
       const index =
         range === 'today'
           ? new Date(row.usedAt.getTime() + VN_OFFSET_MS).getUTCHours()
-          : Math.min(buckets - 1, Math.floor((row.usedAt.getTime() - start.getTime()) / DAY_MS));
+          : Math.min(
+              buckets - 1,
+              Math.floor((row.usedAt.getTime() - start.getTime()) / DAY_MS),
+            );
       trend[index] += amount;
     }
 
@@ -372,11 +404,13 @@ export class CustomerServicesService {
   private async listByCustomerAID(
     customerAID: string,
     query: ListCustomerServicesQueryDto,
+    branchAID: string | null = null,
   ): Promise<CustomerServiceListResponse> {
     const { page, pageSize } = query;
     const where: Prisma.CustomerServiceWhereInput = {
       customerAID,
       deletedAt: null,
+      ...(branchAID ? { branchAID } : {}),
     };
     const [records, total] = await this.prisma.$transaction([
       this.prisma.customerService.findMany({
@@ -414,7 +448,7 @@ export class CustomerServicesService {
       where: {
         customerServiceID,
         deletedAt: null,
-        ...(scope ? { customer: customersInBranchWhere(scope) } : {}),
+        ...(scope ? { branchAID: scope } : {}),
       },
     });
     if (!record) {

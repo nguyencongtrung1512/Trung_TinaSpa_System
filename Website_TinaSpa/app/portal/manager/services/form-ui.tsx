@@ -171,7 +171,10 @@ export function ConfirmDialog({
   busy,
   error,
   onConfirm,
-  onClose
+  onClose,
+  icon = 'delete',
+  busyLabel = 'Đang xóa...',
+  tone = 'danger'
 }: {
   readonly open: boolean
   readonly title: string
@@ -181,6 +184,9 @@ export function ConfirmDialog({
   readonly error?: string
   readonly onConfirm: () => void
   readonly onClose: () => void
+  readonly icon?: string
+  readonly busyLabel?: string
+  readonly tone?: 'danger' | 'primary'
 }) {
   return (
     <PortalDialog
@@ -194,9 +200,13 @@ export function ConfirmDialog({
           <button type='button' className={outlineButtonClass} onClick={onClose}>
             Hủy
           </button>
-          <button type='submit' className={`${primaryButtonClass} bg-red-600 hover:bg-red-700`} disabled={busy}>
-            <Icon name='delete' size={18} />
-            {busy ? 'Đang xóa...' : confirmLabel}
+          <button
+            type='submit'
+            className={tone === 'danger' ? `${primaryButtonClass} bg-red-600 hover:bg-red-700` : primaryButtonClass}
+            disabled={busy}
+          >
+            <Icon name={icon} size={18} />
+            {busy ? busyLabel : confirmLabel}
           </button>
         </>
       }

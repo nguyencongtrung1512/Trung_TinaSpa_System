@@ -2,7 +2,10 @@ import { apiRequest } from '~/lib/api'
 
 export type BlogStatus = 'DRAFT' | 'PUBLISHED' | 'HIDDEN'
 
-export const blogStatusMeta: Record<BlogStatus, { readonly label: string; readonly icon: string; readonly className: string }> = {
+export const blogStatusMeta: Record<
+  BlogStatus,
+  { readonly label: string; readonly icon: string; readonly className: string }
+> = {
   DRAFT: { label: 'Bản nháp', icon: 'edit_note', className: 'bg-amber-50 text-amber-700' },
   PUBLISHED: { label: 'Đã xuất bản', icon: 'check_circle', className: 'bg-emerald-50 text-emerald-700' },
   HIDDEN: { label: 'Đã ẩn', icon: 'visibility_off', className: 'bg-canvas text-muted' }
@@ -13,8 +16,24 @@ export interface BlogCategory {
   readonly slug: string
   readonly nameVietnamese: string
   readonly nameEnglish: string | null
+  readonly description: string | null
+  readonly displayOrder: number
   readonly isActive: boolean
   readonly blogCount: number
+  /** Management reads only. */
+  readonly note?: string | null
+  readonly createdAt?: string
+  readonly updatedAt?: string
+}
+
+export interface BlogCategoryPayload {
+  readonly nameVietnamese?: string
+  readonly nameEnglish?: string | null
+  readonly slug?: string
+  readonly description?: string | null
+  readonly displayOrder?: number
+  readonly isActive?: boolean
+  readonly note?: string | null
 }
 
 export interface Blog {
@@ -82,8 +101,18 @@ export const blogApi = {
   update: (blogID: string, body: BlogPayload) =>
     apiRequest<Blog>(`/blogs/${blogID}`, { method: 'PATCH', body, auth: true }),
   listCategories: () => apiRequest<BlogCategory[]>('/blog-categories/manage', { auth: true }),
-  createCategory: (body: { nameVietnamese: string; nameEnglish?: string | null; slug: string }) =>
-    apiRequest<BlogCategory>('/blog-categories', { method: 'POST', body, auth: true })
+  getCategory: (blogCategoryID: string) =>
+    apiRequest<BlogCategory>(`/blog-categories/manage/${encodeURIComponent(blogCategoryID)}`, { auth: true }),
+  createCategory: (body: BlogCategoryPayload) =>
+    apiRequest<BlogCategory>('/blog-categories', { method: 'POST', body, auth: true }),
+  updateCategory: (blogCategoryID: string, body: BlogCategoryPayload) =>
+    apiRequest<BlogCategory>(`/blog-categories/${encodeURIComponent(blogCategoryID)}`, {
+      method: 'PATCH',
+      body,
+      auth: true
+    }),
+  removeCategory: (blogCategoryID: string) =>
+    apiRequest<void>(`/blog-categories/${encodeURIComponent(blogCategoryID)}`, { method: 'DELETE', auth: true })
 }
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })

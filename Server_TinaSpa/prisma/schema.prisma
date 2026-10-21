@@ -9,33 +9,33 @@ datasource db {
 
 /// role: ADMIN | MANAGER | STAFF | CUSTOMER (CHECK constraint "CK_User_role" trong DB)
 model User {
-  userAID      String    @id @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(20)
-  userID       String    @unique(map: "UQ_User_userID") @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(14)
-  phone        String    @unique(map: "UQ_User_phone") @db.VarChar(20)
-  passwordHash String    @db.VarChar(255)
-  fullName     String    @db.VarChar(100)
-  avatar       String?
-  address      String?   @db.VarChar(255)
-  dateOfBirth  DateTime? @db.Date
+  userAID            String    @id @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(20)
+  userID             String    @unique(map: "UQ_User_userID") @default(dbgenerated("\"generateBusinessID\"('User'::text)")) @db.VarChar(14)
+  phone              String    @unique(map: "UQ_User_phone") @db.VarChar(20)
+  passwordHash       String    @db.VarChar(255)
+  fullName           String    @db.VarChar(100)
+  avatar             String?
+  address            String?   @db.VarChar(255)
+  dateOfBirth        DateTime? @db.Date
   /// gender: MALE | FEMALE | OTHER (CHECK "CK_User_gender")
-  gender       String?   @db.VarChar(10)
-  role         String    @default("CUSTOMER") @db.VarChar(20)
-  isActive     Boolean   @default(true)
+  gender             String?   @db.VarChar(10)
+  role               String    @default("CUSTOMER") @db.VarChar(20)
+  isActive           Boolean   @default(true)
   /// true khi nhân viên tạo tài khoản với mật khẩu mặc định (= số điện thoại); khách phải đổi mật khẩu
-  mustChangePassword Boolean @default(false)
+  mustChangePassword Boolean   @default(false)
   /// Khu vực làm việc (MANAGER/STAFF) hoặc khu vực ghi nhận khách (CUSTOMER). ADMIN để trống.
-  branchAID    String?   @db.VarChar(20)
-  createdAt    DateTime  @default(now())
-  createdByAID String?   @db.VarChar(20)
-  updatedAt    DateTime  @default(now()) @updatedAt
-  updatedByAID String?   @db.VarChar(20)
-  note         String?
+  branchAID          String?   @db.VarChar(20)
+  createdAt          DateTime  @default(now())
+  createdByAID       String?   @db.VarChar(20)
+  updatedAt          DateTime  @default(now()) @updatedAt
+  updatedByAID       String?   @db.VarChar(20)
+  note               String?
 
   branch                Branch?           @relation(fields: [branchAID], references: [branchAID], onDelete: Restrict, map: "FK_User_branchAID")
   refreshTokens         RefreshToken[]
-  appointments          Appointment[]  @relation("AppointmentCustomer")
-  confirmedAppointments Appointment[]  @relation("AppointmentConfirmedBy")
-  servedAppointments    Appointment[]  @relation("AppointmentServedBy")
+  appointments          Appointment[]     @relation("AppointmentCustomer")
+  confirmedAppointments Appointment[]     @relation("AppointmentConfirmedBy")
+  servedAppointments    Appointment[]     @relation("AppointmentServedBy")
   customerServices      CustomerService[] @relation("CustomerServiceCustomer")
   authoredBlogs         Blog[]            @relation("BlogAuthor")
 
@@ -164,8 +164,9 @@ model Branch {
 
   note String?
 
-  appointments Appointment[]
-  users        User[]
+  appointments     Appointment[]
+  users            User[]
+  customerServices CustomerService[]
 
   @@index([status, sortOrder], map: "IX_Branch_status_sortOrder")
 }
@@ -231,6 +232,8 @@ model CustomerService {
   usedAt        DateTime @default(now())
   /// Ghi chú / dặn dò của nhân viên, khách xem được
   staffNote     String?
+  /// Khu vực thực hiện dịch vụ; MANAGER/STAFF chỉ thấy và sửa bản ghi của khu vực mình.
+  branchAID     String?  @db.VarChar(20)
 
   createdAt    DateTime  @default(now())
   createdByAID String?   @db.VarChar(20)
@@ -242,9 +245,11 @@ model CustomerService {
 
   customer User    @relation("CustomerServiceCustomer", fields: [customerAID], references: [userAID], onDelete: Restrict, map: "FK_CustomerService_customerAID")
   service  Service @relation(fields: [serviceAID], references: [serviceAID], onDelete: Restrict, map: "FK_CustomerService_serviceAID")
+  branch   Branch? @relation(fields: [branchAID], references: [branchAID], onDelete: Restrict, map: "FK_CustomerService_branchAID")
 
   @@index([customerAID, usedAt], map: "IX_CustomerService_customerAID_usedAt")
   @@index([serviceAID], map: "IX_CustomerService_serviceAID")
+  @@index([branchAID, usedAt], map: "IX_CustomerService_branchAID_usedAt")
 }
 
 /// Danh mục bài viết. Không có deletedAt: tắt hiển thị bằng isActive.
@@ -365,7 +370,7 @@ model Product {
 
   note String?
 
-  productCategory ProductCategory @relation(fields: [productCategoryAID], references: [productCategoryAID], onDelete: Restrict, map: "FK_Product_productCategoryAID")
+  productCategory ProductCategory  @relation(fields: [productCategoryAID], references: [productCategoryAID], onDelete: Restrict, map: "FK_Product_productCategoryAID")
   details         ProductDetail[]
   variants        ProductVariant[]
 
@@ -396,7 +401,7 @@ model ProductVariant {
   note String?
 
   images  ProductVariantImage[]
-  product Product @relation(fields: [productAID], references: [productAID], onDelete: Cascade, map: "FK_ProductVariant_productAID")
+  product Product               @relation(fields: [productAID], references: [productAID], onDelete: Cascade, map: "FK_ProductVariant_productAID")
 
   @@index([productAID, sortOrder], map: "IX_ProductVariant_productAID_sortOrder")
 }
@@ -454,6 +459,16 @@ model ProductDetail {
   product Product @relation(fields: [productAID], references: [productAID], onDelete: Cascade, map: "FK_ProductDetail_productAID")
 
   @@index([productAID, detailType, sortOrder], map: "IX_ProductDetail_productAID_detailType")
+}
+
+/// Cấu hình hệ thống dạng key → JSON. Khóa hiện có: "popupBanner" (xem src/settings/settings.constants.ts).
+model SystemSetting {
+  key          String   @id(map: "PK_SystemSetting") @db.VarChar(100)
+  value        Json
+  updatedAt    DateTime @default(now()) @updatedAt
+  updatedByAID String?  @db.VarChar(20)
+
+  note String?
 }
 
 model BusinessIdCounter {

@@ -16,6 +16,7 @@ export interface PortalUser {
   readonly mustChangePassword?: boolean
   readonly branchAID?: string | null
   readonly branchID: string | null
+  readonly branchName?: string | null
   readonly createdAt: string
   readonly updatedAt: string
 }
@@ -50,6 +51,9 @@ export interface StaffPayload {
   readonly role?: 'STAFF' | 'MANAGER'
 }
 
+/** Sửa tài khoản nội bộ; trường undefined giữ nguyên, password bỏ trống để giữ mật khẩu cũ. */
+export type StaffUpdatePayload = Partial<Omit<StaffPayload, 'role'>>
+
 export const userRoleLabels: Record<UserRole, string> = {
   CUSTOMER: 'Khách hàng',
   STAFF: 'Nhân viên',
@@ -81,4 +85,61 @@ export function listUsers(query: UserListQuery) {
 
 export function createStaff(body: StaffPayload) {
   return apiRequest<PortalUser>('/users/staff', { method: 'POST', body, auth: true })
+}
+
+export function updateStaff(userID: string, body: StaffUpdatePayload) {
+  return apiRequest<PortalUser>(`/users/${encodeURIComponent(userID)}`, { method: 'PATCH', body, auth: true })
+}
+
+export interface UserDetail {
+  readonly user: PortalUser
+  readonly stats: {
+    /** Units of service (sum of quantity). */
+    readonly serviceCount: number
+    readonly serviceTotal: number
+    readonly lastServiceAt: string | null
+    readonly appointmentCount: number
+    readonly completedAppointments: number
+    readonly cancelledAppointments: number
+  }
+  /** Customer: services used. Staff/manager: services they recorded (with the customer). Latest 50. */
+  readonly services: {
+    readonly customerServiceID: string
+    readonly serviceID: string
+    readonly nameVietnamese: string
+    readonly price: number
+    readonly quantity: number
+    readonly usedAt: string
+    readonly staffNote: string | null
+    readonly branchName: string | null
+    readonly customer: { readonly userID: string; readonly fullName: string; readonly phone: string } | null
+  }[]
+  /** Customer: bookings made. Staff/manager: bookings they confirmed or served. Latest 50. */
+  readonly appointments: {
+    readonly appointmentID: string
+    readonly customerName: string
+    readonly phoneNumber: string
+    readonly appointmentDate: string
+    readonly appointmentTime: string
+    readonly status: string
+    readonly branchName: string
+    readonly customerNote: string | null
+    readonly serviceNote: string | null
+  }[]
+}
+
+export function getUserDetail(userID: string) {
+  return apiRequest<UserDetail>(`/users/${encodeURIComponent(userID)}/detail`, { auth: true })
+}
+
+export function deleteUser(userID: string) {
+  return apiRequest<void>(`/users/${encodeURIComponent(userID)}`, { method: 'DELETE', auth: true })
+}
+
+export function setUserActive(userID: string, isActive: boolean) {
+  return apiRequest<PortalUser>(`/users/${encodeURIComponent(userID)}/status`, {
+    method: 'PATCH',
+    body: { isActive },
+    auth: true
+  })
 }

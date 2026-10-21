@@ -71,7 +71,13 @@ export interface ProductCategoryFormDialogProps {
   readonly onSaved: (message: string) => void
 }
 
-export function ProductCategoryFormDialog({ open, category, nextOrder, onClose, onSaved }: ProductCategoryFormDialogProps) {
+export function ProductCategoryFormDialog({
+  open,
+  category,
+  nextOrder,
+  onClose,
+  onSaved
+}: ProductCategoryFormDialogProps) {
   const [values, setValues] = useState(() => initialValues(category, nextOrder))
   const [slugTouched, setSlugTouched] = useState(Boolean(category))
   const [errors, setErrors] = useState<FormErrors>({})

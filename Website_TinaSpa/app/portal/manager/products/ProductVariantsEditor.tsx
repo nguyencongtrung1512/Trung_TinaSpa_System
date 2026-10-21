@@ -3,6 +3,7 @@ import { ImageUpload } from '~/components/ui/ImageUpload'
 import { formatPrice } from '../services/catalog.api'
 import { Field, iconButtonClass, inputClass, outlineButtonClass } from '../services/form-ui'
 import type { ProductStatus, ProductVariant, ProductVariantImage } from './product.api'
+import { Select } from '~/components/ui/Select'
 
 export interface VariantRow {
   /** Local key only; never sent to the API. */
@@ -82,7 +83,11 @@ export function rowsToVariants(rows: readonly VariantRow[]) {
     sku: blank(row.sku),
     price: Number(row.price),
     compareAtPrice: row.compareAtPrice ? Number(row.compareAtPrice) : null,
-    images: row.images.map((item) => ({ image: item.image, altVietnamese: item.altVietnamese, altEnglish: item.altEnglish })),
+    images: row.images.map((item) => ({
+      image: item.image,
+      altVietnamese: item.altVietnamese,
+      altEnglish: item.altEnglish
+    })),
     status: row.status,
     sortOrder: index
   }))
@@ -195,15 +200,15 @@ export function ProductVariantsEditor({ rows, errors, onChange, onUploadingChang
                 </Field>
                 <Field label='Trạng thái'>
                   {(id) => (
-                    <select
+                    <Select
                       id={id}
-                      className={inputClass}
                       value={row.status}
-                      onChange={(event) => patch(row.key, { status: event.target.value as ProductStatus })}
-                    >
-                      <option value='ACTIVE'>Đang bán</option>
-                      <option value='INACTIVE'>Tạm ẩn</option>
-                    </select>
+                      onChange={(value) => patch(row.key, { status: value })}
+                      options={[
+                        { value: 'ACTIVE', label: 'Đang bán' },
+                        { value: 'INACTIVE', label: 'Tạm ẩn' }
+                      ]}
+                    />
                   )}
                 </Field>
                 <div className='sm:col-span-2'>
@@ -240,7 +245,9 @@ export function ProductVariantsEditor({ rows, errors, onChange, onUploadingChang
                               type='button'
                               className={`${iconButtonClass} hover:text-red-600`}
                               aria-label='Xóa ảnh'
-                              onClick={() => patch(row.key, { images: row.images.filter((_, at) => at !== imageIndex) })}
+                              onClick={() =>
+                                patch(row.key, { images: row.images.filter((_, at) => at !== imageIndex) })
+                              }
                             >
                               <Icon name='delete' size={16} />
                             </button>
@@ -262,12 +269,11 @@ export function ProductVariantsEditor({ rows, errors, onChange, onUploadingChang
                     <ImageUpload
                       value=''
                       folder='products'
-                      allowUrlInput={false}
                       labels={{ choose: 'Thêm ảnh', replace: 'Thêm ảnh' }}
-                      onChange={(url) => {
+                      onChange={(url, alt) => {
                         if (url) {
                           patch(row.key, {
-                            images: [...row.images, { image: url, altVietnamese: null, altEnglish: null }]
+                            images: [...row.images, { image: url, altVietnamese: alt || null, altEnglish: null }]
                           })
                         }
                       }}
@@ -280,7 +286,11 @@ export function ProductVariantsEditor({ rows, errors, onChange, onUploadingChang
           )
         })}
       </ul>
-      <button type='button' className={`${outlineButtonClass} mt-3`} onClick={() => onChange([...rows, newVariantRow()])}>
+      <button
+        type='button'
+        className={`${outlineButtonClass} mt-3`}
+        onClick={() => onChange([...rows, newVariantRow()])}
+      >
         <Icon name='add' size={16} />
         Thêm phiên bản
       </button>

@@ -10,6 +10,7 @@ import {
   primaryButtonClass
 } from '~/portal/manager/services/form-ui'
 import { appointmentsApi, formatPhone, type Appointment } from './appointments.api'
+import { Select } from '~/components/ui/Select'
 
 export function RescheduleDialog({
   appointment,
@@ -99,18 +100,12 @@ function RescheduleForm({
       <div className='grid gap-4'>
         <Field label='Khu vực' required>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={branchID}
-              onChange={(event) => setBranchID(event.target.value)}
-            >
-              {branchOptions.map((item) => (
-                <option key={item.branchID} value={item.branchID}>
-                  {item.nameVietnamese}
-                </option>
-              ))}
-            </select>
+              onChange={setBranchID}
+              options={branchOptions.map((item) => ({ value: item.branchID, label: item.nameVietnamese }))}
+            />
           )}
         </Field>
         <div className='grid gap-4 sm:grid-cols-2'>

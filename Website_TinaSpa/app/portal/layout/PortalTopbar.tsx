@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Icon } from '~/components/ui/Icon'
 import { useToast } from '~/components/ui/toast-view'
+import { useSession } from '~/lib/auth'
 import { useBranches } from '~/portal/appointments/useAppointments'
 import { portalActions, portalActors } from '~/portal/navigation'
 import type { PortalRole } from '~/portal/types'
@@ -14,6 +15,11 @@ export interface PortalTopbarProps {
 export function PortalTopbar({ role, menuOpen, onMenuToggle }: PortalTopbarProps) {
   const actor = portalActors[role]
   const branches = useBranches()
+  const session = useSession()
+  // Quản lý / nhân viên làm việc tại một khu vực; quản trị xem toàn hệ thống.
+  const ownBranchID = role === 'admin' ? null : session?.user.branchID
+  const ownBranchName =
+    session?.user.branchName ?? branches.find((branch) => branch.branchID === ownBranchID)?.nameVietnamese
   const toast = useToast()
 
   return (
@@ -41,7 +47,11 @@ export function PortalTopbar({ role, menuOpen, onMenuToggle }: PortalTopbarProps
 
         <p className='ml-2 hidden items-center gap-2 rounded-full border border-rose-soft/80 bg-canvas px-4 py-2 text-sm font-medium text-ink xl:inline-flex'>
           <Icon name='location_on' size={18} className='text-clinic' />
-          {branches.length > 0 ? `${branches.length} khu vực nhận lịch` : actor.branch}
+          {ownBranchID
+            ? (ownBranchName ?? ownBranchID)
+            : branches.length > 0
+              ? `${branches.length} khu vực nhận lịch`
+              : actor.branch}
         </p>
 
         <div className='ml-auto flex items-center gap-2'>

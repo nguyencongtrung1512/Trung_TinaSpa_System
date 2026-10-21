@@ -5,12 +5,7 @@ import { Pagination } from '~/components/ui/Pagination'
 import { useToast } from '~/components/ui/toast-view'
 import { useSession } from '~/lib/auth'
 import { formatPortalDate } from '~/portal/format'
-import {
-  PortalDialog,
-  inputClass,
-  outlineButtonClass,
-  primaryButtonClass
-} from '~/portal/manager/services/form-ui'
+import { PortalDialog, inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
 import { portalRoleLabel } from '~/portal/navigation'
 import { portalCardClass } from '~/portal/styles'
 import type { PortalRole } from '~/portal/types'
@@ -41,7 +36,8 @@ const tabs: readonly { readonly id: StatusTab; readonly label: string }[] = [
 const copy: Record<PortalRole, { title: string; description: string; empty: string }> = {
   staff: {
     title: 'Bài viết của tôi',
-    description: 'Xem tất cả bài viết, viết bài mới (lưu ở dạng bản nháp) và chỉnh sửa bản nháp do bạn tạo. Quản lý sẽ xuất bản.',
+    description:
+      'Xem tất cả bài viết, viết bài mới (lưu ở dạng bản nháp) và chỉnh sửa bản nháp do bạn tạo. Quản lý sẽ xuất bản.',
     empty: 'Chưa có bài viết nào.'
   },
   manager: {
@@ -109,7 +105,7 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
   const [error, setError] = useState<string>()
 
   const [form, setForm] = useState<{ open: boolean; editingID: string | null }>({ open: false, editingID: null })
-  const [categoryOpen, setCategoryOpen] = useState(false)
+  const [categoryForm, setCategoryForm] = useState({ session: 0, open: false })
   const [preview, setPreview] = useState<{ blog?: Blog; loading: boolean; error?: string; open: boolean }>({
     open: false,
     loading: false
@@ -189,7 +185,9 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
     setChangeError(undefined)
     try {
       await blogApi.update(pendingChange.blog.blogID, { status: pendingChange.action.status })
-      showNotice(`Đã chuyển "${pendingChange.blog.nameVietnamese}" sang "${blogStatusMeta[pendingChange.action.status].label}".`)
+      showNotice(
+        `Đã chuyển "${pendingChange.blog.nameVietnamese}" sang "${blogStatusMeta[pendingChange.action.status].label}".`
+      )
       setPendingChange(undefined)
       reload()
     } catch (reason) {
@@ -219,7 +217,11 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
         {canWrite ? (
           <div className='flex flex-wrap gap-2 self-start lg:self-auto'>
             {isManager ? (
-              <button type='button' className={outlineButtonClass} onClick={() => setCategoryOpen(true)}>
+              <button
+                type='button'
+                className={outlineButtonClass}
+                onClick={() => setCategoryForm((current) => ({ session: current.session + 1, open: true }))}
+              >
                 <Icon name='category' size={18} />
                 Thêm danh mục
               </button>
@@ -238,11 +240,7 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
 
       <section className={`${portalCardClass} mt-4 p-3 sm:p-4`} aria-label='Danh sách bài viết'>
         {role === 'staff' ? (
-          <div
-            role='group'
-            aria-label='Phạm vi bài viết'
-            className='mb-3 inline-flex rounded-full bg-canvas p-1'
-          >
+          <div role='group' aria-label='Phạm vi bài viết' className='mb-3 inline-flex rounded-full bg-canvas p-1'>
             {(
               [
                 { id: 'mine', label: 'Bài của tôi', icon: 'person' },
@@ -282,7 +280,9 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
                     setPage(1)
                   }}
                   className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${
-                    selected ? 'bg-clinic text-white shadow-sm' : 'bg-canvas text-ink/70 hover:bg-mist hover:text-clinic'
+                    selected
+                      ? 'bg-clinic text-white shadow-sm'
+                      : 'bg-canvas text-ink/70 hover:bg-mist hover:text-clinic'
                   }`}
                 >
                   {item.label}
@@ -374,7 +374,8 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
                             </button>
                           ))
                         : null}
-                      {isManager || (role === 'staff' && blog.status === 'DRAFT' && blog.author?.userID === currentUserID) ? (
+                      {isManager ||
+                      (role === 'staff' && blog.status === 'DRAFT' && blog.author?.userID === currentUserID) ? (
                         <button
                           type='button'
                           className={smallOutline}
@@ -424,10 +425,11 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
       />
 
       <CategoryDialog
-        open={categoryOpen}
-        onClose={() => setCategoryOpen(false)}
+        key={categoryForm.session}
+        open={categoryForm.open}
+        onClose={() => setCategoryForm((current) => ({ ...current, open: false }))}
         onSaved={(message) => {
-          setCategoryOpen(false)
+          setCategoryForm((current) => ({ ...current, open: false }))
           showNotice(message)
           reload()
         }}
@@ -454,8 +456,12 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
           <p className='text-sm text-muted'>Đang tải nội dung...</p>
         ) : (
           <>
-            {preview.error ? <p className='mb-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700'>{preview.error}</p> : null}
-            {preview.blog?.summary ? <p className='mb-3 text-sm font-semibold text-ink'>{preview.blog.summary}</p> : null}
+            {preview.error ? (
+              <p className='mb-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700'>{preview.error}</p>
+            ) : null}
+            {preview.blog?.summary ? (
+              <p className='mb-3 text-sm font-semibold text-ink'>{preview.blog.summary}</p>
+            ) : null}
             {/* `content` is sanitized by the API (sanitizeBlogHtml) before it is stored. */}
             {preview.blog?.content ? (
               <div className={proseClass} dangerouslySetInnerHTML={{ __html: preview.blog.content }} />
@@ -493,7 +499,9 @@ export function BlogsPage({ role }: { readonly role: PortalRole }) {
                 : `Chuyển "${pendingChange.blog.nameVietnamese}" về bản nháp?`}
           </p>
         ) : null}
-        {changeError ? <p className='mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700'>{changeError}</p> : null}
+        {changeError ? (
+          <p className='mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700'>{changeError}</p>
+        ) : null}
       </PortalDialog>
     </motion.div>
   )

@@ -13,9 +13,7 @@ export const portalActors: Record<PortalRole, PortalActor> = {
 }
 
 export const portalActions: Record<PortalRole, readonly PortalAction[]> = {
-  staff: [
-    { label: 'Ghi dịch vụ', icon: 'receipt_long', to: '/portal/staff/customer-services', tone: 'solid' }
-  ],
+  staff: [{ label: 'Ghi dịch vụ', icon: 'receipt_long', to: '/portal/staff/customer-services', tone: 'solid' }],
   manager: [
     { label: 'Nhân viên', icon: 'badge', to: '/portal/manager/staff', tone: 'outline' },
     { label: 'Khách hàng', icon: 'group', to: '/portal/manager/customers', tone: 'outline' },
@@ -50,6 +48,12 @@ const staffNavigation: readonly PortalNavGroup[] = [
         summary: 'Lịch khách đặt qua website theo khu vực: xác nhận và chỉnh thời gian.'
       },
       {
+        label: 'Khách hàng',
+        icon: 'group',
+        to: '/portal/staff/customers',
+        summary: 'Khách hàng đặt lịch tại khu vực của bạn.'
+      },
+      {
         label: 'Dịch vụ của khách',
         icon: 'receipt_long',
         to: '/portal/staff/customer-services',
@@ -77,13 +81,13 @@ const staffNavigation: readonly PortalNavGroup[] = [
         label: 'Danh mục dịch vụ',
         icon: 'spa',
         to: '/portal/staff/services',
-        summary: 'Dịch vụ đang mở tại chi nhánh.'
+        summary: 'Xem dịch vụ đang mở, giá và mô tả để tư vấn cho khách.'
       },
       {
         label: 'Sản phẩm tư vấn',
         icon: 'inventory_2',
         to: '/portal/staff/products',
-        summary: 'Sản phẩm dùng khi kê đơn chăm sóc tại nhà.'
+        summary: 'Sản phẩm dùng khi tư vấn và kê đơn chăm sóc tại nhà (chỉ xem).'
       }
     ]
   }
@@ -126,47 +130,54 @@ const managerNavigation: readonly PortalNavGroup[] = [
     ]
   },
   {
-    label: 'Dịch vụ & phác đồ',
+    label: 'Thiết lập danh mục',
     items: [
       {
-        label: 'Dịch vụ & Menu trị liệu',
-        icon: 'spa',
-        to: '/portal/manager/services',
-        summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
+        label: 'Danh mục bài viết',
+        icon: 'category',
+        to: '/portal/manager/blog-categories',
+        summary: 'Thêm, sửa, ẩn hoặc xóa chủ đề bài viết trên trang Blog.'
       },
+      {
+        label: 'Danh mục dịch vụ',
+        icon: 'folder_special',
+        to: '/portal/manager/service-categories',
+        summary: 'Nhóm dịch vụ hiển thị trên website và form đặt lịch.'
+      },
+      {
+        label: 'Danh mục sản phẩm',
+        icon: 'folder_open',
+        to: '/portal/manager/product-categories',
+        summary: 'Thêm, sửa, ẩn hoặc xóa nhóm sản phẩm trên trang Sản phẩm.'
+      }
+    ]
+  },
+  {
+    label: 'Quản lý nội dung',
+    items: [
       {
         label: 'Sản phẩm',
         icon: 'inventory_2',
         to: '/portal/manager/products',
-        summary: 'Danh mục và sản phẩm bán lẻ hiển thị trên website.'
+        summary: 'Sản phẩm bán lẻ hiển thị trên website.'
+      },
+      {
+        label: 'Duyệt bài viết',
+        icon: 'rate_review',
+        to: '/portal/manager/article-review',
+        summary: 'Bài viết nhân viên gửi lên: xem, chỉnh sửa, xuất bản hoặc ẩn.'
+      },
+      {
+        label: 'Dịch vụ & Menu trị liệu',
+        icon: 'spa',
+        to: '/portal/manager/services',
+        summary: 'Giá và thời lượng dịch vụ hiển thị trên website và form đặt lịch.'
       },
       {
         label: 'Lộ trình chăm sóc',
         icon: 'healing',
         to: '/portal/manager/treatments',
         summary: 'Phác đồ đang áp dụng và khách theo từng lộ trình.'
-      }
-    ]
-  },
-  {
-    label: 'Nội dung & website',
-    items: [
-      {
-        label: 'Duyệt bài viết',
-        icon: 'rate_review',
-        to: '/portal/manager/article-review',
-        summary: 'Bài viết nhân viên gửi lên: xem, chỉnh sửa, xuất bản hoặc ẩn.'
-      }
-    ]
-  },
-  {
-    label: 'Kinh doanh & quản trị',
-    items: [
-      {
-        label: 'Doanh thu chi nhánh',
-        icon: 'payments',
-        to: '/portal/manager/revenue',
-        summary: 'Doanh thu theo ngày, dịch vụ và chuyên viên.'
       }
     ]
   }
@@ -209,19 +220,48 @@ const adminNavigation: readonly PortalNavGroup[] = [
         label: 'Chi nhánh',
         icon: 'store',
         to: '/portal/admin/branches',
-        summary: 'Danh sách chi nhánh đang hoạt động.'
+        summary: 'Thêm, sửa, tạm ngưng chi nhánh (khu vực) và xem nhân sự từng nơi.'
       },
       {
         label: 'Cấu hình',
         icon: 'settings',
         to: '/portal/admin/settings',
-        summary: 'Thiết lập dùng chung cho toàn bộ cổng, chương trình khuyến mãi.'
+        summary: 'Thiết lập dùng chung: popup banner trang chủ, chương trình khuyến mãi.'
       }
     ]
   },
   {
-    label: 'Danh mục',
+    label: 'Thiết lập danh mục',
     items: [
+      {
+        label: 'Danh mục bài viết',
+        icon: 'category',
+        to: '/portal/admin/blog-categories',
+        summary: 'Chủ đề bài viết trên trang Blog (chỉ xem).'
+      },
+      {
+        label: 'Danh mục dịch vụ',
+        icon: 'folder_special',
+        to: '/portal/admin/service-categories',
+        summary: 'Nhóm dịch vụ hiển thị trên website và form đặt lịch.'
+      },
+      {
+        label: 'Danh mục sản phẩm',
+        icon: 'folder_open',
+        to: '/portal/admin/product-categories',
+        summary: 'Thêm, sửa, ẩn hoặc xóa nhóm sản phẩm trên trang Sản phẩm.'
+      }
+    ]
+  },
+  {
+    label: 'Quản lý nội dung',
+    items: [
+      {
+        label: 'Sản phẩm',
+        icon: 'inventory_2',
+        to: '/portal/admin/products',
+        summary: 'Sản phẩm hiển thị trên website.'
+      },
       {
         label: 'Bài viết',
         icon: 'article',
@@ -232,13 +272,7 @@ const adminNavigation: readonly PortalNavGroup[] = [
         label: 'Dịch vụ & Menu trị liệu',
         icon: 'spa',
         to: '/portal/admin/services',
-        summary: 'Nhóm dịch vụ, giá và thời lượng hiển thị trên website và form đặt lịch.'
-      },
-      {
-        label: 'Sản phẩm',
-        icon: 'inventory_2',
-        to: '/portal/admin/products',
-        summary: 'Danh mục và sản phẩm hiển thị trên website.'
+        summary: 'Giá và thời lượng dịch vụ hiển thị trên website và form đặt lịch.'
       }
     ]
   }

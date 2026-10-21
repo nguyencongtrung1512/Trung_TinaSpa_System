@@ -135,26 +135,17 @@ export function ProductDetailsEditor({ rows, onChange, onUploadingChange }: Prod
                       </button>
                     </div>
                     {type === 'GALLERY' ? (
-                      <div className='grid gap-3 sm:grid-cols-2'>
+                      <div>
                         <Field label='Ảnh'>
                           {(id) => (
                             <ImageUpload
                               id={id}
                               folder='products'
                               value={row.image}
-                              onChange={(url) => patch(row.key, { image: url })}
+                              onChange={(url, alt) =>
+                                patch(row.key, alt === undefined ? { image: url } : { image: url, imageAlt: alt })
+                              }
                               onUploadingChange={onUploadingChange}
-                            />
-                          )}
-                        </Field>
-                        <Field label='Mô tả ảnh (alt)'>
-                          {(id) => (
-                            <input
-                              id={id}
-                              className={inputClass}
-                              value={row.imageAlt}
-                              maxLength={255}
-                              onChange={(event) => patch(row.key, { imageAlt: event.target.value })}
                             />
                           )}
                         </Field>
@@ -185,7 +176,11 @@ export function ProductDetailsEditor({ rows, onChange, onUploadingChange }: Prod
                                 />
                               )}
                             </Field>
-                            <Field label='Icon' hint='Tên Material Symbols, VD: spa, water_drop.' className='sm:col-span-2'>
+                            <Field
+                              label='Icon'
+                              hint='Tên Material Symbols, VD: spa, water_drop.'
+                              className='sm:col-span-2'
+                            >
                               {(id) => (
                                 <input
                                   id={id}

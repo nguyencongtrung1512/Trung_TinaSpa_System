@@ -10,6 +10,7 @@ import type { PortalRole } from '~/portal/types'
 import { appointmentStatusMeta } from './appointments.api'
 import { AppointmentList } from './AppointmentList'
 import { useAppointments, useBranches } from './useAppointments'
+import { Select } from '~/components/ui/Select'
 
 function shiftDate(iso: string, days: number) {
   const [year, month, day] = iso.split('-').map(Number)
@@ -101,32 +102,26 @@ export function AppointmentsPage({ role }: { readonly role: PortalRole }) {
 
           {/* Bộ lọc khu vực & trạng thái */}
           <div className='flex flex-wrap gap-2'>
-            <select
+            <Select
               aria-label='Lọc khu vực'
-              className={`${inputClass} min-w-[10rem] sm:w-56`}
+              className='w-full min-w-[10rem] sm:w-56'
               value={branchID}
-              onChange={(event) => setBranchID(event.target.value)}
-            >
-              <option value=''>Mọi khu vực</option>
-              {branches.map((item) => (
-                <option key={item.branchID} value={item.branchID}>
-                  {item.nameVietnamese}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={setBranchID}
+              options={[
+                { value: '', label: 'Mọi khu vực' },
+                ...branches.map((item) => ({ value: item.branchID, label: item.nameVietnamese }))
+              ]}
+            />
+            <Select
               aria-label='Lọc trạng thái'
-              className={`${inputClass} min-w-[9rem] sm:w-44`}
+              className='w-full min-w-[9rem] sm:w-44'
               value={status}
-              onChange={(event) => setStatus(event.target.value as AppointmentStatus | '')}
-            >
-              <option value=''>Mọi trạng thái</option>
-              {statuses.map((key) => (
-                <option key={key} value={key}>
-                  {appointmentStatusMeta[key].label}
-                </option>
-              ))}
-            </select>
+              onChange={setStatus}
+              options={[
+                { value: '' as const, label: 'Mọi trạng thái' },
+                ...statuses.map((key) => ({ value: key, label: appointmentStatusMeta[key].label }))
+              ]}
+            />
           </div>
         </div>
       </div>
@@ -143,8 +138,9 @@ export function AppointmentsPage({ role }: { readonly role: PortalRole }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') setStatus((cur) => (cur === key ? '' : key))
               }}
-              className={`${portalCardClass} flex cursor-pointer items-center gap-3 p-4 transition hover:border-clinic ${isSelected ? 'ring-2 ring-clinic bg-mist/50' : ''
-                }`}
+              className={`${portalCardClass} flex cursor-pointer items-center gap-3 p-4 transition hover:border-clinic ${
+                isSelected ? 'ring-2 ring-clinic bg-mist/50' : ''
+              }`}
             >
               <span className={`grid size-10 place-items-center rounded-2xl ${appointmentStatusMeta[key].className}`}>
                 <Icon name={appointmentStatusMeta[key].icon} size={20} />

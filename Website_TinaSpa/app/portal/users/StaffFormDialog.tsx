@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon } from '~/components/ui/Icon'
+import { ImageUpload } from '~/components/ui/ImageUpload'
 import {
   Field,
   FormError,
@@ -10,7 +11,15 @@ import {
   primaryButtonClass
 } from '~/portal/manager/services/form-ui'
 import { useBranches } from '~/portal/appointments/useAppointments'
-import { createStaff, userGenderLabels, type StaffPayload, type UserGender } from './users.api'
+import {
+  createStaff,
+  updateStaff,
+  userGenderLabels,
+  type PortalUser,
+  type StaffPayload,
+  type UserGender
+} from './users.api'
+import { Select } from '~/components/ui/Select'
 
 interface StaffFormValues {
   readonly fullName: string
@@ -40,6 +49,21 @@ const emptyValues: StaffFormValues = {
   role: 'STAFF'
 }
 
+function valuesFromUser(user: PortalUser): StaffFormValues {
+  return {
+    fullName: user.fullName,
+    phone: user.phone,
+    password: '',
+    gender: user.gender ?? '',
+    dateOfBirth: user.dateOfBirth ?? '',
+    address: user.address ?? '',
+    avatar: user.avatar ?? '',
+    note: '',
+    branchID: user.branchID ?? '',
+    role: user.role === 'MANAGER' ? 'MANAGER' : 'STAFF'
+  }
+}
+
 const PHONE_PATTERN = /^\+?[0-9]{9,15}$/
 
 function todayISO() {
@@ -47,11 +71,12 @@ function todayISO() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
-function validate(values: StaffFormValues, requireBranch: boolean): FormErrors {
+function validate(values: StaffFormValues, requireBranch: boolean, editing: boolean): FormErrors {
   const errors: FormErrors = {}
   if (values.fullName.trim().length < 2) errors.fullName = 'Nhập họ tên (ít nhất 2 ký tự).'
   if (!PHONE_PATTERN.test(values.phone.trim())) errors.phone = 'Số điện thoại gồm 9–15 chữ số, có thể bắt đầu bằng +.'
-  if (values.password.length < 8) errors.password = 'Mật khẩu tối thiểu 8 ký tự.'
+  // Khi sửa, để trống mật khẩu nghĩa là giữ mật khẩu cũ.
+  if ((!editing || values.password) && values.password.length < 8) errors.password = 'Mật khẩu tối thiểu 8 ký tự.'
   if (values.dateOfBirth && values.dateOfBirth > todayISO()) errors.dateOfBirth = 'Ngày sinh không được ở tương lai.'
   if (requireBranch && !values.branchID) errors.branchID = 'Chọn khu vực làm việc.'
   return errors
@@ -80,6 +105,8 @@ export interface StaffFormDialogProps {
   readonly onSaved: (message: string) => void
   readonly canPickBranch?: boolean
   readonly canCreateManager?: boolean
+  /** Có giá trị thì dialog ở chế độ sửa tài khoản này. */
+  readonly user?: PortalUser
 }
 
 export function StaffFormDialog({
@@ -87,51 +114,70 @@ export function StaffFormDialog({
   onClose,
   onSaved,
   canPickBranch = false,
-  canCreateManager = false
+  canCreateManager = false,
+  user
 }: StaffFormDialogProps) {
   const branches = useBranches()
-  const [values, setValues] = useState(emptyValues)
+  const editing = user !== undefined
+  const [values, setValues] = useState(() => (user ? valuesFromUser(user) : emptyValues))
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string>()
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [avatarBroken, setAvatarBroken] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const selectedBranch = branches.find((b) => b.branchID === values.branchID) ?? null
 
   function update<K extends keyof StaffFormValues>(field: K, value: StaffFormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: undefined }))
-    if (field === 'avatar') setAvatarBroken(false)
   }
 
   async function submit() {
-    const nextErrors = validate(values, canPickBranch)
+    if (uploading) return
+    const nextErrors = validate(values, canPickBranch, editing)
     setErrors(nextErrors)
     if (Object.values(nextErrors).some(Boolean)) return
 
     setBusy(true)
     setSubmitError(undefined)
     try {
-      const payload = toPayload(values, canPickBranch, canCreateManager)
-      await createStaff(payload)
-      const roleLabel = payload.role === 'MANAGER' ? 'quản lý' : 'nhân viên'
-      onSaved(`Đã thêm ${roleLabel} "${payload.fullName}".`)
+      if (user) {
+        const { password, note, ...rest } = toPayload(values, canPickBranch, false)
+        await updateStaff(user.userID, {
+          ...rest,
+          ...(password ? { password } : {}),
+          ...(note ? { note } : {})
+        })
+        const moved = canPickBranch && values.branchID !== (user.branchID ?? '')
+        onSaved(`Đã cập nhật "${rest.fullName}"${moved ? ' và chuyển khu vực' : ''}.`)
+      } else {
+        const payload = toPayload(values, canPickBranch, canCreateManager)
+        await createStaff(payload)
+        const roleLabel = payload.role === 'MANAGER' ? 'quản lý' : 'nhân viên'
+        onSaved(`Đã thêm ${roleLabel} "${payload.fullName}".`)
+      }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Không thể thêm nhân viên.')
+      setSubmitError(
+        error instanceof Error ? error.message : editing ? 'Không thể cập nhật tài khoản.' : 'Không thể thêm nhân viên.'
+      )
     } finally {
       setBusy(false)
     }
   }
 
-  const avatar = values.avatar.trim()
-
   return (
     <PortalDialog
       open={open}
-      title={canCreateManager ? 'Thêm tài khoản nội bộ' : 'Thêm nhân viên'}
+      title={editing ? `Sửa tài khoản ${user.fullName}` : canCreateManager ? 'Thêm tài khoản nội bộ' : 'Thêm nhân viên'}
       description={
-        canCreateManager
-          ? 'Admin gán khu vực cho quản lý hoặc nhân viên. Quản lý sau đó chỉ xem nhân viên và khách hàng của khu vực đó.'
-          : 'Tài khoản nhân viên được gắn vào khu vực của bạn. Nhân viên đăng nhập bằng số điện thoại và mật khẩu này.'
+        editing
+          ? canPickBranch
+            ? 'Đổi khu vực hoặc mật khẩu sẽ buộc tài khoản đăng nhập lại.'
+            : 'Đặt mật khẩu mới sẽ buộc nhân viên đăng nhập lại. Chỉ quản trị viên được chuyển khu vực.'
+          : canCreateManager
+            ? 'Admin gán khu vực cho quản lý hoặc nhân viên.'
+            : 'Tài khoản nhân viên được gắn vào khu vực của bạn. Nhân viên đăng nhập bằng số điện thoại và mật khẩu này.'
       }
       onClose={onClose}
       onSubmit={() => void submit()}
@@ -140,9 +186,9 @@ export function StaffFormDialog({
           <button type='button' className={outlineButtonClass} onClick={onClose}>
             Hủy
           </button>
-          <button type='submit' className={primaryButtonClass} disabled={busy}>
-            <Icon name='person_add' size={18} />
-            {busy ? 'Đang lưu...' : canCreateManager ? 'Thêm tài khoản' : 'Thêm nhân viên'}
+          <button type='submit' className={primaryButtonClass} disabled={busy || uploading}>
+            <Icon name={editing ? 'save' : 'person_add'} size={18} />
+            {busy ? 'Đang lưu...' : editing ? 'Lưu thay đổi' : canCreateManager ? 'Thêm tài khoản' : 'Thêm nhân viên'}
           </button>
         </>
       }
@@ -177,7 +223,12 @@ export function StaffFormDialog({
             />
           )}
         </Field>
-        <Field label='Mật khẩu' required error={errors.password} hint='Tối thiểu 8 ký tự.'>
+        <Field
+          label={editing ? 'Mật khẩu mới' : 'Mật khẩu'}
+          required={!editing}
+          error={errors.password}
+          hint={editing ? 'Để trống nếu giữ mật khẩu cũ.' : 'Tối thiểu 8 ký tự.'}
+        >
           {(id) => (
             <div className='relative'>
               <input
@@ -204,49 +255,60 @@ export function StaffFormDialog({
       <p className='mt-6 text-xs font-bold tracking-[0.16em] text-clinic uppercase'>Hồ sơ</p>
       <div className='mt-4 grid gap-4 sm:grid-cols-2'>
         {canPickBranch ? (
-          <Field label='Khu vực' required error={errors.branchID} className={canCreateManager ? '' : 'sm:col-span-2'}>
+          <Field
+            label='Khu vực'
+            required
+            error={errors.branchID}
+            className={canCreateManager && !editing ? '' : 'sm:col-span-2'}
+          >
             {(id) => (
-              <select id={id} className={inputClass} value={values.branchID} onChange={(event) => update('branchID', event.target.value)}>
-                <option value=''>Chọn khu vực</option>
-                {branches.map((item) => (
-                  <option key={item.branchID} value={item.branchID}>
-                    {item.nameVietnamese} ({item.branchID})
-                  </option>
-                ))}
-              </select>
+              <>
+                <Select
+                  id={id}
+                  value={values.branchID}
+                  onChange={(value) => update('branchID', value)}
+                  placeholder='Chọn khu vực'
+                  options={branches.map((item) => ({ value: item.branchID, label: item.nameVietnamese }))}
+                />
+                {selectedBranch?.addressVietnamese ? (
+                  <p className='mt-1.5 flex items-start gap-1 text-xs text-stone-500'>
+                    <Icon name='location_on' size={14} className='mt-px shrink-0 text-clinic' />
+                    {selectedBranch.addressVietnamese}
+                  </p>
+                ) : null}
+              </>
             )}
           </Field>
         ) : null}
-        {canCreateManager ? (
+        {canCreateManager && !editing ? (
           <Field label='Vai trò' required>
             {(id) => (
-              <select
+              <Select
                 id={id}
-                className={inputClass}
                 value={values.role}
-                onChange={(event) => update('role', event.target.value as 'STAFF' | 'MANAGER')}
-              >
-                <option value='STAFF'>Nhân viên</option>
-                <option value='MANAGER'>Quản lý khu vực</option>
-              </select>
+                onChange={(value) => update('role', value)}
+                options={[
+                  { value: 'STAFF', label: 'Nhân viên' },
+                  { value: 'MANAGER', label: 'Quản lý khu vực' }
+                ]}
+              />
             )}
           </Field>
         ) : null}
         <Field label='Giới tính'>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.gender}
-              onChange={(event) => update('gender', event.target.value as UserGender | '')}
-            >
-              <option value=''>Chưa chọn</option>
-              {Object.entries(userGenderLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => update('gender', value)}
+              options={[
+                { value: '', label: 'Chưa chọn' },
+                ...(Object.keys(userGenderLabels) as UserGender[]).map((gender) => ({
+                  value: gender,
+                  label: userGenderLabels[gender]
+                }))
+              ]}
+            />
           )}
         </Field>
         <Field label='Ngày sinh' error={errors.dateOfBirth} hint='Dùng để tính tuổi.'>
@@ -273,26 +335,22 @@ export function StaffFormDialog({
             />
           )}
         </Field>
-        <Field label='Ảnh đại diện' hint='Đường dẫn ảnh, VD: /images/staff/linh-dan.jpg' className='sm:col-span-2'>
+        <Field label='Ảnh đại diện' className='sm:col-span-2'>
           {(id) => (
-            <div className='flex items-center gap-3'>
-              <span className='grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-mist text-clinic'>
-                {avatar && !avatarBroken ? (
-                  <img src={avatar} alt='' className='size-full object-cover' onError={() => setAvatarBroken(true)} />
-                ) : (
-                  <Icon name='person' size={22} />
-                )}
-              </span>
-              <input
-                id={id}
-                className={inputClass}
-                value={values.avatar}
-                onChange={(event) => update('avatar', event.target.value)}
-              />
-            </div>
+            <ImageUpload
+              id={id}
+              folder='staff'
+              value={values.avatar}
+              onChange={(url) => update('avatar', url)}
+              onUploadingChange={setUploading}
+            />
           )}
         </Field>
-        <Field label='Ghi chú nội bộ' className='sm:col-span-2'>
+        <Field
+          label='Ghi chú nội bộ'
+          hint={editing ? 'Để trống nếu giữ ghi chú cũ.' : undefined}
+          className='sm:col-span-2'
+        >
           {(id) => (
             <textarea
               id={id}

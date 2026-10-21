@@ -10,6 +10,7 @@ import {
   type ServicePayload
 } from './catalog.api'
 import { Field, FormError, PortalDialog, inputClass, outlineButtonClass, primaryButtonClass } from './form-ui'
+import { Select } from '~/components/ui/Select'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -251,20 +252,16 @@ export function ServiceFormDialog({
       <div className='mt-4 grid gap-4 sm:grid-cols-2'>
         <Field label='Nhóm dịch vụ' required error={errors.serviceCategoryID}>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.serviceCategoryID}
-              onChange={(event) => update('serviceCategoryID', event.target.value)}
-            >
-              <option value=''>Chọn nhóm</option>
-              {categories.map((category) => (
-                <option key={category.serviceCategoryID} value={category.serviceCategoryID}>
-                  {category.nameVietnamese}
-                  {category.status === 'INACTIVE' ? ' (tạm ẩn)' : ''}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => update('serviceCategoryID', value)}
+              placeholder='Chọn nhóm'
+              options={categories.map((category) => ({
+                value: category.serviceCategoryID,
+                label: `${category.nameVietnamese}${category.status === 'INACTIVE' ? ' (tạm ẩn)' : ''}`
+              }))}
+            />
           )}
         </Field>
         <Field label='Slug' required error={errors.slug} hint='Dùng cho link đặt lịch /booking?service=slug.'>
@@ -311,15 +308,15 @@ export function ServiceFormDialog({
         </Field>
         <Field label='Trạng thái'>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.status}
-              onChange={(event) => update('status', event.target.value as CatalogStatus)}
-            >
-              <option value='ACTIVE'>Đang mở</option>
-              <option value='INACTIVE'>Tạm ẩn</option>
-            </select>
+              onChange={(value) => update('status', value)}
+              options={[
+                { value: 'ACTIVE', label: 'Đang mở' },
+                { value: 'INACTIVE', label: 'Tạm ẩn' }
+              ]}
+            />
           )}
         </Field>
         <Field label='Ghi chú nội bộ' className='sm:col-span-2'>

@@ -2,15 +2,8 @@ import { useState } from 'react'
 import { Icon } from '~/components/ui/Icon'
 import { ImageUpload } from '~/components/ui/ImageUpload'
 import { catalogApi, toSlug, type CatalogCategory, type CatalogStatus, type CategoryPayload } from './catalog.api'
-import {
-  Field,
-  FormError,
-  PortalDialog,
-  Toggle,
-  inputClass,
-  outlineButtonClass,
-  primaryButtonClass
-} from './form-ui'
+import { Field, FormError, PortalDialog, Toggle, inputClass, outlineButtonClass, primaryButtonClass } from './form-ui'
+import { Select } from '~/components/ui/Select'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -250,40 +243,28 @@ export function CategoryFormDialog({ open, category, nextSortOrder, onClose, onS
         </Field>
         <Field label='Trạng thái'>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.status}
-              onChange={(event) => update('status', event.target.value as CatalogStatus)}
-            >
-              <option value='ACTIVE'>Đang mở</option>
-              <option value='INACTIVE'>Tạm ẩn</option>
-            </select>
+              onChange={(value) => update('status', value)}
+              options={[
+                { value: 'ACTIVE', label: 'Đang mở' },
+                { value: 'INACTIVE', label: 'Tạm ẩn' }
+              ]}
+            />
           )}
         </Field>
-        <Field
-          label='Ảnh khối menu'
-          hint='Tải ảnh lên hoặc dán đường dẫn, VD: /images/p1.png'
-          className='sm:col-span-2'
-        >
+        <Field label='Ảnh khối menu' hint='Mô tả ảnh (alt) lấy theo tên file tải lên.' className='sm:col-span-2'>
           {(id) => (
             <ImageUpload
               id={id}
               folder='services'
               value={values.image}
-              onChange={(url) => update('image', url)}
+              onChange={(url, alt) => {
+                update('image', url)
+                if (alt !== undefined) update('imageAlt', alt)
+              }}
               onUploadingChange={setUploading}
-            />
-          )}
-        </Field>
-        <Field label='Mô tả ảnh (alt)' className='sm:col-span-2'>
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              value={values.imageAlt}
-              onChange={(event) => update('imageAlt', event.target.value)}
-              maxLength={255}
             />
           )}
         </Field>

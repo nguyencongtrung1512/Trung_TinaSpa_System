@@ -178,6 +178,42 @@ describe('CustomerServicesService', () => {
     expect(result.total).toBe(1);
   });
 
+  it('scopes recorded services to the staff branch', async () => {
+    const staff: AuthUser = {
+      ...admin,
+      roles: ['STAFF'],
+      branchAID: 'br-a',
+      branchID: 'BR-A',
+    };
+    prisma.user.findFirst.mockResolvedValueOnce({ userAID: 'cust-aid' });
+
+    await service.add('cust-id', { items: [{ serviceID: 'svc-id' }] }, staff);
+    expect(prisma.customerService.create.mock.calls[0][0].data.branchAID).toBe(
+      'br-a',
+    );
+
+    prisma.user.findFirst.mockResolvedValueOnce({ userAID: 'cust-aid' });
+    await service.listForCustomer('cust-id', { page: 1, pageSize: 5 }, staff);
+    expect(prisma.customerService.findMany.mock.calls[0][0].where).toEqual({
+      customerAID: 'cust-aid',
+      deletedAt: null,
+      branchAID: 'br-a',
+    });
+
+    await service.remove('cs-id', staff);
+    expect(
+      prisma.customerService.findFirst.mock.calls[0][0].where.branchAID,
+    ).toBe('br-a');
+  });
+
+  it('records admin entries under the customer branch', async () => {
+    users.findByUserID.mockResolvedValueOnce({ ...customer, branchAID: 'br-b' });
+    await service.add('cust-id', { items: [{ serviceID: 'svc-id' }] }, admin);
+    expect(prisma.customerService.create.mock.calls[0][0].data.branchAID).toBe(
+      'br-b',
+    );
+  });
+
   it('soft deletes a record', async () => {
     await service.remove('cs-id', admin);
     const { data } = prisma.customerService.update.mock.calls[0][0];

@@ -39,3 +39,10 @@ export const ManageProducts = () =>
     UseGuards(JwtAuthGuard, RolesGuard),
     Roles(RoleName.ADMIN, RoleName.MANAGER),
   );
+
+/** Read-only access to the manage endpoints: staff use it to advise customers. */
+export const ViewProducts = () =>
+  applyDecorators(
+    UseGuards(JwtAuthGuard, RolesGuard),
+    Roles(RoleName.ADMIN, RoleName.MANAGER, RoleName.STAFF),
+  );

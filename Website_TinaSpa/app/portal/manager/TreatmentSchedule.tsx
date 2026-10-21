@@ -35,7 +35,9 @@ export function TreatmentSchedule({ items, loading, error, busyID, onRetry, onCo
       </div>
 
       {error ? (
-        <div className={`${portalCardClass} flex flex-wrap items-center justify-between gap-3 p-5 text-sm text-red-700`}>
+        <div
+          className={`${portalCardClass} flex flex-wrap items-center justify-between gap-3 p-5 text-sm text-red-700`}
+        >
           <span>{error}</span>
           <button type='button' className='font-bold text-clinic' onClick={onRetry}>
             Thử lại

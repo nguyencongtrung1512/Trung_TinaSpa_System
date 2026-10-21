@@ -18,7 +18,7 @@ import {
   SaveProductDto,
 } from './dto/product.dto.js';
 import { ProductCategoriesService } from './product-categories.service.js';
-import { ManageProducts } from './products.constants.js';
+import { ManageProducts, ViewProducts } from './products.constants.js';
 import { ProductsService } from './products.service.js';
 
 @Controller('product-categories')
@@ -31,14 +31,17 @@ export class ProductCategoriesController {
   }
 
   @Get('manage')
-  @ManageProducts()
+  @ViewProducts()
   listForManage() {
     return this.categories.listForManage();
   }
 
   @Post()
   @ManageProducts()
-  create(@Body() dto: SaveProductCategoryDto, @CurrentUser('userAID') userAID: string) {
+  create(
+    @Body() dto: SaveProductCategoryDto,
+    @CurrentUser('userAID') userAID: string,
+  ) {
     return this.categories.create(dto, userAID);
   }
 
@@ -70,13 +73,13 @@ export class ProductsController {
   }
 
   @Get('manage')
-  @ManageProducts()
+  @ViewProducts()
   listForManage(@Query() query: ManageProductsQueryDto) {
     return this.products.listForManage(query);
   }
 
   @Get('manage/:productID')
-  @ManageProducts()
+  @ViewProducts()
   findForManage(@Param('productID') productID: string) {
     return this.products.findForManage(productID);
   }
@@ -105,7 +108,10 @@ export class ProductsController {
   @Delete(':productID')
   @ManageProducts()
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('productID') productID: string, @CurrentUser('userAID') userAID: string) {
+  remove(
+    @Param('productID') productID: string,
+    @CurrentUser('userAID') userAID: string,
+  ) {
     return this.products.remove(productID, userAID);
   }
 }

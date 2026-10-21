@@ -11,6 +11,7 @@ import {
 } from '~/portal/manager/services/form-ui'
 import { toSlug } from '~/portal/manager/services/catalog.api'
 import { blogApi, type Blog, type BlogCategory, type BlogPayload } from './blog.api'
+import { Select } from '~/components/ui/Select'
 
 interface FormValues {
   readonly nameVietnamese: string
@@ -214,19 +215,16 @@ export function BlogFormDialog({ open, editingID, categories, canFeature, onClos
             hint={categories.length === 0 ? 'Chưa có danh mục. Hãy nhờ quản lý tạo danh mục trước.' : undefined}
           >
             {(id) => (
-              <select
+              <Select
                 id={id}
-                className={inputClass}
                 value={values.blogCategoryID}
-                onChange={(event) => update('blogCategoryID', event.target.value)}
-              >
-                <option value=''>Chọn danh mục</option>
-                {categories.map((category) => (
-                  <option key={category.blogCategoryID} value={category.blogCategoryID}>
-                    {category.nameVietnamese}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => update('blogCategoryID', value)}
+                placeholder='Chọn danh mục'
+                options={categories.map((category) => ({
+                  value: category.blogCategoryID,
+                  label: category.nameVietnamese
+                }))}
+              />
             )}
           </Field>
           <Field label='Đường dẫn (slug)' required error={errors.slug} hint='Tự tạo từ tiêu đề, có thể chỉnh.'>

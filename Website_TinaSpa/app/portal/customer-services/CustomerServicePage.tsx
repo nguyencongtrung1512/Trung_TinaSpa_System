@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
 import { Icon } from '~/components/ui/Icon'
+import { useToast } from '~/components/ui/toast-view'
 import { formatPortalDate } from '~/portal/format'
 import { formatPhone } from '~/portal/appointments/appointments.api'
 import {
@@ -23,6 +24,8 @@ import {
   type CustomerLookup,
   type CustomerServiceRecord
 } from './customerServices.api'
+import { Select } from '~/components/ui/Select'
+import { CustomerPicker } from './CustomerPicker'
 
 interface DraftLine {
   readonly key: number
@@ -59,7 +62,7 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
   const [lookedUpPhone, setLookedUpPhone] = useState('')
   const [lookupBusy, setLookupBusy] = useState(false)
   const [error, setError] = useState<string>()
-  const [notice, setNotice] = useState<string>()
+  const toast = useToast()
 
   const [fullName, setFullName] = useState('')
   const [createBusy, setCreateBusy] = useState(false)
@@ -117,7 +120,6 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
       }
       setLookupBusy(true)
       setError(undefined)
-      setNotice(undefined)
       try {
         const result = await customerServicesApi.lookup(phone)
         setLookup(result)
@@ -160,7 +162,7 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
     setError(undefined)
     try {
       await customerServicesApi.createCustomer({ phone: lookedUpPhone, fullName: fullName.trim() })
-      setNotice(t('staffServices.created'))
+      toast.success(t('staffServices.created'))
       await runLookup(lookedUpPhone)
     } catch (reason) {
       setError(errorText(reason, t('staffServices.errors.create')))
@@ -220,7 +222,7 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
         usedAt: usedDate === todayISO() ? new Date().toISOString() : `${usedDate}T05:00:00.000Z`
       })
       setLines([{ key: 1, serviceID: '', quantity: 1, staffNote: '' }])
-      setNotice(t('staffServices.saved', { count: added.length, name: customer.fullName }))
+      toast.success(t('staffServices.saved', { count: added.length, name: customer.fullName }))
       await loadRecords(customer.userID)
     } catch (reason) {
       setFormError(errorText(reason, t('staffServices.errors.save')))
@@ -236,7 +238,7 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
     try {
       await customerServicesApi.remove(removing.customerServiceID)
       setRemoving(undefined)
-      setNotice(t('staffServices.removed'))
+      toast.success(t('staffServices.removed'))
       await loadRecords(customer.userID)
     } catch (reason) {
       setRemoveError(errorText(reason, t('staffServices.errors.remove')))
@@ -255,23 +257,24 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
           <span className='font-medium tracking-normal text-muted'>{formatPortalDate(new Date())}</span>
         </div>
         <h1 className='mt-2 text-3xl font-extrabold text-ink sm:text-4xl'>{t('staffServices.title')}</h1>
-        <p className='mt-1 text-sm text-muted'>
-          {t('staffServices.intro')}
-        </p>
+        <p className='mt-1 text-sm text-muted'>{t('staffServices.intro')}</p>
       </header>
 
-      <form onSubmit={submitLookup} className={`${portalCardClass} mt-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-end`}>
+      <form
+        onSubmit={submitLookup}
+        className={`${portalCardClass} mt-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-end`}
+      >
         <Field label={t('staffServices.phoneLabel')} required className='flex-1'>
           {(id) => (
-            <input
+            <CustomerPicker
               id={id}
-              type='tel'
-              inputMode='tel'
-              className={inputClass}
               value={phoneInput}
-              onChange={(event) => setPhoneInput(event.target.value)}
+              onChange={setPhoneInput}
+              onPick={(customer) => {
+                setSearchParams({ phone: customer.phone }, { replace: true })
+                void runLookup(customer.phone)
+              }}
               placeholder={t('staffServices.phonePlaceholder')}
-              autoComplete='off'
             />
           )}
         </Field>
@@ -283,20 +286,14 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
 
       <div className='mt-4 space-y-3' aria-live='polite'>
         <FormError message={error} />
-        {notice ? (
-          <p className='flex items-start gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700'>
-            <Icon name='check_circle' size={18} className='mt-0.5 shrink-0' />
-            {notice}
-          </p>
-        ) : null}
       </div>
 
       {lookup && !customer ? (
         <section className={`${portalCardClass} mt-4 p-5`} aria-label={t('staffServices.createAccount')}>
-          <h2 className='text-lg font-extrabold text-ink'>{t('staffServices.noAccount', { phone: formatPhone(lookedUpPhone) })}</h2>
-          <p className='mt-1 text-sm text-muted'>
-            {t('staffServices.noAccountHint')}
-          </p>
+          <h2 className='text-lg font-extrabold text-ink'>
+            {t('staffServices.noAccount', { phone: formatPhone(lookedUpPhone) })}
+          </h2>
+          <p className='mt-1 text-sm text-muted'>{t('staffServices.noAccountHint')}</p>
           {lookup.recentAppointments.length > 0 ? (
             <ul className='mt-3 space-y-1 text-xs text-ink/80'>
               {lookup.recentAppointments.map((appointment) => (
@@ -311,7 +308,10 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
               ))}
             </ul>
           ) : null}
-          <form onSubmit={(event) => void createAccount(event)} className='mt-4 flex flex-col gap-3 sm:flex-row sm:items-end'>
+          <form
+            onSubmit={(event) => void createAccount(event)}
+            className='mt-4 flex flex-col gap-3 sm:flex-row sm:items-end'
+          >
             <Field label={t('staffServices.fullName')} required className='flex-1'>
               {(id) => (
                 <input
@@ -334,7 +334,10 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
 
       {customer ? (
         <>
-          <section className={`${portalCardClass} mt-4 flex flex-wrap items-center gap-4 p-5`} aria-label={customer.fullName}>
+          <section
+            className={`${portalCardClass} mt-4 flex flex-wrap items-center gap-4 p-5`}
+            aria-label={customer.fullName}
+          >
             <span className='grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-rose-soft to-clinic/70 text-sm font-extrabold text-white'>
               {customer.fullName.trim().slice(0, 1).toUpperCase()}
             </span>
@@ -366,23 +369,19 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
                 <div key={line.key} className='grid gap-3 rounded-2xl bg-canvas p-3 sm:grid-cols-[1fr_6rem_auto]'>
                   <Field label={t('staffServices.serviceN', { n: index + 1 })} required>
                     {(id) => (
-                      <select
+                      <Select
                         id={id}
-                        className={inputClass}
                         value={line.serviceID}
-                        onChange={(event) => updateLine(line.key, { serviceID: event.target.value })}
-                      >
-                        <option value=''>{t('staffServices.chooseService')}</option>
-                        {grouped.map(([label, services]) => (
-                          <optgroup key={label} label={label}>
-                            {services.map((service) => (
-                              <option key={service.serviceID} value={service.serviceID}>
-                                {service.nameVietnamese} — {formatPrice(service.price)}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
+                        onChange={(value) => updateLine(line.key, { serviceID: value })}
+                        placeholder={t('staffServices.chooseService')}
+                        options={grouped.flatMap(([label, services]) =>
+                          services.map((service) => ({
+                            value: service.serviceID,
+                            label: `${service.nameVietnamese} — ${formatPrice(service.price)}`,
+                            group: label
+                          }))
+                        )}
+                      />
                     )}
                   </Field>
                   <Field label={t('staffServices.quantity')}>
@@ -476,7 +475,8 @@ export function CustomerServicePage({ role }: { readonly role: PortalRole }) {
                         {record.quantity > 1 ? <span className='text-muted'> × {record.quantity}</span> : null}
                       </p>
                       <p className='text-xs text-muted'>
-                        {dateTimeFormatter.format(new Date(record.usedAt))} · {formatPrice(record.price * record.quantity)}
+                        {dateTimeFormatter.format(new Date(record.usedAt))} ·{' '}
+                        {formatPrice(record.price * record.quantity)}
                       </p>
                       {record.staffNote ? <p className='mt-1 text-xs text-ink/70'>{record.staffNote}</p> : null}
                     </div>

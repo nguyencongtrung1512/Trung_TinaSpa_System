@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Icon } from '~/components/ui/Icon'
+import { useToast } from '~/components/ui/toast-view'
 import { Pagination } from '~/components/ui/Pagination'
 import { formatPortalDate } from '~/portal/format'
 import { portalRoleLabel } from '~/portal/navigation'
 import { portalCardClass } from '~/portal/styles'
 import type { PortalRole } from '~/portal/types'
 import { ConfirmDialog, inputClass, outlineButtonClass, primaryButtonClass } from '../services/form-ui'
-import { ProductCategoryFormDialog } from './ProductCategoryFormDialog'
-import { ProductCategoryPanel } from './ProductCategoryPanel'
 import { ProductFormDialog } from './ProductFormDialog'
 import { ProductTable } from './ProductTable'
 import { productApi, type Product, type ProductCategory, type ProductPage } from './product.api'
+import { Select } from '~/components/ui/Select'
 
 type StatusFilter = 'all' | 'ACTIVE' | 'INACTIVE'
 
@@ -21,16 +21,14 @@ interface FormState<T> {
   readonly target: T | null
 }
 
-type DeleteTarget =
-  | { readonly kind: 'category'; readonly item: ProductCategory }
-  | { readonly kind: 'product'; readonly item: Product }
-
 const closedForm = { session: 0, open: false, target: null }
 
 const PAGE_SIZE = 10
 
+/** Quản lý và quản trị thêm/sửa/ẩn/xóa sản phẩm; nhân viên chỉ xem để tư vấn. Danh mục nằm ở trang riêng. */
 export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
   const reduceMotion = useReducedMotion()
+  const canManage = role !== 'staff'
   const [categories, setCategories] = useState<ProductCategory[]>([])
   const [activeTotal, setActiveTotal] = useState(0)
   const [result, setResult] = useState<ProductPage | null>(null)
@@ -43,14 +41,12 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [page, setPage] = useState(1)
   const [reloadKey, setReloadKey] = useState(0)
-  const [categoryForm, setCategoryForm] = useState<FormState<ProductCategory>>(closedForm)
   const [productForm, setProductForm] = useState<FormState<Product>>(closedForm)
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState<string>()
   const [togglingID, setTogglingID] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string>()
-  const noticeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const toast = useToast()
 
   const products = result?.items ?? []
 
@@ -72,7 +68,6 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
 
   useEffect(() => {
     void refreshMeta()
-    return () => clearTimeout(noticeTimer.current)
   }, [refreshMeta])
 
   useEffect(() => {
@@ -115,21 +110,12 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
     setReloadKey((key) => key + 1)
   }, [refreshMeta])
 
-  const showNotice = (message: string) => {
-    setNotice(message)
-    clearTimeout(noticeTimer.current)
-    noticeTimer.current = setTimeout(() => setNotice(undefined), 3500)
-  }
-
   const selectedCategory = categories.find((category) => category.productCategoryID === selectedID)
 
   const totalProducts = categories.reduce((sum, category) => sum + category.productCount, 0)
 
-  const openCategoryForm = (target: ProductCategory | null) =>
-    setCategoryForm((current) => ({ session: current.session + 1, open: true, target }))
   const openProductForm = (target: Product | null) =>
     setProductForm((current) => ({ session: current.session + 1, open: true, target }))
-  const closeCategoryForm = useCallback(() => setCategoryForm((current) => ({ ...current, open: false })), [])
   const closeProductForm = useCallback(() => setProductForm((current) => ({ ...current, open: false })), [])
   const closeDelete = useCallback(() => setDeleteTarget(null), [])
 
@@ -138,36 +124,28 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
     try {
       openProductForm(await productApi.getProduct(product.productID))
     } catch (error) {
-      showNotice(error instanceof Error ? error.message : 'Không tải được sản phẩm.')
+      toast.error('Không tải được sản phẩm', error instanceof Error ? error.message : undefined)
     }
   }
 
   const handleSaved = (close: () => void) => (message: string) => {
     close()
-    showNotice(message)
+    toast.success(message)
     reload()
   }
 
-  const askDelete = (target: DeleteTarget) => {
+  const askDelete = (target: Product) => {
     setDeleteError(undefined)
     setDeleteTarget(target)
   }
 
   async function confirmDelete() {
-    if (!deleteTarget || (deleteTarget.kind === 'category' && deleteTarget.item.productCount > 0)) return
+    if (!deleteTarget) return
     setDeleteBusy(true)
     setDeleteError(undefined)
     try {
-      if (deleteTarget.kind === 'category') {
-        await productApi.removeCategory(deleteTarget.item.productCategoryID)
-        if (selectedID === deleteTarget.item.productCategoryID) {
-          setSelectedID('all')
-          setPage(1)
-        }
-      } else {
-        await productApi.removeProduct(deleteTarget.item.productID)
-      }
-      showNotice(`Đã xóa "${deleteTarget.item.nameVietnamese}".`)
+      await productApi.removeProduct(deleteTarget.productID)
+      toast.success(`Đã xóa "${deleteTarget.nameVietnamese}".`)
       setDeleteTarget(null)
       if (products.length === 1 && page > 1) setPage(page - 1)
       reload()
@@ -184,37 +162,13 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
     try {
       await productApi.updateProduct(product.productID, { status })
       reload()
-      showNotice(`${product.nameVietnamese}: ${status === 'ACTIVE' ? 'đã mở bán lại' : 'đã tạm ẩn'}.`)
+      toast.success(`${product.nameVietnamese}: ${status === 'ACTIVE' ? 'đã mở bán lại' : 'đã tạm ẩn'}.`)
     } catch (error) {
-      showNotice(error instanceof Error ? error.message : 'Không đổi được trạng thái.')
+      toast.error('Không đổi được trạng thái', error instanceof Error ? error.message : undefined)
     } finally {
       setTogglingID(null)
     }
   }
-
-  const blockedCategory = deleteTarget?.kind === 'category' && deleteTarget.item.productCount > 0
-
-  const deleteMessage = (() => {
-    if (!deleteTarget) return null
-    if (deleteTarget.kind === 'product') {
-      return (
-        <p>
-          Sản phẩm <strong>{deleteTarget.item.nameVietnamese}</strong> sẽ bị gỡ khỏi website và trang quản lý.
-        </p>
-      )
-    }
-    return deleteTarget.item.productCount > 0 ? (
-      <p>
-        Danh mục <strong>{deleteTarget.item.nameVietnamese}</strong> đang có{' '}
-        <strong>{deleteTarget.item.productCount} sản phẩm</strong>. Chỉ xóa được danh mục khi không còn sản phẩm nào: hãy
-        xóa hoặc chuyển các sản phẩm sang danh mục khác trước.
-      </p>
-    ) : (
-      <p>
-        Danh mục <strong>{deleteTarget.item.nameVietnamese}</strong> sẽ bị xóa vĩnh viễn.
-      </p>
-    )
-  })()
 
   return (
     <motion.div
@@ -229,28 +183,28 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
             <span className='font-medium tracking-normal text-muted'>{formatPortalDate(new Date())}</span>
           </div>
           <h1 className='mt-2 text-3xl font-extrabold text-ink sm:text-4xl'>Sản phẩm</h1>
-          <p className='mt-1 text-sm text-muted'>Quản lý danh mục và sản phẩm hiển thị trên trang Sản phẩm của website.</p>
+          <p className='mt-1 text-sm text-muted'>
+            {canManage
+              ? 'Sản phẩm hiển thị trên trang Sản phẩm của website. Bấm vào một sản phẩm để xem chi tiết.'
+              : 'Sản phẩm dùng khi tư vấn và kê đơn chăm sóc tại nhà. Bấm vào một sản phẩm để xem chi tiết.'}
+          </p>
         </div>
-        <div className='flex flex-wrap gap-2'>
-          <button type='button' className={outlineButtonClass} onClick={() => openCategoryForm(null)}>
-            <Icon name='create_new_folder' size={18} />
-            Thêm danh mục
-          </button>
+        {canManage ? (
           <button
             type='button'
-            className={primaryButtonClass}
+            className={`${primaryButtonClass} self-start lg:self-auto`}
             onClick={() => openProductForm(null)}
             disabled={categories.length === 0}
+            title={categories.length === 0 ? 'Cần tạo danh mục sản phẩm trước' : undefined}
           >
             <Icon name='add' size={18} />
             Thêm sản phẩm
           </button>
-        </div>
+        ) : null}
       </header>
 
-      <ul className='mt-6 grid gap-3 sm:grid-cols-4'>
+      <ul className='mt-6 grid gap-3 sm:grid-cols-3'>
         {[
-          { label: 'Danh mục', value: categories.length, icon: 'category' },
           { label: 'Sản phẩm', value: totalProducts, icon: 'inventory_2' },
           { label: 'Đang bán', value: activeTotal, icon: 'visibility' },
           { label: 'Tạm ẩn', value: totalProducts - activeTotal, icon: 'visibility_off' }
@@ -284,113 +238,104 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
           </button>
         </div>
       ) : (
-        <div className='mt-6 grid items-start gap-6 xl:grid-cols-[320px_minmax(0,1fr)]'>
-          <div className='xl:sticky xl:top-24'>
-            {metaLoading ? (
-              <div className={`${portalCardClass} h-80 animate-pulse`} />
-            ) : (
-              <ProductCategoryPanel
-                categories={categories}
-                totalProducts={totalProducts}
-                selectedID={selectedID}
-                onSelect={(id) => {
-                  setSelectedID(id)
-                  setPage(1)
-                }}
-                onEdit={openCategoryForm}
-                onDelete={(item) => askDelete({ kind: 'category', item })}
+        <section className={`${portalCardClass} mt-6 p-3 sm:p-4`} aria-label='Danh sách sản phẩm'>
+          <div className='flex flex-col gap-3 px-1 pb-3 sm:flex-row sm:items-center'>
+            <h2 className='flex-1 text-lg font-extrabold text-ink'>
+              {selectedCategory?.nameVietnamese ?? 'Tất cả sản phẩm'}
+              <span className='ml-2 text-sm font-semibold text-muted'>{result?.total ?? 0}</span>
+            </h2>
+            <div className='relative sm:w-64'>
+              <Icon
+                name='search'
+                size={18}
+                className='pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted'
               />
-            )}
+              <input
+                type='search'
+                aria-label='Tìm sản phẩm'
+                placeholder='Tìm tên, slug, mô tả...'
+                className={`${inputClass} pl-10`}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <Select
+              aria-label='Lọc danh mục'
+              className='w-full sm:w-52'
+              value={selectedID}
+              onChange={(value) => {
+                setSelectedID(value)
+                setPage(1)
+              }}
+              options={[
+                { value: 'all', label: 'Mọi danh mục' },
+                ...categories.map((category) => ({
+                  value: category.productCategoryID,
+                  label: category.nameVietnamese
+                }))
+              ]}
+            />
+            <Select
+              aria-label='Lọc trạng thái'
+              className='w-full sm:w-40'
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value)
+                setPage(1)
+              }}
+              options={[
+                { value: 'all', label: 'Mọi trạng thái' },
+                { value: 'ACTIVE', label: 'Đang bán' },
+                { value: 'INACTIVE', label: 'Tạm ẩn' }
+              ]}
+            />
           </div>
 
-          <section className={`${portalCardClass} p-3 sm:p-4`} aria-label='Danh sách sản phẩm'>
-            <div className='flex flex-col gap-3 px-1 pb-3 sm:flex-row sm:items-center'>
-              <h2 className='flex-1 text-lg font-extrabold text-ink'>
-                {selectedCategory?.nameVietnamese ?? 'Tất cả sản phẩm'}
-                <span className='ml-2 text-sm font-semibold text-muted'>{result?.total ?? 0}</span>
-              </h2>
-              <div className='relative sm:w-64'>
-                <Icon
-                  name='search'
-                  size={18}
-                  className='pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted'
-                />
-                <input
-                  type='search'
-                  aria-label='Tìm sản phẩm'
-                  placeholder='Tìm tên, slug, mô tả...'
-                  className={`${inputClass} pl-10`}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-              <select
-                aria-label='Lọc trạng thái'
-                className={`${inputClass} sm:w-40`}
-                value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value as StatusFilter)
-                  setPage(1)
-                }}
-              >
-                <option value='all'>Mọi trạng thái</option>
-                <option value='ACTIVE'>Đang bán</option>
-                <option value='INACTIVE'>Tạm ẩn</option>
-              </select>
+          {listLoading && !result ? (
+            <div className='space-y-2 p-2'>
+              {[0, 1, 2, 3].map((row) => (
+                <div key={row} className='h-16 animate-pulse rounded-2xl bg-canvas' />
+              ))}
             </div>
-
-            {listLoading && !result ? (
-              <div className='space-y-2 p-2'>
-                {[0, 1, 2, 3].map((row) => (
-                  <div key={row} className='h-16 animate-pulse rounded-2xl bg-canvas' />
-                ))}
-              </div>
-            ) : products.length > 0 ? (
-              <ProductTable
-                products={products}
-                showCategory={selectedID === 'all'}
-                togglingID={togglingID}
-                onEdit={(product) => void editProduct(product)}
-                onDelete={(item) => askDelete({ kind: 'product', item })}
-                onToggleStatus={(product) => void toggleStatus(product)}
-              />
-            ) : (
-              <div className='flex flex-col items-center gap-3 px-6 py-14 text-center'>
-                <Icon name='inventory_2' size={32} className='text-clinic/60' />
-                <p className='text-sm text-muted'>
-                  {totalProducts === 0 ? 'Chưa có sản phẩm nào.' : 'Không có sản phẩm khớp bộ lọc.'}
-                </p>
-                {categories.length > 0 ? (
-                  <button type='button' className={outlineButtonClass} onClick={() => openProductForm(null)}>
-                    <Icon name='add' size={18} />
-                    Thêm sản phẩm
-                  </button>
-                ) : null}
-              </div>
-            )}
-            {result ? (
-              <Pagination
-                className='border-t border-rose-soft/40 px-1 pt-3'
-                page={page}
-                pageSize={result.pageSize}
-                total={result.total}
-                disabled={listLoading}
-                onPageChange={setPage}
-                labels={{ summary: ({ from, to, total }) => `Hiển thị ${from}–${to} / ${total} sản phẩm` }}
-              />
-            ) : null}
-          </section>
-        </div>
+          ) : products.length > 0 ? (
+            <ProductTable
+              products={products}
+              showCategory={selectedID === 'all'}
+              detailBasePath={`/portal/${role}/products`}
+              canManage={canManage}
+              togglingID={togglingID}
+              onEdit={(product) => void editProduct(product)}
+              onDelete={askDelete}
+              onToggleStatus={(product) => void toggleStatus(product)}
+            />
+          ) : (
+            <div className='flex flex-col items-center gap-3 px-6 py-14 text-center'>
+              <Icon name='inventory_2' size={32} className='text-clinic/60' />
+              <p className='text-sm text-muted'>
+                {totalProducts === 0 ? 'Chưa có sản phẩm nào.' : 'Không có sản phẩm khớp bộ lọc.'}
+              </p>
+              {canManage && categories.length > 0 ? (
+                <button type='button' className={outlineButtonClass} onClick={() => openProductForm(null)}>
+                  <Icon name='add' size={18} />
+                  Thêm sản phẩm
+                </button>
+              ) : null}
+            </div>
+          )}
+          {result ? (
+            <Pagination
+              className='border-t border-rose-soft/40 px-1 pt-3'
+              page={page}
+              pageSize={result.pageSize}
+              total={result.total}
+              disabled={listLoading}
+              onPageChange={setPage}
+              labels={{ summary: ({ from, to, total }) => `Hiển thị ${from}–${to} / ${total} sản phẩm` }}
+            />
+          ) : null}
+        </section>
       )}
 
-      <ProductCategoryFormDialog
-        key={`category-${categoryForm.session}`}
-        open={categoryForm.open}
-        category={categoryForm.target}
-        nextOrder={categories.reduce((max, category) => Math.max(max, category.displayOrder), 0) + 1}
-        onClose={closeCategoryForm}
-        onSaved={handleSaved(closeCategoryForm)}
-      />
       <ProductFormDialog
         key={`product-${productForm.session}`}
         open={productForm.open}
@@ -402,30 +347,18 @@ export function ProductManagementPage({ role }: { readonly role: PortalRole }) {
       />
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={deleteTarget?.kind === 'category' ? 'Xóa danh mục sản phẩm?' : 'Xóa sản phẩm?'}
-        message={deleteMessage}
-        confirmLabel={blockedCategory ? 'Đã hiểu' : 'Xóa'}
+        title='Xóa sản phẩm?'
+        message={
+          <p>
+            Sản phẩm <strong>{deleteTarget?.nameVietnamese}</strong> sẽ bị gỡ khỏi website và trang quản lý.
+          </p>
+        }
+        confirmLabel='Xóa'
         busy={deleteBusy}
         error={deleteError}
-        onConfirm={() => (blockedCategory ? closeDelete() : void confirmDelete())}
+        onConfirm={() => void confirmDelete()}
         onClose={closeDelete}
       />
-
-      <AnimatePresence>
-        {notice ? (
-          <motion.p
-            key={notice}
-            role='status'
-            className='fixed right-4 bottom-4 z-[60] flex max-w-sm items-center gap-2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-xl'
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-          >
-            <Icon name='check_circle' size={18} className='text-emerald-300' />
-            {notice}
-          </motion.p>
-        ) : null}
-      </AnimatePresence>
     </motion.div>
   )
 }

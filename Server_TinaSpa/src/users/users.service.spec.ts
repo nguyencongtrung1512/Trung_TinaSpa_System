@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
@@ -15,9 +16,19 @@ describe('UsersService', () => {
   let prisma: {
     $transaction: ReturnType<typeof vi.fn>;
     user: Record<
-      'findMany' | 'count' | 'groupBy' | 'create' | 'update',
+      | 'findMany'
+      | 'count'
+      | 'groupBy'
+      | 'create'
+      | 'update'
+      | 'findUnique'
+      | 'findFirst'
+      | 'delete',
       ReturnType<typeof vi.fn>
     >;
+    refreshToken: { updateMany: ReturnType<typeof vi.fn> };
+    customerService: { findMany: ReturnType<typeof vi.fn> };
+    appointment: Record<'findMany' | 'groupBy', ReturnType<typeof vi.fn>>;
   };
   let branches: {
     getActiveRecord: ReturnType<typeof vi.fn>;
@@ -83,6 +94,15 @@ describe('UsersService', () => {
         ]),
         create: vi.fn(),
         update: vi.fn().mockResolvedValue(customer),
+        findUnique: vi.fn().mockResolvedValue(null),
+        findFirst: vi.fn().mockResolvedValue(null),
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
+      refreshToken: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      customerService: { findMany: vi.fn().mockResolvedValue([]) },
+      appointment: {
+        findMany: vi.fn().mockResolvedValue([]),
+        groupBy: vi.fn().mockResolvedValue([]),
       },
     };
     branches = {
@@ -124,13 +144,14 @@ describe('UsersService', () => {
     expect(args.where.AND).toEqual(
       expect.arrayContaining([{ isActive: true }]),
     );
-    expect(args.include).toEqual({ branch: { select: { branchID: true } } });
+    expect(args.include).toEqual({
+      branch: { select: { branchID: true, nameVietnamese: true } },
+    });
     expect(prisma.user.groupBy.mock.calls[0][0].where.AND[0]).toEqual({
-      role: { in: ['ADMIN', 'MANAGER', 'STAFF', 'CUSTOMER'] },
+      role: { in: ['MANAGER', 'STAFF', 'CUSTOMER'] },
     });
 
     expect(result.roleCounts).toEqual({
-      ADMIN: 0,
       MANAGER: 0,
       STAFF: 3,
       CUSTOMER: 12,
@@ -294,5 +315,193 @@ describe('UsersService', () => {
         manager,
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  describe('managing staff accounts', () => {
+    const staff = {
+      ...customer,
+      userAID: 'staff-aid',
+      userID: 'staff-id',
+      role: 'STAFF',
+      branchAID: 'branch-aid',
+      branch: { branchID: 'BR001' },
+    };
+
+    it('lets a manager edit staff of their branch without moving them', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(staff);
+      await service.updateStaff('staff-id', { fullName: 'Linh Đan' }, manager);
+
+      const { data } = prisma.user.update.mock.calls[0][0];
+      expect(data).toMatchObject({
+        fullName: 'Linh Đan',
+        updatedByAID: 'mgr-aid',
+      });
+      expect(data.branchAID).toBeUndefined();
+      expect(prisma.refreshToken.updateMany).not.toHaveBeenCalled();
+
+      prisma.user.findUnique.mockResolvedValueOnce(staff);
+      await expect(
+        service.updateStaff('staff-id', { branchID: 'BR002' }, manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('hides staff of other branches and managers from a manager', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({
+        ...staff,
+        branchAID: 'other',
+      });
+      await expect(
+        service.setActive('staff-id', false, manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      prisma.user.findUnique.mockResolvedValueOnce({
+        ...staff,
+        role: 'MANAGER',
+      });
+      await expect(
+        service.updateStaff('staff-id', { fullName: 'X' }, manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('lets admin move staff to another branch and signs them out', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(staff);
+      branches.getActiveRecord.mockResolvedValueOnce({
+        branchAID: 'branch-2',
+        branchID: 'BR002',
+      });
+      await service.updateStaff('staff-id', { branchID: 'BR002' }, admin);
+
+      expect(prisma.user.update.mock.calls[0][0].data.branchAID).toBe(
+        'branch-2',
+      );
+      expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userAID: 'staff-aid', revokedAt: null },
+        }),
+      );
+    });
+
+    it('locks a branch customer and revokes their sessions', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(customer);
+      prisma.user.findFirst.mockResolvedValueOnce({
+        userAID: customer.userAID,
+      });
+      await service.setActive(customer.userID, false, manager);
+
+      expect(prisma.user.update.mock.calls[0][0].data.isActive).toBe(false);
+      expect(prisma.refreshToken.updateMany).toHaveBeenCalled();
+    });
+
+    it('refuses to lock yourself or another admin', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({
+        ...staff,
+        userAID: 'admin-aid',
+        role: 'ADMIN',
+      });
+      await expect(
+        service.setActive('admin-id', false, admin),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      prisma.user.findUnique.mockResolvedValueOnce({ ...staff, role: 'ADMIN' });
+      await expect(
+        service.setActive('staff-id', false, admin),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('deletes an unused account but refuses one with history', async () => {
+      const unused = {
+        _count: {
+          appointments: 0,
+          confirmedAppointments: 0,
+          servedAppointments: 0,
+          customerServices: 0,
+          authoredBlogs: 0,
+        },
+      };
+      prisma.user.findUnique
+        .mockResolvedValueOnce(staff)
+        .mockResolvedValueOnce(unused);
+      await service.remove('staff-id', manager);
+      expect(prisma.user.delete).toHaveBeenCalledWith({
+        where: { userAID: 'staff-aid' },
+      });
+
+      prisma.user.findUnique
+        .mockResolvedValueOnce(staff)
+        .mockResolvedValueOnce({
+          _count: { ...unused._count, servedAppointments: 2 },
+        });
+      await expect(service.remove('staff-id', manager)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(prisma.user.delete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('account detail', () => {
+    it('scopes a customer detail to the manager branch and sums services', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(customer);
+      prisma.user.findFirst.mockResolvedValueOnce({
+        userAID: customer.userAID,
+      });
+      prisma.customerService.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            priceSnapshot: new Prisma.Decimal(300000),
+            quantity: 2,
+            usedAt: new Date('2026-10-01T03:00:00.000Z'),
+          },
+        ]);
+      prisma.appointment.groupBy.mockResolvedValueOnce([
+        { status: 'COMPLETED', _count: { _all: 3 } },
+        { status: 'CANCELLED', _count: { _all: 1 } },
+      ]);
+
+      const result = await service.getDetail(customer.userID, manager);
+
+      const serviceWhere =
+        prisma.customerService.findMany.mock.calls[0][0].where;
+      expect(serviceWhere).toEqual({
+        deletedAt: null,
+        customerAID: customer.userAID,
+        branchAID: 'branch-aid',
+      });
+      const appointmentWhere =
+        prisma.appointment.findMany.mock.calls[0][0].where;
+      expect(appointmentWhere.branchAID).toBe('branch-aid');
+      expect(appointmentWhere.OR).toContainEqual({
+        customerAID: customer.userAID,
+      });
+      expect(result.stats).toMatchObject({
+        serviceCount: 2,
+        serviceTotal: 600000,
+        appointmentCount: 4,
+        completedAppointments: 3,
+        cancelledAppointments: 1,
+      });
+    });
+
+    it('lists services a staff member recorded and bookings they handled', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({
+        ...customer,
+        userAID: 'staff-aid',
+        userID: 'staff-id',
+        role: 'STAFF',
+        branchAID: 'branch-aid',
+      });
+
+      await service.getDetail('staff-id', manager);
+
+      expect(
+        prisma.customerService.findMany.mock.calls[0][0].where,
+      ).toMatchObject({
+        createdByAID: 'staff-aid',
+      });
+      expect(prisma.appointment.findMany.mock.calls[0][0].where.OR).toEqual([
+        { confirmedByAID: 'staff-aid' },
+        { servedByAID: 'staff-aid' },
+      ]);
+    });
   });
 });

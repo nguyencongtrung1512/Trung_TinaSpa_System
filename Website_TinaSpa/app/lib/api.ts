@@ -10,7 +10,7 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  readonly method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   readonly body?: unknown
   /** Sends the access token and retries once with a refreshed token on 401. */
   readonly auth?: boolean
@@ -36,6 +36,10 @@ const apiMessages: Record<string, string> = {
   'Unsupported content type': 'Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.',
   'Object not found': 'Không tìm thấy tệp.',
   'Branch not found': 'Khu vực không tồn tại hoặc đã ngừng nhận lịch.',
+  'Branch slug already exists': 'Slug chi nhánh đã tồn tại.',
+  'Branch still has staff': 'Chi nhánh còn quản lý/nhân viên. Hãy chuyển họ sang chi nhánh khác trước.',
+  'Branch still has upcoming appointments': 'Chi nhánh còn lịch hẹn sắp tới chưa xử lý.',
+  'closeTime must be after openTime': 'Giờ đóng cửa phải sau giờ mở cửa.',
   'Appointment not found': 'Không tìm thấy lịch hẹn.',
   'Appointment already exists on this date': 'Số điện thoại này đã có lịch hẹn trong ngày đã chọn.',
   'Appointment time has passed': 'Giờ hẹn đã qua, vui lòng chọn thời gian khác.',
@@ -43,6 +47,12 @@ const apiMessages: Record<string, string> = {
   'Only pending appointments can be confirmed': 'Chỉ xác nhận được lịch đang chờ xác nhận.',
   'Customer has already checked in': 'Khách đã check-in, không thể đổi thời gian hoặc khu vực.',
   'Customer not found': 'Không tìm thấy khách hàng.',
+  'User has history; lock the account instead':
+    'Tài khoản đã có lịch hẹn, dịch vụ hoặc bài viết nên không thể xóa. Hãy khóa tài khoản thay vì xóa.',
+  'User not found': 'Không tìm thấy tài khoản hoặc tài khoản thuộc khu vực khác.',
+  'Only ADMIN can move staff to another branch': 'Chỉ quản trị viên được chuyển nhân viên sang khu vực khác.',
+  'Use your profile to change your own account': 'Hãy cập nhật tài khoản của chính bạn trong trang Hồ sơ.',
+  'dateOfBirth must not be in the future': 'Ngày sinh không được ở tương lai.',
   'Customer service not found': 'Không tìm thấy dịch vụ đã ghi nhận.',
   'usedAt must not be in the future': 'Ngày sử dụng không được ở tương lai.',
   'Current password is incorrect': 'Mật khẩu hiện tại không đúng.',
@@ -50,13 +60,15 @@ const apiMessages: Record<string, string> = {
   'phone is not a valid phone number': 'Số điện thoại không hợp lệ.',
   'Blog not found': 'Không tìm thấy bài viết.',
   'Blog category not found': 'Không tìm thấy danh mục bài viết.',
+  'Blog category still has blogs': 'Danh mục vẫn còn bài viết. Hãy chuyển bài sang danh mục khác hoặc ẩn danh mục.',
   'Blog slug already exists': 'Đường dẫn bài viết đã tồn tại, hãy đổi slug.',
   'Blog category slug already exists': 'Đường dẫn danh mục đã tồn tại, hãy đổi slug.',
   'Product not found': 'Không tìm thấy sản phẩm.',
   'Product slug already exists': 'Đường dẫn sản phẩm đã tồn tại, hãy đổi slug.',
   'Product category not found': 'Không tìm thấy danh mục sản phẩm.',
   'Product category slug already exists': 'Đường dẫn danh mục đã tồn tại, hãy đổi slug.',
-  'Product category still has products': 'Danh mục vẫn còn sản phẩm. Hãy xóa hoặc chuyển sản phẩm sang danh mục khác trước.',
+  'Product category still has products':
+    'Danh mục vẫn còn sản phẩm. Hãy xóa hoặc chuyển sản phẩm sang danh mục khác trước.',
   'compareAtPrice must not be lower than price': 'Giá gốc phải lớn hơn hoặc bằng giá bán.',
   'At least one variant is required': 'Sản phẩm cần ít nhất một phiên bản.',
   'Variant SKU already exists': 'Mã SKU đã tồn tại, hãy đổi mã khác.',
@@ -65,7 +77,8 @@ const apiMessages: Record<string, string> = {
   'Only draft blogs can be edited': 'Chỉ sửa được bài đang ở trạng thái bản nháp.',
   'publishedAt is required for published blogs': 'Bài xuất bản phải có thời gian xuất bản.',
   'slug must be lowercase letters, digits and hyphens': 'Đường dẫn chỉ gồm chữ thường, số và dấu gạch ngang.',
-  'thumbnailURL must be an https URL or a site-relative path': 'Ảnh đại diện chỉ nhận đường dẫn https:// hoặc đường dẫn nội bộ bắt đầu bằng /.',
+  'thumbnailURL must be an https URL or a site-relative path':
+    'Ảnh đại diện chỉ nhận đường dẫn https:// hoặc đường dẫn nội bộ bắt đầu bằng /.',
   Unauthorized: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
 }
 

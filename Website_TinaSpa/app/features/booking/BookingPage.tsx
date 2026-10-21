@@ -15,6 +15,7 @@ import {
   type Branch,
   type BookingReceipt
 } from '~/lib/booking'
+import { Select } from '~/components/ui/Select'
 
 interface BookingValues {
   readonly name: string
@@ -240,22 +241,16 @@ export function BookingPage() {
                     error={errorText('branch') ?? (branchesError ? t('booking.errors.branchesLoad') : undefined)}
                     hint={selectedBranch ? (branchAddress(selectedBranch, language) ?? undefined) : undefined}
                   >
-                    <select
+                    <Select
                       id='booking-branch'
                       name='branch'
+                      variant='bare'
                       value={values.branch}
                       aria-invalid={Boolean(errors.branch)}
-                      onChange={(event) => update('branch', event.target.value)}
-                      className={`${inputClass} appearance-none ${values.branch ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
-                    >
-                      <option value=''>{t('booking.fields.branchPlaceholder')}</option>
-                      {branches.map((item) => (
-                        <option key={item.branchID} value={item.branchID}>
-                          {branchName(item, language)}
-                        </option>
-                      ))}
-                    </select>
-                    <Icon name='expand_more' size={18} className='pointer-events-none text-[#D4145A]' />
+                      onChange={(value) => update('branch', value)}
+                      placeholder={t('booking.fields.branchPlaceholder')}
+                      options={branches.map((item) => ({ value: item.branchID, label: branchName(item, language) }))}
+                    />
                   </UnderlineField>
                 </div>
 
@@ -294,29 +289,23 @@ export function BookingPage() {
                         : undefined
                     }
                   >
-                    <select
+                    <Select
                       id='booking-time'
                       name='time'
+                      variant='bare'
                       value={values.time}
                       disabled={!selectedBranch}
                       aria-invalid={Boolean(errors.time)}
-                      onChange={(event) => update('time', event.target.value)}
-                      className={`${inputClass} appearance-none disabled:cursor-not-allowed ${values.time ? 'text-[#3A2930]' : 'text-[#8A6573]'}`}
-                    >
-                      <option value=''>
-                        {selectedBranch
+                      onChange={(value) => update('time', value)}
+                      placeholder={
+                        selectedBranch
                           ? availableTimes.length > 0
                             ? t('booking.fields.timePlaceholder')
                             : t('booking.fields.timeNone')
-                          : t('booking.fields.timeNeedBranch')}
-                      </option>
-                      {availableTimes.map((slot) => (
-                        <option key={slot} value={slot}>
-                          {slot}
-                        </option>
-                      ))}
-                    </select>
-                    <Icon name='expand_more' size={18} className='pointer-events-none text-[#D4145A]' />
+                          : t('booking.fields.timeNeedBranch')
+                      }
+                      options={availableTimes.map((slot) => ({ value: slot, label: slot }))}
+                    />
                   </UnderlineField>
                   <UnderlineField
                     id='booking-note'

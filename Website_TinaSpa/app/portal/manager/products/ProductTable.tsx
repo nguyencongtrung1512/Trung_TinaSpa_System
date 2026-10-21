@@ -1,3 +1,4 @@
+import { Link, useNavigate } from 'react-router'
 import { Icon } from '~/components/ui/Icon'
 import { formatPrice } from '../services/catalog.api'
 import { iconButtonClass } from '../services/form-ui'
@@ -6,13 +7,27 @@ import type { Product } from './product.api'
 export interface ProductTableProps {
   readonly products: readonly Product[]
   readonly showCategory: boolean
+  /** Base path of the detail page; a row links to `${detailBasePath}/${productID}`. */
+  readonly detailBasePath: string
+  /** Staff only read: no status toggle, edit or delete. */
+  readonly canManage: boolean
   readonly togglingID: string | null
   readonly onEdit: (product: Product) => void
   readonly onDelete: (product: Product) => void
   readonly onToggleStatus: (product: Product) => void
 }
 
-export function ProductTable({ products, showCategory, togglingID, onEdit, onDelete, onToggleStatus }: ProductTableProps) {
+export function ProductTable({
+  products,
+  showCategory,
+  detailBasePath,
+  canManage,
+  togglingID,
+  onEdit,
+  onDelete,
+  onToggleStatus
+}: ProductTableProps) {
+  const navigate = useNavigate()
   return (
     <div className='overflow-x-auto'>
       <table className='w-full min-w-[720px] text-left text-sm'>
@@ -32,16 +47,23 @@ export function ProductTable({ products, showCategory, togglingID, onEdit, onDel
             <th scope='col' className='px-4 py-3'>
               Trạng thái
             </th>
-            <th scope='col' className='px-4 py-3 text-right'>
-              <span className='sr-only'>Thao tác</span>
-            </th>
+            {canManage ? (
+              <th scope='col' className='px-4 py-3 text-right'>
+                <span className='sr-only'>Thao tác</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
           {products.map((product) => {
             const active = product.status === 'ACTIVE'
+            const detailHref = `${detailBasePath}/${encodeURIComponent(product.productID)}`
             return (
-              <tr key={product.productID} className='border-b border-rose-soft/40 last:border-0 hover:bg-canvas/60'>
+              <tr
+                key={product.productID}
+                onClick={() => navigate(detailHref)}
+                className='cursor-pointer border-b border-rose-soft/40 last:border-0 hover:bg-canvas/60'
+              >
                 <td className='max-w-[320px] px-4 py-3'>
                   <div className='flex items-center gap-3'>
                     <span className='grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-canvas text-clinic'>
@@ -52,7 +74,13 @@ export function ProductTable({ products, showCategory, togglingID, onEdit, onDel
                       )}
                     </span>
                     <div className='min-w-0'>
-                      <p className='truncate font-bold text-ink'>{product.nameVietnamese}</p>
+                      <Link
+                        to={detailHref}
+                        onClick={(event) => event.stopPropagation()}
+                        className='block truncate font-bold text-ink hover:text-clinic'
+                      >
+                        {product.nameVietnamese}
+                      </Link>
                       {product.subtitleVietnamese ? (
                         <p className='truncate text-xs text-muted' title={product.subtitleVietnamese}>
                           {product.subtitleVietnamese}
@@ -74,41 +102,63 @@ export function ProductTable({ products, showCategory, togglingID, onEdit, onDel
                   ) : null}
                 </td>
                 <td className='px-4 py-3'>
-                  <button
-                    type='button'
-                    onClick={() => onToggleStatus(product)}
-                    disabled={togglingID === product.productID}
-                    title={active ? 'Bấm để tạm ẩn' : 'Bấm để mở lại'}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap transition disabled:opacity-50 ${
-                      active
-                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        : 'bg-ink/5 text-muted hover:bg-ink/10'
-                    }`}
-                  >
-                    <span className={`size-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-muted'}`} />
-                    {active ? 'Đang bán' : 'Tạm ẩn'}
-                  </button>
-                </td>
-                <td className='px-4 py-3'>
-                  <div className='flex justify-end'>
+                  {canManage ? (
                     <button
                       type='button'
-                      className={iconButtonClass}
-                      aria-label={`Sửa ${product.nameVietnamese}`}
-                      onClick={() => onEdit(product)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onToggleStatus(product)
+                      }}
+                      disabled={togglingID === product.productID}
+                      title={active ? 'Bấm để tạm ẩn' : 'Bấm để mở lại'}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap transition disabled:opacity-50 ${
+                        active
+                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          : 'bg-ink/5 text-muted hover:bg-ink/10'
+                      }`}
                     >
-                      <Icon name='edit' size={18} />
+                      <span className={`size-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-muted'}`} />
+                      {active ? 'Đang bán' : 'Tạm ẩn'}
                     </button>
-                    <button
-                      type='button'
-                      className={`${iconButtonClass} hover:text-red-600`}
-                      aria-label={`Xóa ${product.nameVietnamese}`}
-                      onClick={() => onDelete(product)}
+                  ) : (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap ${
+                        active ? 'bg-emerald-50 text-emerald-700' : 'bg-ink/5 text-muted'
+                      }`}
                     >
-                      <Icon name='delete' size={18} />
-                    </button>
-                  </div>
+                      <span className={`size-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-muted'}`} />
+                      {active ? 'Đang bán' : 'Tạm ẩn'}
+                    </span>
+                  )}
                 </td>
+                {canManage ? (
+                  <td className='px-4 py-3'>
+                    <div className='flex justify-end'>
+                      <button
+                        type='button'
+                        className={iconButtonClass}
+                        aria-label={`Sửa ${product.nameVietnamese}`}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onEdit(product)
+                        }}
+                      >
+                        <Icon name='edit' size={18} />
+                      </button>
+                      <button
+                        type='button'
+                        className={`${iconButtonClass} hover:text-red-600`}
+                        aria-label={`Xóa ${product.nameVietnamese}`}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onDelete(product)
+                        }}
+                      >
+                        <Icon name='delete' size={18} />
+                      </button>
+                    </div>
+                  </td>
+                ) : null}
               </tr>
             )
           })}

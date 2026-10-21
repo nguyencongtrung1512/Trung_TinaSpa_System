@@ -1,37 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { ActionMenu, type ActionMenuItem } from '~/components/ui/ActionMenu'
 import { Icon } from '~/components/ui/Icon'
 import { Pagination } from '~/components/ui/Pagination'
+import { useToast } from '~/components/ui/toast-view'
 import { formatPortalDate } from '~/portal/format'
-import { inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
+import { useSession } from '~/lib/auth'
+import { ConfirmDialog, inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
 import { portalRoleLabel } from '~/portal/navigation'
 import { portalCardClass } from '~/portal/styles'
 import type { PortalRole } from '~/portal/types'
 import { useBranches } from '~/portal/appointments/useAppointments'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { StaffFormDialog } from './StaffFormDialog'
 import {
-  ageFromDateOfBirth,
+  deleteUser,
   listUsers,
-  userGenderLabels,
+  setUserActive,
   userRoleLabels,
   type PortalUser,
   type UserListResult,
   type UserRole
 } from './users.api'
+import { Select } from '~/components/ui/Select'
 
-type RoleTab = UserRole | 'all'
 type ActiveFilter = 'all' | 'active' | 'locked'
 
 const PAGE_SIZE = 20
-
-const roleBadgeClass: Record<UserRole, string> = {
-  CUSTOMER: 'bg-mist text-clinic',
-  STAFF: 'bg-sky-50 text-sky-700',
-  MANAGER: 'bg-violet-50 text-violet-700',
-  ADMIN: 'bg-amber-50 text-amber-700'
-}
-
-const dateFormatter = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 function initials(fullName: string) {
   const words = fullName.trim().split(/\s+/)
@@ -60,6 +55,8 @@ export interface UserListPageProps {
   readonly entityLabel: string
   readonly canCreateStaff?: boolean
   readonly canPickBranch?: boolean
+  /** Thêm sửa (nhân viên/quản lý), khóa/mở khóa và xóa vào menu thao tác; backend vẫn kiểm tra quyền theo khu vực. */
+  readonly canManage?: boolean
 }
 
 export function UserListPage({
@@ -69,12 +66,16 @@ export function UserListPage({
   roles,
   entityLabel,
   canCreateStaff,
-  canPickBranch
+  canPickBranch,
+  canManage
 }: UserListPageProps) {
   const reduceMotion = useReducedMotion()
+  const session = useSession()
+  const branches = useBranches()
   const multiRole = roles.length > 1
-  const [roleTab, setRoleTab] = useState<RoleTab>(multiRole ? 'all' : roles[0])
+  const [roleTab, setRoleTab] = useState<UserRole>(roles[0])
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all')
+  const [branchFilter, setBranchFilter] = useState('')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -82,11 +83,19 @@ export function UserListPage({
   const [result, setResult] = useState<UserListResult>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
-  const [staffForm, setStaffForm] = useState({ session: 0, open: false })
-  const [notice, setNotice] = useState<string>()
-  const noticeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-  useEffect(() => () => clearTimeout(noticeTimer.current), [])
+  const [staffForm, setStaffForm] = useState<{ session: number; open: boolean; user?: PortalUser }>({
+    session: 0,
+    open: false
+  })
+  const [statusTarget, setStatusTarget] = useState<PortalUser | null>(null)
+  const [statusBusy, setStatusBusy] = useState(false)
+  const [statusError, setStatusError] = useState<string>()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const [deleteTarget, setDeleteTarget] = useState<PortalUser | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState<string>()
+  const toast = useToast()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -101,8 +110,9 @@ export function UserListPage({
     setLoading(true)
     listUsers({
       search: debouncedSearch || undefined,
-      role: roleTab === 'all' ? undefined : roleTab,
+      role: roleTab,
       isActive: activeFilter === 'all' ? undefined : activeFilter === 'active',
+      branchID: canPickBranch && branchFilter ? branchFilter : undefined,
       page,
       pageSize: PAGE_SIZE
     })
@@ -120,27 +130,103 @@ export function UserListPage({
     return () => {
       cancelled = true
     }
-  }, [debouncedSearch, roleTab, activeFilter, page, reloadKey, entityLabel])
+  }, [debouncedSearch, roleTab, activeFilter, branchFilter, canPickBranch, page, reloadKey, entityLabel])
 
   const closeStaffForm = useCallback(() => setStaffForm((current) => ({ ...current, open: false })), [])
 
   const handleStaffSaved = (message: string) => {
+    const editing = staffForm.user !== undefined
     closeStaffForm()
-    setNotice(message)
-    clearTimeout(noticeTimer.current)
-    noticeTimer.current = setTimeout(() => setNotice(undefined), 3500)
-    setPage(1)
+    toast.success(message)
+    if (!editing) setPage(1)
     setReloadKey((key) => key + 1)
   }
 
+  const openCreate = () => setStaffForm((current) => ({ session: current.session + 1, open: true }))
+  const openEdit = (user: PortalUser) => setStaffForm((current) => ({ session: current.session + 1, open: true, user }))
+
+  const closeStatus = () => {
+    if (statusBusy) return
+    setStatusTarget(null)
+    setStatusError(undefined)
+  }
+
+  async function confirmStatus() {
+    if (!statusTarget) return
+    const nextActive = !statusTarget.isActive
+    setStatusBusy(true)
+    setStatusError(undefined)
+    try {
+      await setUserActive(statusTarget.userID, nextActive)
+      toast.success(`Đã ${nextActive ? 'mở khóa' : 'khóa'} tài khoản`, statusTarget.fullName)
+      setStatusTarget(null)
+      setReloadKey((key) => key + 1)
+    } catch (reason) {
+      setStatusError(reason instanceof Error ? reason.message : 'Không thể cập nhật trạng thái tài khoản.')
+    } finally {
+      setStatusBusy(false)
+    }
+  }
+
+  const closeDelete = () => {
+    if (deleteBusy) return
+    setDeleteTarget(null)
+    setDeleteError(undefined)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleteBusy(true)
+    setDeleteError(undefined)
+    try {
+      await deleteUser(deleteTarget.userID)
+      toast.success('Đã xóa tài khoản', deleteTarget.fullName)
+      setDeleteTarget(null)
+      if (result && result.items.length === 1 && page > 1) setPage(page - 1)
+      setReloadKey((key) => key + 1)
+    } catch (reason) {
+      setDeleteError(reason instanceof Error ? reason.message : 'Không thể xóa tài khoản.')
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
+
+  const branchLabelOf = (user: PortalUser) => (user.branchID ? (user.branchName ?? user.branchID) : 'Toàn hệ thống')
+
+  // Trang chi tiết nằm ngay dưới trang danh sách, VD /portal/manager/staff/:userID.
+  const detailPath = (user: PortalUser) => `${pathname.replace(/\/$/, '')}/${encodeURIComponent(user.userID)}`
+
+  // Quản lý chỉ sửa nhân viên; quản trị sửa được cả quản lý. Không thao tác trên chính mình hay tài khoản quản trị.
+  const isSelf = (user: PortalUser) => user.userID === session?.user.userID
+  const canEdit = (user: PortalUser) =>
+    canManage && !isSelf(user) && (user.role === 'STAFF' || (role === 'admin' && user.role === 'MANAGER'))
+  const canToggle = (user: PortalUser) => canManage && !isSelf(user) && user.role !== 'ADMIN'
+
+  const menuItems = (user: PortalUser): ActionMenuItem[] => [
+    { label: 'Xem chi tiết', icon: 'visibility', onSelect: () => navigate(detailPath(user)) },
+    ...(canEdit(user) ? [{ label: 'Chỉnh sửa', icon: 'edit', onSelect: () => openEdit(user) }] : []),
+    ...(canToggle(user)
+      ? [
+          {
+            label: user.isActive ? 'Khóa tài khoản' : 'Mở khóa',
+            icon: user.isActive ? 'lock' : 'lock_open',
+            onSelect: () => setStatusTarget(user)
+          },
+          {
+            label: 'Xóa',
+            icon: 'delete',
+            tone: 'danger' as const,
+            onSelect: () => {
+              setDeleteError(undefined)
+              setDeleteTarget(user)
+            }
+          }
+        ]
+      : [])
+  ]
+
   const roleCounts = result?.roleCounts
-  const countOf = (value: RoleTab) =>
-    roleCounts
-      ? value === 'all'
-        ? roles.reduce((sum, item) => sum + (roleCounts[item] ?? 0), 0)
-        : (roleCounts[value] ?? 0)
-      : undefined
-  const tabs: RoleTab[] = ['all', ...roles]
+  const countOf = (value: UserRole) => (roleCounts ? (roleCounts[value] ?? 0) : undefined)
 
   return (
     <motion.div
@@ -158,11 +244,7 @@ export function UserListPage({
           <p className='mt-1 text-sm text-muted'>{description}</p>
         </div>
         {canCreateStaff ? (
-          <button
-            type='button'
-            className={`${primaryButtonClass} self-start lg:self-auto`}
-            onClick={() => setStaffForm((current) => ({ session: current.session + 1, open: true }))}
-          >
+          <button type='button' className={`${primaryButtonClass} self-start lg:self-auto`} onClick={openCreate}>
             <Icon name='person_add' size={18} />
             Thêm nhân viên
           </button>
@@ -173,7 +255,7 @@ export function UserListPage({
         <div className='flex flex-col gap-3 px-1 pb-3 lg:flex-row lg:items-center'>
           {multiRole ? (
             <div role='tablist' aria-label='Lọc theo vai trò' className='flex flex-1 flex-wrap gap-1.5'>
-              {tabs.map((tab) => {
+              {roles.map((tab) => {
                 const selected = roleTab === tab
                 return (
                   <button
@@ -191,7 +273,7 @@ export function UserListPage({
                         : 'bg-canvas text-ink/70 hover:bg-mist hover:text-clinic'
                     }`}
                   >
-                    {tab === 'all' ? 'Tất cả' : userRoleLabels[tab]}
+                    {userRoleLabels[tab]}
                     <span
                       className={`min-w-6 rounded-full px-1.5 text-center text-[11px] tabular-nums ${
                         selected ? 'bg-white/20' : 'bg-white text-muted'
@@ -224,19 +306,36 @@ export function UserListPage({
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-          <select
+          <Select
             aria-label='Lọc trạng thái tài khoản'
-            className={`${inputClass} lg:w-44`}
+            className='w-full lg:w-44'
             value={activeFilter}
-            onChange={(event) => {
-              setActiveFilter(event.target.value as ActiveFilter)
+            onChange={(value) => {
+              setActiveFilter(value)
               setPage(1)
             }}
-          >
-            <option value='all'>Mọi trạng thái</option>
-            <option value='active'>Đang hoạt động</option>
-            <option value='locked'>Đã khóa</option>
-          </select>
+            options={[
+              { value: 'all', label: 'Mọi trạng thái' },
+              { value: 'active', label: 'Đang hoạt động' },
+              { value: 'locked', label: 'Đã khóa' }
+            ]}
+          />
+
+          {canPickBranch && branches.length > 0 ? (
+            <Select
+              aria-label='Lọc theo khu vực'
+              className='w-full lg:w-48'
+              value={branchFilter}
+              onChange={(value) => {
+                setBranchFilter(value)
+                setPage(1)
+              }}
+              options={[
+                { value: '', label: 'Tất cả khu vực' },
+                ...branches.map((b) => ({ value: b.branchID, label: b.nameVietnamese }))
+              ]}
+            />
+          ) : null}
         </div>
 
         {error ? (
@@ -256,76 +355,58 @@ export function UserListPage({
           </div>
         ) : result && result.items.length > 0 ? (
           <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
-            <table className='w-full min-w-[760px] text-left text-sm'>
+            <table className='w-full min-w-[640px] text-left text-sm'>
               <thead>
                 <tr className='border-b border-rose-soft/60 text-[11px] font-bold tracking-wide text-muted uppercase'>
                   <th scope='col' className='px-4 py-3'>
                     Họ tên
                   </th>
                   <th scope='col' className='px-4 py-3'>
-                    Liên hệ
+                    Số điện thoại
                   </th>
                   <th scope='col' className='px-4 py-3'>
-                    Giới tính
+                    Khu vực
                   </th>
-                  <th scope='col' className='px-4 py-3 text-right'>
-                    Tuổi
-                  </th>
-                  {multiRole ? (
-                    <th scope='col' className='px-4 py-3'>
-                      Vai trò
-                    </th>
-                  ) : null}
                   <th scope='col' className='px-4 py-3'>
                     Trạng thái
                   </th>
-                  <th scope='col' className='px-4 py-3 text-right'>
-                    Ngày tạo
+                  <th scope='col' className='w-14 px-2 py-3'>
+                    <span className='sr-only'>Thao tác</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {result.items.map((user) => {
-                  const age = ageFromDateOfBirth(user.dateOfBirth)
                   return (
                     <tr key={user.userID} className='border-b border-rose-soft/40 last:border-0 hover:bg-canvas/60'>
                       <td className='px-4 py-3'>
-                        <div className='flex items-center gap-3'>
+                        <Link to={detailPath(user)} className='group flex items-center gap-3 rounded-xl text-left'>
                           <UserAvatar user={user} />
-                          <div className='min-w-0'>
-                            <p className='truncate font-bold text-ink'>{user.fullName}</p>
-                            <p className='font-mono text-[11px] text-muted/80'>{user.userID}</p>
-                          </div>
-                        </div>
+                          <span className='min-w-0'>
+                            <span className='block truncate font-bold text-ink group-hover:text-clinic'>
+                              {user.fullName}
+                            </span>
+                            <span className='block font-mono text-[11px] text-muted/80'>{user.userID}</span>
+                          </span>
+                        </Link>
                       </td>
-                      <td className='max-w-[260px] px-4 py-3'>
+                      <td className='px-4 py-3 whitespace-nowrap'>
                         <a href={`tel:${user.phone}`} className='text-ink/80 tabular-nums hover:text-clinic'>
                           {user.phone}
                         </a>
-                        {user.address ? (
-                          <p className='truncate text-xs text-muted' title={user.address}>
-                            {user.address}
-                          </p>
-                        ) : null}
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap text-ink/80'>
-                        {user.gender ? userGenderLabels[user.gender] : '—'}
-                      </td>
-                      <td
-                        className='px-4 py-3 text-right whitespace-nowrap text-ink/80 tabular-nums'
-                        title={user.dateOfBirth ? dateFormatter.format(new Date(user.dateOfBirth)) : undefined}
-                      >
-                        {age ?? '—'}
-                      </td>
-                      {multiRole ? (
-                        <td className='px-4 py-3'>
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap ${roleBadgeClass[user.role] ?? 'bg-canvas text-muted'}`}
-                          >
-                            {userRoleLabels[user.role] ?? user.role}
+                      <td className='px-4 py-3 whitespace-nowrap text-xs text-ink/80'>
+                        {user.branchID ? (
+                          <span className='inline-flex items-center gap-1 rounded-full bg-mist/60 px-2.5 py-1 font-semibold text-clinic'>
+                            <Icon name='location_on' size={14} />
+                            {branchLabelOf(user)}
                           </span>
-                        </td>
-                      ) : null}
+                        ) : (
+                          <span className='inline-flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-muted'>
+                            Toàn hệ thống
+                          </span>
+                        )}
+                      </td>
                       <td className='px-4 py-3'>
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap ${
@@ -336,8 +417,8 @@ export function UserListPage({
                           {user.isActive ? 'Hoạt động' : 'Đã khóa'}
                         </span>
                       </td>
-                      <td className='px-4 py-3 text-right whitespace-nowrap text-ink/80 tabular-nums'>
-                        {dateFormatter.format(new Date(user.createdAt))}
+                      <td className='px-2 py-3 text-right'>
+                        <ActionMenu label={`Thao tác với ${user.fullName}`} items={menuItems(user)} />
                       </td>
                     </tr>
                   )
@@ -354,11 +435,7 @@ export function UserListPage({
                 : `Chưa có ${entityLabel} nào.`}
             </p>
             {canCreateStaff && !debouncedSearch && activeFilter === 'all' ? (
-              <button
-                type='button'
-                className={outlineButtonClass}
-                onClick={() => setStaffForm((current) => ({ session: current.session + 1, open: true }))}
-              >
+              <button type='button' className={outlineButtonClass} onClick={openCreate}>
                 <Icon name='person_add' size={18} />
                 Thêm nhân viên
               </button>
@@ -379,30 +456,58 @@ export function UserListPage({
         ) : null}
       </section>
 
-      {canCreateStaff ? (
+      {canCreateStaff || canManage ? (
         <StaffFormDialog
           key={staffForm.session}
           open={staffForm.open}
           onClose={closeStaffForm}
           onSaved={handleStaffSaved}
+          canPickBranch={canPickBranch}
+          canCreateManager={role === 'admin'}
+          user={staffForm.user}
         />
       ) : null}
 
-      <AnimatePresence>
-        {notice ? (
-          <motion.p
-            key={notice}
-            role='status'
-            className='fixed right-4 bottom-4 z-[60] flex max-w-sm items-center gap-2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-xl'
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-          >
-            <Icon name='check_circle' size={18} className='text-emerald-300' />
-            {notice}
-          </motion.p>
-        ) : null}
-      </AnimatePresence>
+      <ConfirmDialog
+        open={statusTarget !== null}
+        title={statusTarget?.isActive ? 'Khóa tài khoản?' : 'Mở khóa tài khoản?'}
+        message={
+          statusTarget?.isActive ? (
+            <>
+              <strong>{statusTarget.fullName}</strong> sẽ bị đăng xuất ngay và không thể đăng nhập cho đến khi được mở
+              khóa.
+            </>
+          ) : (
+            <>
+              <strong>{statusTarget?.fullName}</strong> có thể đăng nhập lại bằng mật khẩu hiện tại.
+            </>
+          )
+        }
+        confirmLabel={statusTarget?.isActive ? 'Khóa' : 'Mở khóa'}
+        icon={statusTarget?.isActive ? 'lock' : 'lock_open'}
+        busyLabel='Đang lưu...'
+        tone={statusTarget?.isActive ? 'danger' : 'primary'}
+        busy={statusBusy}
+        error={statusError}
+        onConfirm={() => void confirmStatus()}
+        onClose={closeStatus}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title='Xóa tài khoản?'
+        message={
+          <>
+            Tài khoản <strong>{deleteTarget?.fullName}</strong> ({deleteTarget?.phone}) sẽ bị xóa vĩnh viễn. Chỉ xóa
+            được tài khoản chưa có lịch hẹn, dịch vụ hoặc bài viết; nếu đã có, hãy khóa tài khoản để giữ lịch sử.
+          </>
+        }
+        confirmLabel='Xóa'
+        busy={deleteBusy}
+        error={deleteError}
+        onConfirm={() => void confirmDelete()}
+        onClose={closeDelete}
+      />
     </motion.div>
   )
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { formatPrice, useRelatedProducts, type ProductItem } from '~/data/products'
 import { Icon } from '~/components/ui/Icon'
+import { useToast } from '~/components/ui/toast-view'
 import { StableText } from '~/components/ui/StableText'
 
 const tabs = ['story', 'ingredients', 'usage', 'notes'] as const
@@ -21,7 +22,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
   const [qty, setQty] = useState(1)
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '')
   const [tab, setTab] = useState<TabId>('story')
-  const [notice, setNotice] = useState('')
+  const toast = useToast()
   const companions = useRelatedProducts(product)
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0]
   const gallery = variant.gallery.length > 0 ? variant.gallery : product.gallery
@@ -30,13 +31,15 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
 
   function changeQty(next: number) {
     setQty(Math.min(10, Math.max(1, next)))
-    setNotice('')
   }
 
   return (
     <div className='bg-canvas'>
       <section className='mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12'>
-        <nav aria-label={t('products.detail.breadcrumb')} className='flex flex-wrap items-center gap-2 text-sm text-muted'>
+        <nav
+          aria-label={t('products.detail.breadcrumb')}
+          className='flex flex-wrap items-center gap-2 text-sm text-muted'
+        >
           <Link to='/' className='transition hover:text-clinic'>
             <StableText i18nKey='nav.home' align='start' />
           </Link>
@@ -83,9 +86,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
           </div>
 
           <div>
-            <p className='text-xs font-bold tracking-[0.22em] text-clinic uppercase'>
-              {product.categoryName}
-            </p>
+            <p className='text-xs font-bold tracking-[0.22em] text-clinic uppercase'>{product.categoryName}</p>
             <h1 className='mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl'>{product.name}</h1>
             <p className='mt-2 text-sm font-semibold text-muted'>{product.subtitle}</p>
             <p className='mt-4 text-sm leading-7 text-muted'>{product.description}</p>
@@ -101,7 +102,9 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             </div>
             {product.variants.length > 1 ? (
               <div className='mt-5' role='radiogroup' aria-label={t('products.detail.variants')}>
-                <p className='text-xs font-bold tracking-[0.14em] text-muted uppercase'>{t('products.detail.variants')}</p>
+                <p className='text-xs font-bold tracking-[0.14em] text-muted uppercase'>
+                  {t('products.detail.variants')}
+                </p>
                 <div className='mt-2 flex flex-wrap gap-2'>
                   {product.variants.map((item) => {
                     const selected = item.id === variant.id
@@ -114,7 +117,6 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                         onClick={() => {
                           setVariantId(item.id)
                           setShot(0)
-                          setNotice('')
                         }}
                         className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                           selected
@@ -157,16 +159,12 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
 
             <button
               type='button'
-              onClick={() => setNotice(t('products.detail.added', { qty, name: cartName }))}
+              onClick={() => toast.success(t('products.detail.added', { qty, name: cartName }))}
               className='mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-clinic px-6 text-sm font-semibold text-white shadow-[0_12px_28px_var(--color-whisper-shadow)] transition hover:bg-clinic-deep'
             >
               <Icon name='shopping_bag' size={18} />
               {t('products.detail.addToCart')}
             </button>
-            <p className='sr-only' aria-live='polite'>
-              {notice}
-            </p>
-            {notice ? <p className='mt-3 text-sm font-semibold text-clinic'>{notice}</p> : null}
 
             <ul className='mt-8 grid grid-cols-3 gap-3'>
               {trustPoints.map((icon) => (
@@ -174,7 +172,9 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                   <span className='mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-mist text-clinic'>
                     <Icon name={icon} size={22} />
                   </span>
-                  <span className='mt-2 block text-xs font-semibold text-ink'>{t(`products.detail.trust.${icon}`)}</span>
+                  <span className='mt-2 block text-xs font-semibold text-ink'>
+                    {t(`products.detail.trust.${icon}`)}
+                  </span>
                 </li>
               ))}
             </ul>

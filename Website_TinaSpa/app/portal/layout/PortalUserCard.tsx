@@ -30,7 +30,9 @@ export function PortalUserCard({ role, className }: PortalUserCardProps) {
   }
 
   return (
-    <div className={`mt-auto shrink-0 flex items-center gap-3 border-t border-rose-soft/60 px-1 pt-4 ${className ?? ''}`}>
+    <div
+      className={`mt-auto shrink-0 flex items-center gap-3 border-t border-rose-soft/60 px-1 pt-4 ${className ?? ''}`}
+    >
       <Link
         to={`/portal/${role}/profile`}
         title='Hồ sơ của tôi'

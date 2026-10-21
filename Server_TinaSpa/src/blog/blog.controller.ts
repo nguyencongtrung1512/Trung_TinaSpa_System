@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -34,6 +37,17 @@ export class BlogCategoriesController {
     return this.categories.listForManage();
   }
 
+  @Get('manage/:blogCategoryID')
+  @ViewBlogManagement()
+  findForManage(@Param('blogCategoryID') blogCategoryID: string) {
+    return this.categories.findForManage(blogCategoryID);
+  }
+
+  @Get(':slug')
+  findBySlug(@Param('slug') slug: string) {
+    return this.categories.findBySlug(slug);
+  }
+
   @Post()
   @WriteBlogCategory()
   create(@Body() dto: SaveBlogCategoryDto, @CurrentUser('userAID') userAID: string) {
@@ -47,6 +61,13 @@ export class BlogCategoriesController {
     @Body() dto: SaveBlogCategoryDto,
   ) {
     return this.categories.update(blogCategoryID, dto);
+  }
+
+  @Delete(':blogCategoryID')
+  @WriteBlogCategory()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('blogCategoryID') blogCategoryID: string) {
+    return this.categories.remove(blogCategoryID);
   }
 }
 

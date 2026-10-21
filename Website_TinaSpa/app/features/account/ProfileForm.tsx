@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '~/components/ui/Icon'
+import { useToast } from '~/components/ui/toast-view'
 import { ImageUpload } from '~/components/ui/ImageUpload'
 import type { AuthUser } from '~/lib/auth'
 import { fetchMyProfile, updateMyProfile } from '~/lib/profile'
 import { MAX_IMAGE_SIZE_MB } from '~/lib/storage'
 import { Field, FormError, inputClass, outlineButtonClass, primaryButtonClass } from '~/portal/manager/services/form-ui'
+import { Select } from '~/components/ui/Select'
 
 type Gender = NonNullable<AuthUser['gender']>
 
@@ -58,7 +60,7 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
   const [saved, setSaved] = useState(() => toValues(user))
   const [errors, setErrors] = useState<ProfileErrors>({})
   const [submitError, setSubmitError] = useState<string>()
-  const [notice, setNotice] = useState(false)
+  const toast = useToast()
   const [busy, setBusy] = useState(false)
   const [avatarBroken, setAvatarBroken] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -69,7 +71,6 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
   function update<K extends keyof ProfileValues>(field: K, value: ProfileValues[K]) {
     setValues((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: undefined }))
-    setNotice(false)
     if (field === 'avatar') setAvatarBroken(false)
   }
 
@@ -94,7 +95,7 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
       const nextValues = toValues(next)
       setValues(nextValues)
       setSaved(nextValues)
-      setNotice(true)
+      toast.success(t('account.saved'))
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : t('account.errors.save'))
     } finally {
@@ -164,19 +165,15 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
         </Field>
         <Field label={t('account.gender')}>
           {(id) => (
-            <select
+            <Select
               id={id}
-              className={inputClass}
               value={values.gender}
-              onChange={(event) => update('gender', event.target.value as Gender | '')}
-            >
-              <option value=''>{t('account.genderNone')}</option>
-              {genders.map((gender) => (
-                <option key={gender} value={gender}>
-                  {t(`account.genders.${gender}`)}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => update('gender', value)}
+              options={[
+                { value: '', label: t('account.genderNone') },
+                ...genders.map((gender) => ({ value: gender, label: t(`account.genders.${gender}`) }))
+              ]}
+            />
           )}
         </Field>
         <Field label={t('account.dateOfBirth')} error={errors.dateOfBirth}>
@@ -200,7 +197,6 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
               value={values.avatar}
               onChange={(url) => update('avatar', url)}
               onUploadingChange={setUploading}
-              allowUrlInput={false}
               labels={{
                 choose: t('account.avatarUpload.choose'),
                 replace: t('account.avatarUpload.replace'),
@@ -227,12 +223,6 @@ function ProfileEditor({ user }: { readonly user: AuthUser }) {
       </div>
 
       <div className='mt-6 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end'>
-        {notice ? (
-          <p role='status' className='flex items-center gap-1.5 text-sm font-semibold text-emerald-700 sm:mr-auto'>
-            <Icon name='check_circle' size={18} />
-            {t('account.saved')}
-          </p>
-        ) : null}
         <button type='submit' className={primaryButtonClass} disabled={busy || uploading || !dirty}>
           <Icon name='save' size={18} />
           {busy ? t('account.saving') : t('account.save')}

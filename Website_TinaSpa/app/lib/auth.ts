@@ -12,6 +12,7 @@ export type AuthUser = {
   isActive: boolean
   mustChangePassword?: boolean
   branchID?: string | null
+  branchName?: string | null
   createdAt?: string
 }
 
@@ -93,8 +94,13 @@ export function register(input: { phone: string; password: string; fullName: str
 }
 
 export function apiUrl(path: string) {
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  // Khi chạy dev trên máy, dùng đường dẫn tương đối để đi qua Vite proxy
+  if (import.meta.env.DEV) {
+    return normalized
+  }
   const base = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? ''
-  return `${base}${path}`
+  return `${base}${normalized}`
 }
 
 async function requestAuth(path: string, body: { phone: string; password: string; fullName?: string }) {

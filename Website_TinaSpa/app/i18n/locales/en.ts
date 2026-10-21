@@ -9,7 +9,9 @@ const en: typeof vi = {
     mainNav: 'Main navigation',
     mobileNav: 'Mobile menu',
     language: 'Language',
-    viewAll: 'View all'
+    viewAll: 'View all',
+    close: 'Close',
+    promotion: 'Promotion'
   },
   meta: {
     home: {
@@ -95,7 +97,8 @@ const en: typeof vi = {
     },
     password: {
       title: 'Change password',
-      notice: 'Your account still uses the default password (your phone number). Please change it to keep your account secure.',
+      notice:
+        'Your account still uses the default password (your phone number). Please change it to keep your account secure.',
       current: 'Current password',
       next: 'New password',
       confirm: 'Repeat new password',
@@ -118,18 +121,21 @@ const en: typeof vi = {
   },
   staffServices: {
     title: 'Client services',
-    intro: 'Enter a phone number to find or create a client account, then record the services the client used. Clients can review them on their Profile page.',
-    phoneLabel: 'Client phone number',
-    phonePlaceholder: 'e.g. 0901 234 567',
+    intro:
+      'Enter a phone number to find or create a client account, then record the services the client used. Clients can review them on their Profile page.',
+    phoneLabel: 'Client name or phone number',
+    phonePlaceholder: 'Type a name to pick a client, or enter a phone (e.g. 0901 234 567)',
     search: 'Find client',
     searching: 'Searching...',
     noAccount: 'No account for {{phone}} yet',
-    noAccountHint: 'Create an account to record services. The initial password is the phone number and the client must change it at first sign-in.',
+    noAccountHint:
+      'Create an account to record services. The initial password is the phone number and the client must change it at first sign-in.',
     appointmentLine: 'Booking {{date}} {{time}} — {{name}}',
     fullName: 'Client full name',
     createAccount: 'Create account',
     creating: 'Creating...',
-    created: 'Account created. The initial password is the client phone number; the client will be asked to change it on sign-in.',
+    created:
+      'Account created. The initial password is the client phone number; the client will be asked to change it on sign-in.',
     customerMeta: '{{phone}} · ID {{id}}',
     defaultPassword: 'Default password not changed',
     addTitle: 'Add services used',
@@ -154,7 +160,7 @@ const en: typeof vi = {
     removeMessage: 'Remove {{name}} from the client profile? The client will no longer see it.',
     removed: 'Service removed from the client profile.',
     errors: {
-      phone: 'Invalid phone number (starts with 0 or +84, 9–11 digits).',
+      phone: 'Pick a client from the suggestions, or enter a full phone number (starts with 0 or +84, 9–11 digits).',
       fullName: 'Enter the client full name (at least 2 characters).',
       pickService: 'Pick a service on every row or remove empty rows.',
       futureDate: 'The date used cannot be in the future.',
@@ -511,8 +517,6 @@ const en: typeof vi = {
       q1: {
         tab: 'Location 01: District 1, HCMC',
         name: 'TinaSpa Ben Nghe — District 1',
-        description:
-          'In the heart of vibrant Saigon, a green, cool space with private treatment rooms and a rigorous medical skin care process.',
         address: '12 Nguyen Hue, Ben Nghe Ward, District 1, Ho Chi Minh City',
         hours: 'Monday – Sunday: 08:00 – 20:00',
         imageAlt: 'TinaSpa District 1 treatment room'
@@ -520,8 +524,6 @@ const en: typeof vi = {
       hn: {
         tab: 'Location 02: Hoan Kiem, Hanoi',
         name: 'TinaSpa Trang Tien — Hoan Kiem',
-        description:
-          'Set in the elegant old French Quarter, capturing Indochine charm with a royal herbal steam room and advanced medical treatments.',
         address: '45 Ly Thuong Kiet, Hang Bai Ward, Hoan Kiem District, Hanoi',
         hours: 'Monday – Sunday: 09:00 – 21:00',
         imageAlt: 'TinaSpa Hoan Kiem treatment room'

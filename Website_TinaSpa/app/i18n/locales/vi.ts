@@ -7,7 +7,9 @@ const vi = {
     mainNav: 'Điều hướng chính',
     mobileNav: 'Menu di động',
     language: 'Ngôn ngữ',
-    viewAll: 'Xem tất cả'
+    viewAll: 'Xem tất cả',
+    close: 'Đóng',
+    promotion: 'Chương trình ưu đãi'
   },
   meta: {
     home: {
@@ -114,13 +116,15 @@ const vi = {
   },
   staffServices: {
     title: 'Dịch vụ của khách',
-    intro: 'Nhập số điện thoại để tìm hoặc tạo tài khoản khách, sau đó ghi các dịch vụ khách đã sử dụng. Khách xem lại ở trang Hồ sơ.',
-    phoneLabel: 'Số điện thoại khách',
-    phonePlaceholder: 'VD: 0901 234 567',
+    intro:
+      'Nhập số điện thoại để tìm hoặc tạo tài khoản khách, sau đó ghi các dịch vụ khách đã sử dụng. Khách xem lại ở trang Hồ sơ.',
+    phoneLabel: 'Tên hoặc số điện thoại khách',
+    phonePlaceholder: 'Gõ tên để chọn khách, hoặc nhập số điện thoại (VD: 0901 234 567)',
     search: 'Tìm khách',
     searching: 'Đang tìm...',
     noAccount: 'Chưa có tài khoản cho {{phone}}',
-    noAccountHint: 'Tạo tài khoản để ghi dịch vụ. Mật khẩu ban đầu là số điện thoại, khách phải đổi khi đăng nhập lần đầu.',
+    noAccountHint:
+      'Tạo tài khoản để ghi dịch vụ. Mật khẩu ban đầu là số điện thoại, khách phải đổi khi đăng nhập lần đầu.',
     appointmentLine: 'Lịch {{date}} {{time}} — {{name}}',
     fullName: 'Họ và tên khách',
     createAccount: 'Tạo tài khoản',
@@ -150,7 +154,7 @@ const vi = {
     removeMessage: 'Xóa {{name}} khỏi hồ sơ của khách? Khách sẽ không còn thấy mục này.',
     removed: 'Đã xóa dịch vụ khỏi hồ sơ khách.',
     errors: {
-      phone: 'Số điện thoại không hợp lệ (bắt đầu bằng 0 hoặc +84, gồm 9–11 chữ số).',
+      phone: 'Chọn khách trong danh sách gợi ý, hoặc nhập đủ số điện thoại (bắt đầu bằng 0 hoặc +84, gồm 9–11 chữ số).',
       fullName: 'Nhập họ tên khách (ít nhất 2 ký tự).',
       pickService: 'Chọn dịch vụ cho tất cả các dòng hoặc xóa dòng trống.',
       futureDate: 'Ngày sử dụng không được ở tương lai.',
@@ -506,8 +510,6 @@ const vi = {
       q1: {
         tab: 'Cơ sở 01: Quận 1, TP.HCM',
         name: 'TinaSpa Bến Nghé — Quận 1',
-        description:
-          'Nằm giữa trung tâm Sài Gòn sôi động, không gian xanh mát với phòng trị liệu riêng tư cùng quy trình chăm sóc da y khoa chuẩn mực.',
         address: '12 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
         hours: 'Thứ 2 – Chủ Nhật: 08:00 – 20:00',
         imageAlt: 'Phòng trị liệu TinaSpa Quận 1'
@@ -515,8 +517,6 @@ const vi = {
       hn: {
         tab: 'Cơ sở 02: Hoàn Kiếm, Hà Nội',
         name: 'TinaSpa Tràng Tiền — Hoàn Kiếm',
-        description:
-          'Tọa lạc tại khu phố Pháp cổ thanh lịch, kết tinh nét đẹp quý phái Đông Dương với phòng xông hơi thảo dược hoàng cung và quy trình điều trị y khoa tân tiến.',
         address: '45 Lý Thường Kiệt, Phường Hàng Bài, Quận Hoàn Kiếm, Hà Nội',
         hours: 'Thứ 2 – Chủ Nhật: 09:00 – 21:00',
         imageAlt: 'Phòng trị liệu TinaSpa Hoàn Kiếm'

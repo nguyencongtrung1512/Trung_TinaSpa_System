@@ -6,6 +6,7 @@ export const StorageFolder = {
   BLOGS: 'blogs',
   STAFF: 'staff',
   AVATARS: 'avatars',
+  SETTINGS: 'settings',
 } as const;
 
 export type StorageFolder = (typeof StorageFolder)[keyof typeof StorageFolder];
@@ -19,6 +20,7 @@ export const FOLDER_UPLOAD_ROLES: Record<StorageFolder, RoleName[] | null> = {
   blogs: [RoleName.ADMIN, RoleName.MANAGER],
   staff: [RoleName.ADMIN, RoleName.MANAGER],
   avatars: null,
+  settings: [RoleName.ADMIN],
 };
 
 /** Allowed content types → accepted file extensions. The first one is used in the object key. */
